@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Ministère de la Fonction Publique - Plateforme Web Administrative</title>
+  <!-- Optimisations Apple iOS / iPhone Web App -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GFP Intranet">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#047857">
+  <link rel="apple-touch-icon" href="assets/logo-republique-cote-ivoire.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+    }
+    html {
+      -webkit-text-size-adjust: 100%;
+      height: -webkit-fill-available;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      padding-top: var(--sat);
+      padding-bottom: var(--sab);
+      padding-left: var(--sal);
+      padding-right: var(--sar);
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #view-login, #view-app, header, main, nav, div {
+      position: relative;
+      z-index: 1;
+    }
+    /* Empêche le zoom intempestif d'iOS Safari sur les champs de saisie */
+    @media screen and (max-width: 768px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
+    /* Défilement tactile avec élan fluide sur iPhone iOS */
+    .overflow-x-auto, .overflow-y-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Masquer barre visuelle mais garder le swipe tactile */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Amélioration ergonomie tactile */
+    button, select, input, a {
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+
+  <!-- BANDEAU TRICOLORE -->
+  <div class="h-2 w-full flex">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <div id="view-login" class="flex-1 flex items-center justify-center p-3 sm:p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-5 sm:p-8 space-y-6">
+
+      <div class="text-center space-y-3">
+        <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
+        <div>
+          <h1 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</h1>
+          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE</h2>
+          <p class="text-xs text-slate-600">Secrétariat général</p>
+        </div>
+        <div class="h-0.5 w-16 bg-orange-500 mx-auto rounded-full"></div>
+        <p class="text-xs text-slate-500 font-medium">Plateforme Web de Gestion des Services Administratifs</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Profil d'Accès *</label>
+          <select id="loginRole" onchange="autoFillLogin()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-emerald-600">
+            <option value="AGENT">Agent Fonctionnaire</option>
+            <option value="RESPONSABLE">Gestionnaire RH</option>
+            <option value="SOUS_DIRECTEUR">Sous-Directeur</option>
+            <option value="DRH">DRH</option>
+            <option value="DIRECTEUR">Directeur Central</option>
+            <option value="DIRCAB">Directeur de Cabinet</option>
+            <option value="SECRETAIRE">Secrétaire de Direction</option>
+            <option value="SERVICE">Service Gestion Administrative</option>
+            <option value="CHEF_SERVICE">Chef de Service</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Identifiant de connexion *</label>
+          <input type="text" id="loginMat" value="000001X" required autocomplete="username" placeholder="Votre identifiant"
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
+          <input type="password" id="loginPass" value="test123" required autocomplete="current-password"
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
+        </div>
+
+        <p id="loginError" class="hidden text-xs text-red-600 font-bold text-center">Identifiant ou mot de passe incorrect.</p>
+
+        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
+          Se Connecter à l'Espace Intranet
+        </button>
+      </form>
+
+      <a href="admin-login.html" class="block text-center text-xs font-bold text-purple-700 hover:text-purple-900">
+        Accès réservé à l'administration
+      </a>
+
+      <div class="border-t border-slate-200 pt-5">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Nouveau sur la plateforme ?</h3>
+            <p class="text-xs text-slate-500 mt-1">Créez votre compte puis choisissez votre profil.</p>
+          </div>
+          <button type="button" onclick="toggleCreateAccountForm()" class="shrink-0 px-3 py-2 border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold">
+            Créer un compte
+          </button>
+        </div>
+
+        <form id="createAccountForm" onsubmit="handleCreateAccount(event)" class="hidden mt-5 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountCivilite">Civilité *</label>
+              <select id="newAccountCivilite" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="M.">M.</option>
+                <option value="Mme">Mme</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountMatricule">Matricule *</label>
+              <input type="text" id="newAccountMatricule" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono" placeholder="Ex. 000007K">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountNom">Nom *</label>
+              <input type="text" id="newAccountNom" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm" autocomplete="family-name">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountPrenom">Prénom *</label>
+              <input type="text" id="newAccountPrenom" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm" autocomplete="given-name">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountRole">Choisissez votre rôle *</label>
+            <select id="newAccountRole" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold">
+              <option value="ROLE_AGENT">Agent Fonctionnaire</option>
+              <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
+              <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
+              <option value="ROLE_DRH">DRH</option>
+              <option value="ROLE_DIRECTEUR">Directeur Central</option>
+              <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
+              <option value="ROLE_SECRETAIRE">Secrétaire de Direction</option>
+              <option value="ROLE_SERVICE_ADMINISTRATIF">Service Gestion Administrative</option>
+              <option value="ROLE_CHEF_DE_SERVICE">Chef de Service</option>
+              <option value="ROLE_DIRECTEUR_CABINET">Directeur de Cabinet</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountPassword">Mot de passe *</label>
+            <input type="password" id="newAccountPassword" required minlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm" autocomplete="new-password">
+          </div>
+
+          <p id="createAccountError" class="hidden text-xs text-red-600 font-bold text-center"></p>
+          <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">
+            Créer mon compte
+          </button>
+        </form>
+        <p id="createAccountSuccess" class="hidden mt-4 text-xs text-emerald-700 font-bold text-center"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VUE 2 : APPLICATION CONNECTEE -->
+  <div id="view-app" class="hidden flex-1 flex flex-col">
+
+    <!-- HEADER SYSTEME AVEC CENTRE DE NOTIFICATIONS & AVATAR -->
+    <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-3 min-w-0">
+          <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
+          <div>
+            <h1 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">MINISTÈRE FONCTION PUBLIQUE</h1>
+            <p id="userHeaderService" class="text-[10px] sm:text-xs text-slate-500 truncate">Portail Intranet</p>
+          </div>
+        </div>
+
+        <!-- ZONE DROITE : CENTRE DE NOTIFICATIONS + AVATAR + DECONNEXION -->
+        <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+          
+          <!-- BOUTON CENTRE DE NOTIFICATIONS AVEC BADGE ROUGE -->
+          <div class="relative">
+            <button onclick="toggleNotificationsPanel()" id="notifBellButton" class="relative p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition border border-slate-200" title="Centre de notifications">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <!-- BADGE ROUGE DYNAMIQUE -->
+              <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-md animate-pulse">
+                0
+              </span>
+            </button>
+
+            <!-- PANNEAU DEROULANT DES NOTIFICATIONS (ADAPTE MOBILE IPHONE) -->
+            <div id="notificationsDropdown" class="hidden fixed sm:absolute right-2 sm:right-0 top-14 sm:top-auto mt-2 w-[calc(100vw-1rem)] max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+              <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-bold uppercase tracking-wider">Centre d'Alertes</span>
+                  <span id="dropdownUnreadCount" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0 non lue</span>
+                </div>
+                <button onclick="markAllNotificationsAsRead()" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold underline">
+                  Tout marquer comme lu
+                </button>
+              </div>
+              <div id="notificationsList" class="max-h-80 overflow-y-auto divide-y divide-slate-100 p-1">
+                <!-- Notifications injectées par JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- PROFIL UTILISATEUR & AVATAR -->
+          <div class="flex items-center space-x-2 bg-slate-100 p-1 sm:p-1.5 rounded-full border border-slate-200">
+            <div class="relative group cursor-pointer" onclick="document.getElementById('avatarFileInput').click()" title="Changer la photo">
+              <img id="currentUserAvatarImg" src="" alt="Photo" class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover border-2 border-emerald-600 shadow-sm">
+              <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
+                Changer
+              </div>
+              <input type="file" id="avatarFileInput" accept="image/*" onchange="handleAvatarUpload(event)" class="hidden">
+            </div>
+
+            <div class="text-left pr-1 sm:pr-2 hidden md:block">
+              <p id="currentUserNavName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
+              <div id="currentUserRolesBadges" class="flex flex-wrap gap-1 mt-0.5"></div>
+            </div>
+          </div>
+
+          <button onclick="handleLogout()" class="px-2.5 sm:px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700 shrink-0">
+            <span class="hidden sm:inline">Déconnexion</span>
+            <span class="sm:inline-block md:hidden">Sortir</span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="bg-slate-100 border-t border-slate-200 px-3 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2 no-scrollbar" id="navTabsContainer">
+          <!-- Injecté dynamiquement selon privilèges -->
+        </div>
+      </nav>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+      <!-- SECTION AGENT / DEMARCHES PERSONNELLES -->
+      <div id="role-agent-views" class="hidden space-y-6">
+        <div id="agent-tab-dashboard" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold text-slate-400 uppercase">Solde Annuel de Permission</span>
+              <p class="text-3xl font-extrabold text-slate-900 mt-2"><span id="agentSoldeDisplay">24</span> / 30 <span class="text-xs font-normal text-slate-500">jours</span></p>
+              <p class="text-xs text-emerald-600 font-semibold mt-1">Conforme au statut général de la Fonction Publique</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold text-slate-400 uppercase">Mes Demandes d'Absence</span>
+              <p id="agentCountPerm" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+              <p class="text-xs text-orange-600 font-semibold mt-1">Enregistrées dans le système</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold text-slate-400 uppercase">Mes Actes d'État Civil</span>
+              <p id="agentCountActes" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+              <p class="text-xs text-blue-600 font-semibold mt-1">Naissances et Décès déclarés</p>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h2 class="font-bold text-base text-slate-900">Mes Demandes et Déclarations</h2>
+              <button onclick="switchAgentTab('demande')" class="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold shadow hover:bg-emerald-800">
+                + Faire une Demande
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left">
+                <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                  <tr>
+                    <th class="px-6 py-3">Réf Dossier</th>
+                    <th class="px-6 py-3">Nature du Service</th>
+                    <th class="px-6 py-3">Motif / Intitulé</th>
+                    <th class="px-6 py-3">Période / Date</th>
+                    <th class="px-6 py-3">Niveau Décision Requis</th>
+                    <th class="px-6 py-3">Statut du Traitement</th>
+                  </tr>
+                </thead>
+                <tbody id="agentPersonalRequestsTable" class="divide-y divide-slate-200">
+                  <!-- JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="agent-tab-demande" class="hidden space-y-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-2xl mx-auto">
+            <h2 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3 mb-4">
+              Formulaire de Demande de Permission d'Absence
+            </h2>
+            <form onsubmit="handleAgentSubmitPermission(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Type de Permission *</label>
+                <select id="agentPermType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                  <option value="Événement Familial Ordinaire">Événement Familial Ordinaire (<= 3 jours)</option>
+                  <option value="Repos Médical Court">Repos Médical Court (<= 3 jours)</option>
+                  <option value="Congé Maternité / Paternité">Congé Maternité ou Paternité (> 3 jours)</option>
+                  <option value="Permission Spéciale d Absence">Permission Spéciale d'Absence (> 3 jours)</option>
+                  <option value="Événement Familial Long (> 3 jours)">Événement Familial Long (> 3 jours)</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Début *</label>
+                  <input type="date" id="agentPermStart" value="2025-09-02" required onchange="majJours('agentPermStart','agentPermEnd','agentPermJours')" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Fin *</label>
+                  <input type="date" id="agentPermEnd" value="2025-09-04" required onchange="majJours('agentPermStart','agentPermEnd','agentPermJours')" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de jours *</label>
+                  <input type="number" id="agentPermJours" min="1" max="30" value="3" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-bold">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif *</label>
+                <textarea id="agentPermMotif" rows="3" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">Motif de la demande d absence...</textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pièce Jointe Justificative *</label>
+                <input type="file" id="agentPermFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+              </div>
+              <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Enregistrer et Transmettre au Gestionnaire RH
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div id="agent-tab-actes" class="hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+              <h2 class="font-bold text-base text-slate-900 border-b border-slate-200 pb-2">Déclaration de Naissance</h2>
+              <form onsubmit="handleAgentSubmitNaissance(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'enfant *</label>
+                  <input type="text" id="agentNaissNom" value="GRAMBOUTE" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom de l'enfant *</label>
+                  <input type="text" id="agentNaissPrenom" value="Mohamed Rayan" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Naissance *</label>
+                  <input type="date" id="agentNaissDate" value="2025-08-20" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Extrait d'Acte Scanné *</label>
+                  <input type="file" id="agentNaissFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                </div>
+                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-lg text-sm">
+                  Transmettre à la DRH
+                </button>
+              </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+              <h2 class="font-bold text-base text-slate-900 border-b border-slate-200 pb-2">Déclaration de Décès</h2>
+              <form onsubmit="handleAgentSubmitDeces(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Défunt *</label>
+                  <input type="text" id="agentDecesNom" value="KONE" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom du Défunt *</label>
+                  <input type="text" id="agentDecesPrenom" value="Bakary" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Décès *</label>
+                  <input type="date" id="agentDecesDate" value="2025-08-15" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Certificat de Décès Scanné *</label>
+                  <input type="file" id="agentDecesFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                </div>
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm">
+                  Transmettre à la DRH
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="agent-tab-notes" class="hidden space-y-4">
+          <h2 class="text-base font-bold text-slate-900">Notes de Service Diffusées</h2>
+          <div id="agentNotesContainer" class="space-y-3">
+            <!-- JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION GESTIONNAIRE RH -->
+      <div id="role-responsable-views" class="hidden space-y-6">
+        <!-- 1. VÉRIFICATION DES DEMANDES -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Vérification des Demandes d'Absence</h2>
+              <p class="text-xs text-slate-500">Contrôlez les demandes. Pour ≤ 2 jours, transmission à la Direction (visa). Pour > 2 jours, transmission directe au DRH.</p>
+            </div>
+            <span id="n1PendingCount" class="px-3 py-1 bg-orange-100 text-orange-800 border border-orange-300 rounded-full text-xs font-bold">
+              0 demande
+            </span>
+          </div>
+
+          <div id="n1ValidationContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+
+        <!-- 2. DÉCISIONS DU DRH À NOTIFIER -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Décisions du DRH à Notifier aux Agents</h2>
+              <p class="text-xs text-slate-500">Le DRH a rendu sa décision finale. Notifiez l'agent demandeur (acceptation ou rejet motivé).</p>
+            </div>
+            <span id="rhNotifyPendingCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+              0 à notifier
+            </span>
+          </div>
+
+          <div id="rhDecisionsNotifyContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION VISA DIRECTION (DIRECTEUR / SOUS-DIRECTEUR) -->
+      <div id="role-visa-views" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 id="visaViewTitle" class="text-base font-bold text-slate-900">Espace Visa Hiérarchique de Direction</h2>
+              <p class="text-xs text-slate-500">Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH pour décision finale.</p>
+            </div>
+            <span id="visaPendingCount" class="px-3 py-1 bg-indigo-100 text-indigo-800 border border-indigo-300 rounded-full text-xs font-bold">
+              0 demande
+            </span>
+          </div>
+
+          <div id="visaValidationContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION VALIDATION FINALE DRH -->
+      <div id="role-drh-views" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Console de Décision Finale DRH</h2>
+              <p class="text-xs text-slate-500">Décision finale sur les demandes de permission. Une fois validée ou rejetée, la décision repart vers le Gestionnaire RH pour notification.</p>
+            </div>
+            <span id="rhPendingCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+              0 dossier
+            </span>
+          </div>
+
+          <div id="rhValidationContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Déclarations d'Actes d'État Civil (Naissance & Décès - RG24)</h2>
+              <p class="text-xs text-slate-500">Transmises directement à la DRH pour contrôle, validation et mise à jour du dossier statutaire de l'agent.</p>
+            </div>
+            <span id="drhEtatCivilPendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+              0 acte
+            </span>
+          </div>
+
+          <div id="drhActesContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION SERVICE GESTION ADMINISTRATIVE -->
+      <div id="role-service-views" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Contrôle des Déclarations d'État Civil</h2>
+              <p class="text-xs text-slate-500">Vérifiez les informations et justificatifs, transmettez à la DRH ou retournez à l'agent.</p>
+            </div>
+            <span id="servicePendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+              0 dossier
+            </span>
+          </div>
+
+          <div id="serviceActesContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION ADMINISTRATEUR SYSTÈME -->
+      <div id="note-workflow-view" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 id="noteWorkflowTitle" class="text-base font-bold text-slate-900">Gestion des Notes de Service</h2>
+            <p id="noteWorkflowDescription" class="text-xs text-slate-500">Les émetteurs transmettent les notes à la secrétaire pour saisie et diffusion.</p>
+          </div>
+          <form id="noteDraftForm" onsubmit="handleNoteDraft(event)" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Objet de la note *</label>
+              <input type="text" id="workflowNoteTitle" required class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structures destinataires *</label>
+              <select id="workflowNoteStructures" multiple required class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm min-h-28"></select>
+            </div>
+            <button id="noteDraftSubmit" type="submit" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow">Transmettre à la secrétaire</button>
+          </form>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 mb-3">Suivi des notes</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-slate-100 text-slate-700 font-bold uppercase"><tr><th class="px-4 py-2">Référence</th><th class="px-4 py-2">Objet</th><th class="px-4 py-2">Émetteur</th><th class="px-4 py-2">Destinataires</th><th class="px-4 py-2">État</th><th class="px-4 py-2">Action</th></tr></thead>
+                <tbody id="noteWorkflowTable" class="divide-y divide-slate-200"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION ADMINISTRATEUR SYSTÈME -->
+      <div id="role-admin-views" class="hidden space-y-6">
+        
+        <div id="legacy-admin-notes" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Administration RBAC des Comptes, Rôles et Mots de Passe</h2>
+              <p class="text-xs text-slate-500">Gérez les comptes utilisateurs rattachés aux agents, réinitialisez les mots de passe et modifiez les rôles.</p>
+            </div>
+            <button onclick="toggleNewUserForm()" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold shadow">
+              + Créer un Nouvel Utilisateur
+            </button>
+          </div>
+
+          <div id="adminCreateUserForm" class="hidden bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-3">
+            <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2">Création d'un Nouveau Compte Utilisateur / Agent</h3>
+            <form onsubmit="handleAdminCreateUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule *</label>
+                <input type="text" id="newMatricule" required placeholder="ex: 789456-Z" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom *</label>
+                <input type="text" id="newNom" required placeholder="ex: KOFFI" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom *</label>
+                <input type="text" id="newPrenom" required placeholder="ex: Emmanuel" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rôle RBAC *</label>
+                <select id="newRole" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                  <option value="ROLE_AGENT">Agent Fonctionnaire</option>
+                  <option value="ROLE_SECRETAIRE">Secrétaire</option>
+                  <option value="ROLE_SERVICE_ADMINISTRATIF">Service Gestion Administrative</option>
+                  <option value="ROLE_CHEF_DE_SERVICE">Chef de Service</option>
+                  <option value="ROLE_DIRECTEUR_CABINET">Directeur de Cabinet</option>
+                  <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
+                  <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
+                  <option value="ROLE_DIRECTEUR">Directeur Central</option>
+                  <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
+                  <option value="ROLE_DRH">DRH</option>
+                  <option value="ROLE_ADMIN_DSI">Administrateur Système</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe Initial *</label>
+                <input type="text" id="newPassword" required value="pass123" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Téléphone *</label>
+                <input type="text" id="newTelephone" value="+225 0700000000" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              </div>
+              <div class="md:col-span-3 flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="toggleNewUserForm()" class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
+                <button type="submit" class="px-4 py-1.5 bg-purple-700 text-white font-bold text-xs rounded-lg shadow">Créer le Compte</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-2.5">Matricule</th>
+                  <th class="px-4 py-2.5">Nom & Prénom</th>
+                  <th class="px-4 py-2.5">Structure & Fonction</th>
+                  <th class="px-4 py-2.5">Rôles RBAC</th>
+                  <th class="px-4 py-2.5">Mot de Passe</th>
+                  <th class="px-4 py-2.5 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTable" class="divide-y divide-slate-200">
+                <!-- JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-slate-900">Module de Recherche et Consultation Globale</h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <input type="text" id="adminSearchQuery" onkeyup="filterAdminSearch()" placeholder="Matricule ou Réf..." class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+            <select id="adminSearchType" onchange="filterAdminSearch()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+              <option value="TOUS">Toutes les natures</option>
+              <option value="DEMANDE_PERMISSION">Demandes Permission</option>
+              <option value="DECLARATION_NAISSANCE">Déclarations Naissance</option>
+              <option value="DECLARATION_DECES">Déclarations Décès</option>
+            </select>
+            <select id="adminSearchStatut" onchange="filterAdminSearch()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+              <option value="TOUS">Tous les statuts</option>
+              <option value="EN_ATTENTE_N1">En attente N+1</option>
+              <option value="EN_ATTENTE_RH">En attente RH</option>
+              <option value="VALIDEE">Validée</option>
+              <option value="REJETEE">Rejetée</option>
+            </select>
+            <button onclick="loadBackendData()" class="bg-slate-800 text-white font-bold px-3 py-2 rounded-lg text-xs">
+              Rafraîchir les Données
+            </button>
+          </div>
+
+          <div class="overflow-x-auto pt-2">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-2">Réf Dossier</th>
+                  <th class="px-4 py-2">Matricule & Agent</th>
+                  <th class="px-4 py-2">Nature</th>
+                  <th class="px-4 py-2">Détails</th>
+                  <th class="px-4 py-2">Niveau Requis</th>
+                  <th class="px-4 py-2">Statut Actuel</th>
+                </tr>
+              </thead>
+              <tbody id="adminSearchResultsTable" class="divide-y divide-slate-200">
+                <!-- JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-base font-bold text-slate-900">Émission et Suivi des Notes de Service</h2>
+            <p class="text-xs text-slate-500">Transmettez les notes de service aux structures destinataires.</p>
+          </div>
+
+          <form onsubmit="handleAdminPublishNote(event)" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Titre / Objet de la Note *</label>
+              <input type="text" id="adminNoteTitle" required placeholder="ex: NOTE N° 0027/MFP Relative aux congés" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold">
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">
+              Diffuser la Note de Service
+            </button>
+          </form>
+
+          <div class="space-y-3 pt-2">
+            <h3 class="text-sm font-bold text-slate-900">Historique des Notes Diffusées</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                  <tr>
+                    <th class="px-4 py-2.5">Numéro Réf</th>
+                    <th class="px-4 py-2.5">Objet de la Note</th>
+                    <th class="px-4 py-2.5">Signataire</th>
+                    <th class="px-4 py-2.5">Secrétariat</th>
+                    <th class="px-4 py-2.5">Destinataires</th>
+                    <th class="px-4 py-2.5">Date</th>
+                  </tr>
+                </thead>
+                <tbody id="adminSentNotesTable" class="divide-y divide-slate-200">
+                  <!-- JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const DEFAULT_AVATAR_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23047857' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
+    let currentUser = null;
+    let dbRequests = [];
+    let dbNotes = [];
+    let dbUsers = [];
+    let dbStructures = [];
+    let userNotifications = [];
+    let lastUnreadCount = 0;
+
+    // Alerte sonore douce par Web Audio API
+    function playNotificationSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.1); // A5
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {}
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const clean = String(value).trim();
+      if (!clean) return '—';
+      const date = new Date(clean.includes(' ') ? clean.replace(' ', 'T') : clean);
+      if (Number.isNaN(date.getTime())) return clean;
+      return new Intl.DateTimeFormat('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    }
+
+    function getActorRoutingMessage(r) {
+      if (!r) return 'Aucun acteur de destination défini.';
+
+      const nature = r.nature || '';
+      const statut = r.statut || '';
+      const etape = r.etape || statut;
+
+      if (nature === 'DEMANDE_PERMISSION') {
+        if (etape === 'EN_ATTENTE_GESTIONNAIRE_RH') return 'Destination immédiate : Gestionnaire RH.';
+        if (etape === 'EN_ATTENTE_VISA_SOUS_DIRECTEUR') return 'Destination immédiate : Sous-Directeur (visa).';
+        if (etape === 'EN_ATTENTE_VISA_DIRECTEUR') return 'Destination immédiate : Directeur (visa).';
+        if (etape === 'EN_ATTENTE_RH') return 'Destination immédiate : DRH (décision finale).';
+        if (etape === 'RETOUR_CORRECTION') return 'Retournée à l’agent pour correction.';
+        if (statut === 'EN_ATTENTE_N1') return 'Destination immédiate : Gestionnaire RH.';
+        if (statut === 'VALIDEE') return 'Destination immédiate : notification envoyée à l’agent demandeur (via le Gestionnaire RH).';
+        if (statut === 'REJETEE') return 'Destination immédiate : notification renvoyée à l’agent demandeur (via le Gestionnaire RH).';
+      }
+
+      if (nature === 'DECLARATION_NAISSANCE' || nature === 'DECLARATION_DECES') {
+        if (etape === 'EN_ATTENTE_SERVICE_GESTION_ADMINISTRATIVE') return 'Destination immédiate : Service chargé de la gestion administrative.';
+        if (etape === 'EN_ATTENTE_RH') return 'Destination immédiate : DRH (décision finale).';
+        if (etape === 'RETOUR_CORRECTION') return 'Retournée à l’agent pour correction.';
+        if (statut === 'VALIDEE') return 'Destination immédiate : notification envoyée à l’agent déclarant.';
+        if (statut === 'REJETEE') return 'Destination immédiate : notification renvoyée à l’agent déclarant.';
+      }
+
+      return 'Destination à confirmer selon la validation en cours.';
+    }
+
+    function toggleCreateAccountForm() {
+      const form = document.getElementById('createAccountForm');
+      if (form) {
+        form.classList.toggle('hidden');
+      }
+    }
+
+    function mapRoleCodeToLoginRole(roleCode) {
+      const mapping = {
+        ROLE_AGENT: 'AGENT',
+        ROLE_CHEF_SERVICE: 'RESPONSABLE',
+        ROLE_SOUS_DIRECTEUR: 'SOUS_DIRECTEUR',
+        ROLE_DRH: 'DRH',
+        ROLE_DIRECTEUR: 'DIRECTEUR',
+        ROLE_DIRCAB: 'DIRCAB',
+        ROLE_SECRETAIRE: 'SECRETAIRE',
+        ROLE_ADMIN_DSI: 'ADMINISTRATEUR'
+      };
+      return mapping[roleCode] || 'AGENT';
+    }
+
+    async function handleCreateAccount(e) {
+      if (e) e.preventDefault();
+      const payload = {
+        civilite: document.getElementById('newAccountCivilite')?.value || 'M.',
+        nom: document.getElementById('newAccountNom')?.value.trim(),
+        prenom: document.getElementById('newAccountPrenom')?.value.trim(),
+        matricule: document.getElementById('newAccountMatricule')?.value.trim(),
+        password: document.getElementById('newAccountPassword')?.value.trim(),
+        role: document.getElementById('newAccountRole')?.value || 'ROLE_AGENT'
+      };
+
+      const errorNode = document.getElementById('createAccountError');
+      if (!payload.nom || !payload.prenom || !payload.matricule || !payload.password) {
+        if (errorNode) {
+          errorNode.textContent = 'Complétez tous les champs obligatoires.';
+          errorNode.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const res = await API.register(payload);
+      if (res.status === 'success') {
+        if (errorNode) errorNode.classList.add('hidden');
+        const successNode = document.getElementById('createAccountSuccess');
+        if (successNode) {
+          successNode.textContent = 'Compte créé. Vérifiez le rôle sélectionné puis cliquez sur "Se connecter".';
+          successNode.classList.remove('hidden');
+        }
+        const form = document.getElementById('createAccountForm');
+        if (form) form.classList.add('hidden');
+        const loginRole = document.getElementById('loginRole');
+        if (loginRole) loginRole.value = mapRoleCodeToLoginRole(payload.role);
+        const loginMat = document.getElementById('loginMat');
+        if (loginMat) {
+          loginMat.value = '';
+          loginMat.focus();
+        }
+        const loginPass = document.getElementById('loginPass');
+        if (loginPass) loginPass.value = '';
+      } else {
+        if (errorNode) {
+          errorNode.textContent = res.message || 'Impossible de créer le compte.';
+          errorNode.classList.remove('hidden');
+        }
+      }
+    }
+
+    const LOGIN_DEFAULTS = {
+      "AGENT": "000001X",
+      "RESPONSABLE": "000002A",
+      "SOUS_DIRECTEUR": "SD001",
+      "DRH": "000003B",
+      "DIRECTEUR": "DIR001",
+      "DIRCAB": "DIR001",
+      "SECRETAIRE": "SEC001",
+      "SERVICE": "SVC001",
+      "CHEF_SERVICE": "CHEF001"
+    };
+
+    function autoFillLogin() {
+      const role = document.getElementById('loginRole').value;
+      document.getElementById('loginMat').value = LOGIN_DEFAULTS[role] || '000001X';
+      document.getElementById('loginPass').value = 'test123';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const mat = document.getElementById('loginMat').value.trim();
+      const pwd = document.getElementById('loginPass').value.trim();
+      const role = document.getElementById('loginRole').value;
+      const errorNode = document.getElementById('loginError');
+
+      const res = await API.login(mat, role, pwd);
+      if (res.status === 'success') {
+        currentUser = res.user;
+        if (errorNode) {
+          errorNode.classList.add('hidden');
+        }
+        await loadBackendData();
+        await loadNotifications();
+        loadUserInterface();
+        startNotificationPolling();
+      } else {
+        if (errorNode) {
+          errorNode.classList.remove('hidden');
+          errorNode.textContent = res.message || 'Matricule ou mot de passe incorrect.';
+        } else {
+          alert('Erreur de connexion : ' + (res.message || 'Identifiant incorrect'));
+        }
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      sessionStorage.removeItem('gfp_session_token');
+      document.getElementById('view-app').classList.add('hidden');
+      document.getElementById('view-login').classList.remove('hidden');
+    }
+
+    function handleAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file || !currentUser) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const base64Photo = evt.target.result;
+        localStorage.setItem('user_avatar_' + currentUser.matricule, base64Photo);
+        document.getElementById('currentUserAvatarImg').src = base64Photo;
+        alert("Photo de profil mise à jour avec succès !");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadUserAvatar() {
+      if (!currentUser) return;
+      const savedAvatar = localStorage.getItem('user_avatar_' + currentUser.matricule);
+      const imgElem = document.getElementById('currentUserAvatarImg');
+      if (savedAvatar) {
+        imgElem.src = savedAvatar;
+      } else {
+        imgElem.src = DEFAULT_AVATAR_SVG;
+      }
+    }
+
+    async function loadBackendData() {
+      const reqRes = await API.getRequests();
+      if (reqRes.status === 'success') {
+        dbRequests = reqRes.requests;
+      }
+
+      const noteRes = await API.getNotes();
+      if (noteRes.status === 'success') {
+        dbNotes = noteRes.notes;
+      }
+
+      const userRes = await API.getUsers();
+      if (userRes.status === 'success') {
+        dbUsers = userRes.users;
+      }
+
+      const structureRes = await API.getStructures();
+      if (structureRes.status === 'success') {
+        dbStructures = structureRes.structures;
+      }
+    }
+
+    // -----------------------------------------------------------
+    // GESTION DES NOTIFICATIONS & BADGE ROUGE
+    // -----------------------------------------------------------
+    async function loadNotifications(playAlertOnNew = false) {
+      if (!currentUser) return;
+      const res = await API.getNotifications(currentUser.id_agent);
+      if (res.status === 'success') {
+        userNotifications = res.notifications;
+        const unreadCount = res.unread_count;
+
+        const badge = document.getElementById('notifBadge');
+        const dropdownCount = document.getElementById('dropdownUnreadCount');
+
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+          badge.classList.remove('hidden');
+          dropdownCount.textContent = unreadCount + ' non lue' + (unreadCount > 1 ? 's' : '');
+          dropdownCount.classList.remove('bg-emerald-600');
+          dropdownCount.classList.add('bg-red-500');
+
+          if (playAlertOnNew && unreadCount > lastUnreadCount) {
+            playNotificationSound();
+          }
+        } else {
+          badge.classList.add('hidden');
+          dropdownCount.textContent = '0 non lue';
+          dropdownCount.classList.remove('bg-red-500');
+          dropdownCount.classList.add('bg-emerald-600');
+        }
+
+        lastUnreadCount = unreadCount;
+        renderNotificationsList();
+      }
+    }
+
+    function toggleNotificationsPanel() {
+      const dropdown = document.getElementById('notificationsDropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    function renderNotificationsList() {
+      const container = document.getElementById('notificationsList');
+      container.innerHTML = "";
+
+      if (userNotifications.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-slate-400 text-xs italic">
+            Aucune notification récente.
+          </div>
+        `;
+        return;
+      }
+
+      userNotifications.forEach(n => {
+        const div = document.createElement('div');
+        const isUnread = !n.est_lu;
+        const bgClass = isUnread ? "bg-emerald-50/60 border-l-4 border-emerald-600" : "bg-white";
+
+        let typeBadge = "bg-slate-100 text-slate-700";
+        if (n.type_notif === 'VALIDATION') typeBadge = "bg-emerald-100 text-emerald-800 border border-emerald-300";
+        if (n.type_notif === 'REJET') typeBadge = "bg-red-100 text-red-800 border border-red-300";
+        if (n.type_notif === 'ATTENTE_AVIS') typeBadge = "bg-orange-100 text-orange-800 border border-orange-300";
+        if (n.type_notif === 'ATTENTE_RH') typeBadge = "bg-blue-100 text-blue-800 border border-blue-300";
+        if (n.type_notif === 'NOTE_SERVICE') typeBadge = "bg-purple-100 text-purple-800 border border-purple-300";
+
+        div.className = `p-3 text-xs space-y-1 transition hover:bg-slate-50 ${bgClass}`;
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <span class="font-bold text-slate-900">${n.titre_notif}</span>
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold ${typeBadge}">${n.type_notif}</span>
+          </div>
+          <p class="text-slate-600 text-[11px] leading-relaxed">${n.message_notif}</p>
+          <div class="flex justify-between items-center pt-1 text-[10px] text-slate-400 font-mono">
+            <span>Réf: ${n.reference_dossier || 'Général'}</span>
+            <span>${formatDateTime(n.date_creation)}</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function markAllNotificationsAsRead() {
+      if (!currentUser) return;
+      await API.markNotificationsRead(currentUser.id_agent);
+      await loadNotifications(false);
+    }
+
+    function startNotificationPolling() {
+      setInterval(async () => {
+        if (currentUser) {
+          await loadNotifications(true);
+        }
+      }, 5000); // Vérification automatique toutes les 5 secondes
+    }
+
+    // -----------------------------------------------------------
+    // CHARGEMENT INTERFACE
+    // -----------------------------------------------------------
+    function loadUserInterface() {
+      if (!currentUser) return;
+
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-app').classList.remove('hidden');
+
+      document.getElementById('currentUserNavName').textContent = currentUser.name;
+      document.getElementById('userHeaderService').textContent = (currentUser.structure || "Ministère") + " • " + (currentUser.fonction || "");
+
+      const rolesBadgesContainer = document.getElementById('currentUserRolesBadges');
+      rolesBadgesContainer.innerHTML = "";
+      (currentUser.roles_labels || [currentUser.role]).forEach(r => {
+        const span = document.createElement('span');
+        span.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300";
+        span.textContent = r;
+        rolesBadgesContainer.appendChild(span);
+      });
+
+      if (document.getElementById('agentSoldeDisplay')) {
+        document.getElementById('agentSoldeDisplay').textContent = currentUser.solde_permission || 30;
+      }
+
+      loadUserAvatar();
+
+      document.getElementById('role-agent-views').classList.add('hidden');
+      document.getElementById('role-responsable-views').classList.add('hidden');
+      if (document.getElementById('role-visa-views')) document.getElementById('role-visa-views').classList.add('hidden');
+      document.getElementById('role-drh-views').classList.add('hidden');
+      document.getElementById('role-admin-views').classList.add('hidden');
+      document.getElementById('role-service-views').classList.add('hidden');
+      document.getElementById('note-workflow-view').classList.add('hidden');
+
+      const navContainer = document.getElementById('navTabsContainer');
+      navContainer.innerHTML = "";
+
+      const role = currentUser.role;
+
+      if (role === 'ADMINISTRATEUR') {
+        document.getElementById('role-admin-views').classList.remove('hidden');
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-purple-700 text-white whitespace-nowrap shrink-0">Gestion RBAC & Administration</button>
+        `;
+        renderAdminUsersTable();
+        renderAdminSentNotesTable();
+        filterAdminSearch();
+        setupNoteWorkflow(true, true);
+      } else if (role === 'SECRETAIRE') {
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Suivi des Notes de Service</button>
+        `;
+        setupNoteWorkflow(false, true);
+      } else if (role === 'RESPONSABLE') {
+        document.getElementById('role-responsable-views').classList.remove('hidden');
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-orange-600 text-white whitespace-nowrap shrink-0">Espace Gestionnaire RH</button>
+        `;
+        renderResponsableViews();
+        setupNoteWorkflow(true, false);
+      } else if (role === 'SOUS_DIRECTEUR' || role === 'DIRECTEUR') {
+        document.getElementById('role-visa-views').classList.remove('hidden');
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        const titreNav = role === 'SOUS_DIRECTEUR' ? 'Visa Hiérarchique Sous-Directeur' : 'Visa Hiérarchique Directeur Central';
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-indigo-700 text-white whitespace-nowrap shrink-0">${titreNav}</button>
+        `;
+        renderVisaViews();
+        setupNoteWorkflow(true, false);
+      } else if (role === 'CHEF_SERVICE') {
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Notes de Service</button>
+        `;
+        setupNoteWorkflow(true, false);
+      } else if (role === 'SERVICE') {
+        document.getElementById('role-service-views').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-teal-700 text-white whitespace-nowrap shrink-0">Contrôle État Civil</button>
+        `;
+        renderServiceViews();
+      } else if (role === 'DRH' || role === 'DIRCAB') {
+        document.getElementById('role-drh-views').classList.remove('hidden');
+        if (role === 'DRH' || role === 'DIRCAB') {
+          document.getElementById('note-workflow-view').classList.remove('hidden');
+          setupNoteWorkflow(true, false);
+        }
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white whitespace-nowrap shrink-0">Console de Décision Finale DRH</button>
+        `;
+        renderDrhViews();
+      } else {
+        document.getElementById('role-agent-views').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button onclick="switchAgentTab('dashboard')" id="nav-agent-dashboard" class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Mon Tableau de Bord</button>
+          <button onclick="switchAgentTab('demande')" id="nav-agent-demande" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap shrink-0">Faire une Permission</button>
+          <button onclick="switchAgentTab('actes')" id="nav-agent-actes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap shrink-0">Déclarer Naissance / Décès</button>
+          <button onclick="switchAgentTab('notes')" id="nav-agent-notes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap shrink-0">Notes de Service</button>
+        `;
+        renderAgentViews();
+      }
+    }
+
+    function setupNoteWorkflow(canEmit, canDiffuse) {
+      document.getElementById('legacy-admin-notes').classList.add('hidden');
+      document.getElementById('noteWorkflowDescription').textContent = canDiffuse
+        ? 'Les notes en attente de saisie sont prêtes à être mises en forme puis diffusées aux destinataires.'
+        : 'Rédigez l’objet de la note et transmettez-la à la secrétaire pour saisie et diffusion.';
+      document.getElementById('noteDraftForm').classList.toggle('hidden', !canEmit);
+      document.getElementById('noteWorkflowTitle').textContent = canDiffuse && !canEmit
+        ? 'Saisie et diffusion des Notes de Service'
+        : 'Émission et suivi des Notes de Service';
+      const select = document.getElementById('workflowNoteStructures');
+      select.innerHTML = dbStructures.map(s => `<option value="${s.id_structure}">${s.nom_structure}</option>`).join('');
+      renderNoteWorkflow(canDiffuse);
+    }
+
+    function renderNoteWorkflow(canDiffuse) {
+      const tbody = document.getElementById('noteWorkflowTable');
+      if (!tbody) return;
+      tbody.innerHTML = dbNotes.map(n => `
+        <tr>
+          <td class="px-4 py-3 font-mono font-bold">${n.numero || n.id}</td>
+          <td class="px-4 py-3 font-bold">${n.libelle}</td>
+          <td class="px-4 py-3">${n.emetteur}</td>
+          <td class="px-4 py-3">${n.service}</td>
+          <td class="px-4 py-3 font-bold ${n.statut === 'DIFFUSEE' ? 'text-emerald-700' : 'text-orange-700'}">${n.statut || 'DIFFUSEE'}</td>
+          <td class="px-4 py-3">${canDiffuse && n.statut !== 'DIFFUSEE' ? `<button onclick="handleDiffuseNote(${n.id})" class="px-2 py-1 bg-emerald-700 text-white rounded font-bold">Diffuser</button>` : '-'}</td>
+        </tr>`).join('') || '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500 italic">Aucune note enregistrée.</td></tr>';
+    }
+
+    async function handleNoteDraft(e) {
+      e.preventDefault();
+      const title = document.getElementById('workflowNoteTitle').value.trim();
+      const recipientStructureIds = Array.from(document.getElementById('workflowNoteStructures').selectedOptions).map(option => Number(option.value));
+      const res = await API.publishNote(title, recipientStructureIds);
+      if (res.status === 'success') {
+        alert('Note transmise à la secrétaire sous la référence ' + res.ref + '.');
+        document.getElementById('workflowNoteTitle').value = '';
+        await loadBackendData();
+        setupNoteWorkflow(
+          currentUser.role === 'ADMINISTRATEUR' || currentUser.roles_codes.some(code => ['ROLE_SOUS_DIRECTEUR', 'ROLE_DIRECTEUR', 'ROLE_DRH', 'ROLE_CHEF_DE_SERVICE', 'ROLE_DIRECTEUR_CABINET'].includes(code)),
+          currentUser.role === 'ADMINISTRATEUR' || currentUser.roles_codes.includes('ROLE_SECRETAIRE')
+        );
+      } else {
+        alert(res.message || 'La note n’a pas pu être enregistrée.');
+      }
+    }
+
+    async function handleDiffuseNote(noteId) {
+      const res = await API.diffuseNote(noteId);
+      if (res.status === 'success') {
+        alert('Note diffusée aux structures destinataires.');
+        await loadBackendData();
+        setupNoteWorkflow(false, true);
+        await loadNotifications();
+      } else {
+        alert(res.message || 'La diffusion a échoué.');
+      }
+    }
+
+    function renderAdminUsersTable() {
+      const tbody = document.getElementById('adminUsersTable');
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      dbUsers.forEach(u => {
+        const tr = document.createElement('tr');
+        const rolesBadges = (u.roles || []).map(r => `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">${r.libelle_role}</span>`).join(" ");
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold">${u.matricule}</td>
+          <td class="px-4 py-3 font-medium text-slate-900">${u.civilite} ${u.nom} ${u.prenom}</td>
+          <td class="px-4 py-3 text-slate-600">${u.structure} • ${u.fonction}</td>
+          <td class="px-4 py-3">${rolesBadges || u.role}</td>
+          <td class="px-4 py-3 font-mono text-slate-800">
+            <input type="text" id="pass_input_${u.matricule}" value="${u.password}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-24 font-mono">
+          </td>
+          <td class="px-4 py-3 text-center space-x-1">
+            <button onclick="updateUserPassword('${u.matricule}')" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
+              Enregistrer
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function updateUserPassword(matricule) {
+      const newPass = document.getElementById('pass_input_' + matricule).value.trim();
+      if (newPass) {
+        const res = await API.updateUser({ matricule: matricule, password: newPass });
+        if (res.status === 'success') {
+          alert("Mot de passe mis à jour pour " + matricule);
+          await loadBackendData();
+          renderAdminUsersTable();
+        }
+      }
+    }
+
+    function toggleNewUserForm() {
+      document.getElementById('adminCreateUserForm').classList.toggle('hidden');
+    }
+
+    async function handleAdminCreateUser(e) {
+      e.preventDefault();
+      const userData = {
+        matricule: document.getElementById('newMatricule').value.trim(),
+        nom: document.getElementById('newNom').value.trim(),
+        prenom: document.getElementById('newPrenom').value.trim(),
+        role: document.getElementById('newRole').value,
+        password: document.getElementById('newPassword').value.trim(),
+        telephone: document.getElementById('newTelephone').value.trim(),
+        civilite: "M."
+      };
+
+      const res = await API.createUser(userData);
+      if (res.status === 'success') {
+        alert("Compte agent créé avec succès avec son rôle RBAC !");
+        toggleNewUserForm();
+        await loadBackendData();
+        renderAdminUsersTable();
+      } else {
+        alert("Erreur: " + res.message);
+      }
+    }
+
+    function switchAgentTab(tabName) {
+      document.getElementById('agent-tab-dashboard').classList.add('hidden');
+      document.getElementById('agent-tab-demande').classList.add('hidden');
+      document.getElementById('agent-tab-actes').classList.add('hidden');
+      document.getElementById('agent-tab-notes').classList.add('hidden');
+
+      document.querySelectorAll('#navTabsContainer button').forEach(btn => {
+        btn.classList.remove('bg-emerald-700', 'text-white');
+        btn.classList.add('text-slate-600');
+      });
+
+      document.getElementById('agent-tab-' + tabName).classList.remove('hidden');
+      const activeBtn = document.getElementById('nav-agent-' + tabName);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-emerald-700', 'text-white');
+        activeBtn.classList.remove('text-slate-600');
+      }
+    }
+
+    function renderAgentViews() {
+      const myReqs = dbRequests.filter(r => r.matricule === currentUser.matricule);
+      document.getElementById('agentCountPerm').textContent = myReqs.filter(r => r.nature === 'DEMANDE_PERMISSION').length;
+      document.getElementById('agentCountActes').textContent = myReqs.filter(r => r.nature !== 'DEMANDE_PERMISSION').length;
+
+      const tbody = document.getElementById('agentPersonalRequestsTable');
+      tbody.innerHTML = "";
+
+      if (myReqs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-slate-500 italic">Aucune demande enregistrée.</td></tr>`;
+      } else {
+        myReqs.forEach(r => {
+          let badge = "bg-orange-100 text-orange-800 border-orange-300";
+          if (r.statut === 'EN_ATTENTE_RH') badge = "bg-blue-100 text-blue-800 border-blue-300";
+          if (r.statut === 'VALIDEE') badge = "bg-emerald-100 text-emerald-800 border-emerald-300";
+          if (r.statut === 'REJETEE') badge = "bg-red-100 text-red-800 border-red-300";
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-6 py-4 font-mono font-bold text-xs">${r.id}</td>
+            <td class="px-6 py-4 font-medium text-xs">${r.nature}</td>
+            <td class="px-6 py-4 text-xs">${r.typePerm || r.motif || r.nomChild || r.nomDefunt}</td>
+            <td class="px-6 py-4 text-xs">
+              ${r.dateDebut ? (r.dateDebut + ' au ' + r.dateFin + ' (' + r.jours + 'j)') : r.dateEvt}
+              <br>
+              <span class="text-[10px] text-slate-400">Soumis le ${formatDateTime(r.dateSoumission)}</span>
+            </td>
+            <td class="px-6 py-4 text-xs font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${r.niveau_requis || 'DRH'}</td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">
+                ${r.statut}
+              </span>
+              <p class="mt-1 text-[10px] text-slate-500">${getActorRoutingMessage(r)}</p>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const notesContainer = document.getElementById('agentNotesContainer');
+      notesContainer.innerHTML = "";
+      dbNotes.forEach(n => {
+        const d = document.createElement('div');
+        d.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+        d.innerHTML = `
+          <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${n.numero || 'NOTE'}</span>
+          <h3 class="font-bold text-sm text-slate-900 mt-1">${n.libelle}</h3>
+          <p class="text-xs text-slate-500 mt-1">Signé par ${n.emetteur} • Transmis par le secrétariat le ${n.date}</p>
+        `;
+        notesContainer.appendChild(d);
+      });
+    }
+
+    function renderResponsableViews() {
+      // 1. Demandes en attente de vérification par le Gestionnaire RH
+      const pendingRH = dbRequests.filter(r => r.nature === 'DEMANDE_PERMISSION' && r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH');
+      document.getElementById('n1PendingCount').textContent = pendingRH.length + " demande" + (pendingRH.length > 1 ? "s" : "");
+
+      const container = document.getElementById('n1ValidationContainer');
+      container.innerHTML = "";
+
+      if (pendingRH.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune demande en attente de vérification.</p>`;
+      } else {
+        pendingRH.forEach(r => {
+          const div = document.createElement('div');
+          div.className = "border border-orange-200 rounded-xl p-5 bg-orange-50 space-y-4";
+          const jours = r.jours || 1;
+          const circuitCourt = jours <= 2;
+
+          const circuitBadge = circuitCourt
+            ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Transmission Direction pour Visa préalable</span>`
+            : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission DIRECTE au DRH</span>`;
+
+          const labelOk = circuitCourt
+            ? "Conforme — Transmettre au Directeur/Sous-Directeur"
+            : "Conforme — Transmettre directement au DRH";
+
+          div.innerHTML = `
+            <div class="flex justify-between items-start flex-wrap gap-2">
+              <div class="space-y-1">
+                <span class="font-mono text-xs text-orange-600 font-bold">${r.id} - ${r.nature}</span>
+                <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+                <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
+                <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+                <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
+                <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+                <div class="mt-2">${circuitBadge}</div>
+              </div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-3 border-t border-orange-200">
+              <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+                Dossier non conforme — Rejeter
+              </button>
+              <button onclick="updateStatusAPI('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+                ${labelOk}
+              </button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      // 2. Décisions du DRH à notifier aux agents
+      const aNotifier = dbRequests.filter(r => r.nature === 'DEMANDE_PERMISSION' && (r.statut === 'VALIDEE' || r.statut === 'REJETEE') && !r.notifie);
+      const notifyCountEl = document.getElementById('rhNotifyPendingCount');
+      if (notifyCountEl) notifyCountEl.textContent = aNotifier.length + " à notifier";
+
+      const notifyContainer = document.getElementById('rhDecisionsNotifyContainer');
+      if (notifyContainer) {
+        notifyContainer.innerHTML = "";
+        if (aNotifier.length === 0) {
+          notifyContainer.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune décision du DRH en attente de notification.</p>`;
+        } else {
+          aNotifier.forEach(r => {
+            const ok = r.statut === 'VALIDEE';
+            const div = document.createElement('div');
+            div.className = "border rounded-xl p-5 space-y-4 " + (ok ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50");
+            div.innerHTML = `
+              <div class="flex justify-between items-start flex-wrap gap-2">
+                <div class="space-y-1">
+                  <span class="font-mono text-xs font-bold">${r.id}</span>
+                  <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+                  <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''} (${r.jours || '?'} jour(s))</strong></p>
+                  <p class="text-xs text-slate-600">Décision finale du DRH : <strong class="${ok ? 'text-emerald-700' : 'text-red-700'}">${r.statut}</strong></p>
+                  ${r.motif_rejet ? `<p class="text-xs text-red-600 font-bold">Motif de rejet : ${r.motif_rejet}</p>` : ''}
+                </div>
+                <span class="text-xs px-3 py-1 rounded-full font-bold ${ok ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}">
+                  DRH : ${r.statut}
+                </span>
+              </div>
+              <div class="flex justify-end pt-3 border-t border-slate-200">
+                <button onclick="handleNotifierAgent('${r.id}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
+                  Notifier l'agent
+                </button>
+              </div>
+            `;
+            notifyContainer.appendChild(div);
+          });
+        }
+      }
+    }
+
+    function renderVisaViews() {
+      const monRole = currentUser.role;
+      const isSousDir = monRole === 'SOUS_DIRECTEUR';
+      const etapeCible = isSousDir ? 'EN_ATTENTE_VISA_SOUS_DIRECTEUR' : 'EN_ATTENTE_VISA_DIRECTEUR';
+      const titreView = isSousDir ? 'Espace Visa Hiérarchique - Sous-Directeur' : 'Espace Visa Hiérarchique - Directeur Central';
+
+      const titleEl = document.getElementById('visaViewTitle');
+      if (titleEl) titleEl.textContent = titreView + ' (Permissions ≤ 2 jours)';
+
+      const pendingVisa = dbRequests.filter(r => r.nature === 'DEMANDE_PERMISSION' && r.etape === etapeCible);
+      document.getElementById('visaPendingCount').textContent = pendingVisa.length + " demande" + (pendingVisa.length > 1 ? "s" : "");
+
+      const container = document.getElementById('visaValidationContainer');
+      container.innerHTML = "";
+
+      if (pendingVisa.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune demande en attente de votre visa hiérarchique.</p>`;
+        return;
+      }
+
+      pendingVisa.forEach(r => {
+        const div = document.createElement('div');
+        div.className = "border border-indigo-200 rounded-xl p-5 bg-indigo-50 space-y-4";
+        div.innerHTML = `
+          <div class="flex justify-between items-start flex-wrap gap-2">
+            <div class="space-y-1">
+              <span class="font-mono text-xs text-indigo-700 font-bold">${r.id} - ${r.nature}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+              <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
+              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${r.jours || 1} jour(s)</strong></p>
+              <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
+              <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              <p class="text-xs text-indigo-700 italic mt-1">Rappel : Votre visa hiérarchique transmettra le dossier au DRH qui prendra la décision finale.</p>
+            </div>
+            <span class="bg-indigo-100 text-indigo-800 border border-indigo-300 text-xs px-3 py-1 rounded-full font-bold">
+              Visa ${isSousDir ? 'Sous-Directeur' : 'Directeur'} Requis
+            </span>
+          </div>
+          <div class="flex justify-end space-x-3 pt-3 border-t border-indigo-200">
+            <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+              Refuser le visa
+            </button>
+            <button onclick="updateStatusAPI('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+              Accorder mon visa — Transmettre au DRH
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function handleNotifierAgent(code) {
+      const res = await API.notifierAgent(code);
+      if (res.status === 'success') {
+        alert("L'agent a été notifié de la décision du DRH.");
+        await loadBackendData();
+        renderResponsableViews();
+      } else {
+        alert("Erreur lors de la notification : " + (res.message || "impossible"));
+      }
+    }
+
+    function renderServiceViews() {
+      const pending = dbRequests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && r.statut === 'EN_ATTENTE_SERVICE');
+      document.getElementById('servicePendingCount').textContent = pending.length + " dossier";
+      const container = document.getElementById('serviceActesContainer');
+      container.innerHTML = "";
+      if (pending.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune déclaration en attente de contrôle.</p>`;
+        return;
+      }
+      pending.forEach(r => {
+        const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
+        const div = document.createElement('div');
+        div.className = "border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3";
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-mono text-xs text-teal-700 font-bold">${r.id} • ${r.nature}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent: ${r.agentName} (${r.matricule})</h3>
+              <p class="text-xs text-slate-600 mt-1">Détail: ${r.nomChild || r.nomDefunt || ''} | Événement: ${r.dateEvt || ''} | Lieu: ${r.lieu || ''}</p>
+              <p class="text-xs text-slate-600 mt-1">Pièce: <span class="font-mono">${r.piece || ''}</span></p>
+              <p class="text-xs text-emerald-700 font-bold mt-1">${getActorRoutingMessage(r)}</p>
+            </div>
+            <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded font-bold">Contrôle service</span>
+          </div>
+          <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+            <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 text-xs font-bold rounded">
+              Retourner (incomplet)
+            </button>
+            <button onclick="updateStatusAPI('${r.id}', 'EN_ATTENTE_RH')" class="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded shadow">
+              Conforme — Transmettre DRH
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderDrhViews() {
+      // 1. Permissions d'absence à trancher (Circuit court après visa OU Circuit long direct)
+      const pendingPerms = dbRequests.filter(r => r.nature === 'DEMANDE_PERMISSION' && (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH'));
+      document.getElementById('rhPendingCount').textContent = pendingPerms.length + " dossier" + (pendingPerms.length > 1 ? "s" : "");
+
+      const container = document.getElementById('rhValidationContainer');
+      container.innerHTML = "";
+
+      if (pendingPerms.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune demande de permission en attente de décision finale.</p>`;
+      } else {
+        pendingPerms.forEach(r => {
+          const div = document.createElement('div');
+          div.className = "border border-blue-200 rounded-xl p-5 bg-blue-50 space-y-4";
+          const jours = r.jours || 1;
+          const circuitLabel = jours <= 2
+            ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique accordé par la Direction</span>`
+            : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
+
+          div.innerHTML = `
+            <div class="flex justify-between items-start flex-wrap gap-2">
+              <div class="space-y-1">
+                <span class="font-mono text-xs text-blue-600 font-bold">${r.id}</span>
+                <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+                <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
+                <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+                <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
+                <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+                <div class="mt-2">${circuitLabel}</div>
+                <p class="text-xs text-blue-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
+              </div>
+              <span class="bg-blue-100 text-blue-800 border border-blue-300 text-xs px-3 py-1 rounded-full font-bold">
+                Décision Finale DRH
+              </span>
+            </div>
+            <div class="flex justify-end space-x-3 pt-3 border-t border-blue-200">
+              <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+                Rejeter la Demande
+              </button>
+              <button onclick="updateStatusAPI('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+                Valider Définitivement
+              </button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      // 2. Déclarations d'Actes d'État Civil (RG24)
+      const pendingActes = dbRequests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.statut === 'EN_ATTENTE_SERVICE'));
+      const countActesEl = document.getElementById('drhEtatCivilPendingCount');
+      if (countActesEl) countActesEl.textContent = pendingActes.length + " acte" + (pendingActes.length > 1 ? "s" : "");
+
+      const actesContainer = document.getElementById('drhActesContainer');
+      if (actesContainer) {
+        actesContainer.innerHTML = "";
+        if (pendingActes.length === 0) {
+          actesContainer.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune déclaration d'état civil en attente.</p>`;
+        } else {
+          pendingActes.forEach(r => {
+            const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
+            const label = isNaissance ? "Déclaration de Naissance" : "Déclaration de Décès";
+            const detail = isNaissance ? ("Enfant : " + (r.nomChild || "")) : ("Défunt : " + (r.nomDefunt || ""));
+            const color = isNaissance ? "emerald" : "slate";
+            const div = document.createElement('div');
+            div.className = `border border-${color}-200 rounded-xl p-5 bg-${color}-50 space-y-4`;
+            div.innerHTML = `
+              <div class="flex justify-between items-start flex-wrap gap-2">
+                <div class="space-y-1">
+                  <span class="font-mono text-xs text-${color}-700 font-bold">${r.id} - ${label}</span>
+                  <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+                  <p class="text-xs text-slate-600">${detail}</p>
+                  <p class="text-xs text-slate-600">Date de l'événement : <strong>${r.dateEvt || ''}</strong></p>
+                  <p class="text-xs text-slate-600">Pièce scannée : <span class="font-mono text-slate-500">${r.piece}</span></p>
+                  <p class="text-xs text-teal-700 italic">RG24 : Contrôle, validation et mise à jour du dossier statutaire de l'agent.</p>
+                </div>
+                <span class="bg-teal-100 text-teal-800 border border-teal-300 text-xs px-3 py-1 rounded-full font-bold">
+                  Contrôle & Validation DRH
+                </span>
+              </div>
+              <div class="flex justify-end space-x-3 pt-3 border-t border-${color}-200">
+                <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+                  Rejeter l'acte
+                </button>
+                <button onclick="updateStatusAPI('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+                  Enregistrer et Valider
+                </button>
+              </div>
+            `;
+            actesContainer.appendChild(div);
+          });
+        }
+      }
+    }
+
+    function renderAdminSentNotesTable() {
+      const tbody = document.getElementById('adminSentNotesTable');
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      dbNotes.forEach(n => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold">${n.numero || 'NOTE-#' + n.id}</td>
+          <td class="px-4 py-3 font-bold text-slate-900">${n.libelle}</td>
+          <td class="px-4 py-3 text-slate-600">${n.emetteur}</td>
+          <td class="px-4 py-3 text-slate-500">${n.secretaire || 'Secrétariat'}</td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${n.service}</span>
+          </td>
+          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${n.date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterAdminSearch() {
+      const query = document.getElementById('adminSearchQuery').value.toLowerCase();
+      const typeFilter = document.getElementById('adminSearchType').value;
+      const statusFilter = document.getElementById('adminSearchStatut').value;
+
+      const tbody = document.getElementById('adminSearchResultsTable');
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      let results = dbRequests.filter(r => {
+        const matchQ = r.id.toLowerCase().includes(query) || r.matricule.toLowerCase().includes(query) || r.agentName.toLowerCase().includes(query);
+        const matchT = (typeFilter === 'TOUS') || (r.nature === typeFilter);
+        const matchS = (statusFilter === 'TOUS') || (r.statut === statusFilter);
+        return matchQ && matchT && matchS;
+      });
+
+      results.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2 font-mono font-bold">${r.id}</td>
+          <td class="px-4 py-2 font-medium">${r.matricule} - ${r.agentName}</td>
+          <td class="px-4 py-2 text-slate-600">${r.nature}</td>
+          <td class="px-4 py-2">${r.typePerm || r.motif || r.nomChild || r.nomDefunt}</td>
+          <td class="px-4 py-2 font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${r.niveau_requis || 'DRH'}</td>
+          <td class="px-4 py-2 font-bold">${r.statut}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function majJours(idDebut, idFin, idJours) {
+      const d = document.getElementById(idDebut).value;
+      const f = document.getElementById(idFin).value;
+      if (!d || !f) return;
+      const jours = Math.max(1, Math.round((new Date(f) - new Date(d)) / 86400000) + 1);
+      document.getElementById(idJours).value = jours;
+    }
+
+    async function handleAgentSubmitPermission(e) {
+      e.preventDefault();
+      const data = {
+        typePerm: document.getElementById('agentPermType').value,
+        motif: document.getElementById('agentPermMotif').value,
+        dateDebut: document.getElementById('agentPermStart').value,
+        dateFin: document.getElementById('agentPermEnd').value,
+        jours: parseInt(document.getElementById('agentPermJours').value, 10) || 1,
+        piece: "Justificatif_Permission.pdf"
+      };
+
+      const res = await API.submitPermission(data);
+      if (res.status === 'success') {
+        playNotificationSound();
+        alert("Demande enregistrée sous la référence " + res.code + " (" + res.jours + " jours calculés - Niveau décision : " + res.niveau_requis + "). Une alerte a été envoyée à votre gestionnaire RH.");
+        await loadBackendData();
+        await loadNotifications();
+        renderAgentViews();
+        switchAgentTab('dashboard');
+      }
+    }
+
+    async function handleAgentSubmitNaissance(e) {
+      e.preventDefault();
+      const data = {
+        nature: 'NAISSANCE',
+        nom: document.getElementById('agentNaissNom').value,
+        prenom: document.getElementById('agentNaissPrenom').value,
+        date: document.getElementById('agentNaissDate').value
+      };
+      const res = await API.submitDeclaration(data);
+      if (res.status === 'success') {
+        playNotificationSound();
+        alert("Déclaration de naissance transmise sous la référence " + res.code + ". Une alerte a été transmise à la DRH.");
+        await loadBackendData();
+        await loadNotifications();
+        renderAgentViews();
+        switchAgentTab('dashboard');
+      }
+    }
+
+    async function handleAgentSubmitDeces(e) {
+      e.preventDefault();
+      const data = {
+        nature: 'DECES',
+        nom: document.getElementById('agentDecesNom').value,
+        prenom: document.getElementById('agentDecesPrenom').value,
+        date: document.getElementById('agentDecesDate').value
+      };
+      const res = await API.submitDeclaration(data);
+      if (res.status === 'success') {
+        playNotificationSound();
+        alert("Déclaration de décès transmise sous la référence " + res.code + ". Une alerte a été transmise à la DRH.");
+        await loadBackendData();
+        await loadNotifications();
+        renderAgentViews();
+        switchAgentTab('dashboard');
+      }
+    }
+
+    async function handleAdminPublishNote(e) {
+      e.preventDefault();
+      const title = document.getElementById('adminNoteTitle').value;
+      const res = await API.publishNote(title, "Toutes les Structures");
+      if (res.status === 'success') {
+        playNotificationSound();
+        alert("Note de service diffusée sous la référence " + res.ref + ". Une alerte a été envoyée à tous les agents.");
+        document.getElementById('adminNoteTitle').value = "";
+        await loadBackendData();
+        await loadNotifications();
+        renderAdminSentNotesTable();
+      }
+    }
+
+    async function updateStatusAPI(reqId, newStatut) {
+      const res = await API.updateStatus(reqId, newStatut);
+      if (res.status === 'success') {
+        playNotificationSound();
+        const routeInfo = (() => {
+          if (newStatut === 'EN_ATTENTE_RH') return 'Le dossier va ensuite chez le DRH.';
+          if (newStatut === 'VALIDEE') return 'Le dossier est validé et la notification va vers l’agent demandeur.';
+          if (newStatut === 'REJETEE') return 'Le dossier est rejeté et la notification va vers l’agent demandeur.';
+          return 'Le dossier continue son parcours selon le niveau de validation.';
+        })();
+        alert("Statut du dossier " + reqId + " mis à jour : " + newStatut + ". " + routeInfo);
+        await loadBackendData();
+        await loadNotifications();
+        loadUserInterface();
+      } else {
+        alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+      }
+    }
+  </script>
+</body>
+</html>

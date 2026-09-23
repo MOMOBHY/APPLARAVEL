@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - Ministère de la Fonction Publique</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('../assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .relative-content {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+
+  <!-- BANDEAU TRICOLORE -->
+  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <div class="flex-1 flex items-center justify-center p-4 relative-content">
+    <div class="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-8 space-y-6">
+
+      <div class="text-center space-y-3">
+        <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
+        <div>
+          <h1 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</h1>
+          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE</h2>
+          <p class="text-xs text-slate-600">Secrétariat général</p>
+        </div>
+        <div class="h-0.5 w-16 bg-orange-500 mx-auto rounded-full"></div>
+        <p class="text-xs text-slate-500 font-medium">Plateforme Web de Gestion des Services Administratifs</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Profil d'Accès *</label>
+          <select id="loginRole" onchange="autoFill()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-emerald-600">
+            <option value="AGENT">Agent Fonctionnaire</option>
+            <option value="RESPONSABLE">Gestionnaire RH</option>
+            <option value="SOUS_DIRECTEUR">Sous-Directeur</option>
+            <option value="DIRECTEUR">Directeur</option>
+            <option value="DRH">DRH</option>
+            <option value="ADMINISTRATEUR">Administrateur Système</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule Agent *</label>
+          <input type="text" id="loginMat" value="000001X" required
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:bg-white focus:ring-2 focus:ring-emerald-600">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
+          <input type="password" id="loginPass" value="test123" required
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
+        </div>
+
+        <p id="loginError" class="hidden text-xs text-red-600 font-bold text-center">Matricule ou mot de passe incorrect.</p>
+
+        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
+          Se Connecter à l'Espace Intranet
+        </button>
+      </form>
+
+
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    const ROLES_DEFAULTS = {
+      "AGENT":          { mat: "000001X" },
+      "RESPONSABLE":    { mat: "000002A" },
+      "SOUS_DIRECTEUR": { mat: "SD001" },
+      "DIRECTEUR":      { mat: "DIR001" },
+      "DRH":            { mat: "000003B" },
+      "ADMINISTRATEUR": { mat: "000004Z" }
+    };
+
+    const ROLE_REDIRECT = {
+      "AGENT":          "agent.html",
+      "RESPONSABLE":    "responsable.html",
+      "SOUS_DIRECTEUR": "responsable.html",
+      "DIRECTEUR":      "responsable.html",
+      "DRH":            "drh.html",
+      "ADMINISTRATEUR": "admin.html"
+    };
+
+    function autoFill() {
+      const role = document.getElementById('loginRole').value;
+      document.getElementById('loginMat').value = ROLES_DEFAULTS[role].mat;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const mat  = document.getElementById('loginMat').value.trim();
+      const role = document.getElementById('loginRole').value;
+      const pwd  = document.getElementById('loginPass').value.trim();
+
+      const res = await API.login(mat, role, pwd);
+      if (res.status === 'success') {
+        sessionStorage.setItem('currentUser', JSON.stringify(res.user));
+        window.location.href = ROLE_REDIRECT[res.user.role] || 'agent.html';
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+        document.getElementById('loginError').textContent = res.message || 'Matricule ou mot de passe incorrect.';
+      }
+    }
+  </script>
+
+</body>
+</html>

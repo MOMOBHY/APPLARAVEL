@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef2f0"/>
+      <stop offset="0.55" stop-color="#e4ebe6"/>
+      <stop offset="1" stop-color="#d3dcd4"/>
+    </linearGradient>
+    <filter id="flou" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+    <filter id="flouLeger" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#ciel)"/>
+
+  <g filter="url(#flou)" opacity="0.55">
+    <ellipse cx="250" cy="180" rx="330" ry="200" fill="#f97316"/>
+    <ellipse cx="1350" cy="220" rx="360" ry="210" fill="#059669"/>
+    <ellipse cx="800" cy="750" rx="700" ry="220" fill="#10b981" opacity="0.7"/>
+    <ellipse cx="800" cy="120" rx="500" ry="140" fill="#ffffff"/>
+    <rect x="1050" y="60" width="130" height="700" fill="#f97316" opacity="0.8"/>
+    <rect x="1180" y="60" width="130" height="700" fill="#ffffff" opacity="0.9"/>
+    <rect x="1310" y="60" width="130" height="700" fill="#059669" opacity="0.8"/>
+  </g>
+
+  <g filter="url(#flouLeger)" opacity="0.35">
+    <rect x="120" y="560" width="1360" height="60" fill="#334155"/>
+    <rect x="200" y="620" width="90" height="280" fill="#334155"/>
+    <rect x="1420" y="620" width="90" height="280" fill="#334155"/>
+  </g>
+
+  <rect width="1600" height="900" fill="#ffffff" opacity="0.62"/>
+</svg>

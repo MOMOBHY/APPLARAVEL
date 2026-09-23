@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Accès Administration - Ministère de la Fonction Publique</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GFP Admin">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#6b21a8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+    }
+    html { -webkit-text-size-adjust: 100%; height: -webkit-fill-available; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100dvh;
+      padding-top: var(--sat);
+      padding-bottom: var(--sab);
+      padding-left: var(--sal);
+      padding-right: var(--sar);
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    main, section, div {
+      position: relative;
+      z-index: 1;
+    }
+    @media screen and (max-width: 768px) {
+      input, select, textarea { font-size: 16px !important; }
+    }
+    button, input, a { touch-action: manipulation; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <main class="flex-1 flex items-center justify-center p-3 sm:p-4">
+    <section class="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-5 sm:p-8">
+      <div class="text-center space-y-3 mb-8">
+        <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
+        <p class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</p>
+        <h1 class="text-lg font-extrabold text-purple-800 uppercase">Administration système</h1>
+        <p class="text-xs text-slate-500">Accès réservé aux administrateurs autorisés</p>
+        <div class="h-0.5 w-16 bg-purple-600 mx-auto rounded-full"></div>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <label for="adminIdentifier" class="block text-xs font-bold text-slate-700 uppercase mb-1">Identifiant de connexion *</label>
+          <input id="adminIdentifier" type="text" required autocomplete="username" placeholder="Votre identifiant"
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-purple-600">
+        </div>
+        <div>
+          <label for="adminPassword" class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe *</label>
+          <input id="adminPassword" type="password" required autocomplete="current-password"
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-purple-600">
+        </div>
+
+        <p id="adminLoginError" class="hidden text-xs text-red-600 font-bold text-center"></p>
+        <button type="submit" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
+          Ouvrir l'espace administrateur
+        </button>
+      </form>
+
+      <a href="index.html" class="block text-center mt-6 text-xs font-bold text-slate-600 hover:text-slate-900">
+        Retour à la connexion de la plateforme
+      </a>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      const identifier = document.getElementById('adminIdentifier').value.trim();
+      const password = document.getElementById('adminPassword').value;
+      const errorNode = document.getElementById('adminLoginError');
+      const result = await API.login(identifier, 'ADMINISTRATEUR', password);
+
+      if (result.status === 'success' && result.user.role === 'ADMINISTRATEUR') {
+        sessionStorage.setItem('currentUser', JSON.stringify(result.user));
+        window.location.href = 'views/admin.html';
+        return;
+      }
+
+      errorNode.textContent = result.message || 'Accès administrateur refusé.';
+      errorNode.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

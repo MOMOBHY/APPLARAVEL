@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Administrateur - Ministère de la Fonction Publique</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('../assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    header, main, nav, div {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+
+  <!-- BANDEAU TRICOLORE -->
+  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
+        <div>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <p class="text-xs text-slate-500">Panneau d'Administration du ministère</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-full border border-slate-200">
+          <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Changer la photo">
+            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-purple-600 shadow-sm">
+            <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
+              Changer
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)" class="hidden">
+          </div>
+          <div class="text-left pr-2">
+            <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
+            <p class="text-[11px] font-bold text-purple-700">Administrateur Système</p>
+          </div>
+        </div>
+        <button onclick="logout()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+          Déconnexion
+        </button>
+      </div>
+    </div>
+
+    <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+        <button onclick="showTab('users')" id="nav-users" class="px-3 py-2 rounded-md text-xs font-bold bg-purple-700 text-white">Gestion des Utilisateurs</button>
+        <button onclick="showTab('search')" id="nav-search" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Consultation Globale</button>
+        <button onclick="showTab('notes')" id="nav-notes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Notes de Service</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- TAB : GESTION DES UTILISATEURS -->
+    <div id="tab-users" class="space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Gestion des Utilisateurs & Mots de Passe</h2>
+            <p class="text-xs text-slate-500">Visualisez, créez, et modifiez les comptes agents du système.</p>
+          </div>
+          <button onclick="toggleCreateForm()" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold shadow">
+            + Créer un Nouvel Agent
+          </button>
+        </div>
+
+        <!-- FORMULAIRE CREATION -->
+        <div id="createForm" class="hidden bg-purple-50 p-4 border border-purple-200 rounded-xl">
+          <h3 class="font-bold text-sm text-slate-900 border-b border-purple-200 pb-2 mb-3">Nouveau Compte Agent</h3>
+          <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule *</label>
+              <input type="text" id="newMat" required placeholder="ex: 789456-Z" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom *</label>
+              <input type="text" id="newNom" required class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom *</label>
+              <input type="text" id="newPrenom" required class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rôle Système *</label>
+              <select id="newRole" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                <option value="ROLE_AGENT">Agent Fonctionnaire</option>
+                <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
+                <option value="ROLE_DRH">DRH</option>
+                <option value="ROLE_ADMIN_DSI">Administrateur Système</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe Initial *</label>
+              <input type="text" id="newPass" required value="pass123" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structure / Service *</label>
+              <input type="text" id="newStruct" value="Secrétariat général" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div class="md:col-span-3 flex justify-end space-x-2 pt-2">
+              <button type="button" onclick="toggleCreateForm()" class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
+              <button type="submit" class="px-4 py-1.5 bg-purple-700 text-white font-bold text-xs rounded-lg shadow">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- TABLEAU DES UTILISATEURS -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+              <tr>
+                <th class="px-4 py-2">Matricule</th>
+                <th class="px-4 py-2">Nom & Prénom</th>
+                <th class="px-4 py-2">Rôle</th>
+                <th class="px-4 py-2">Service</th>
+                <th class="px-4 py-2">Mot de Passe</th>
+                <th class="px-4 py-2 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB : CONSULTATION GLOBALE -->
+    <div id="tab-search" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <h2 class="text-base font-bold text-slate-900">Module de Recherche et Consultation Globale</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <input type="text" id="searchQ" onkeyup="filterSearch()" placeholder="Matricule ou Réf..." class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <select id="searchType" onchange="filterSearch()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+            <option value="TOUS">Toutes les natures</option>
+            <option value="DEMANDE_PERMISSION">Demandes Permission</option>
+            <option value="DECLARATION_NAISSANCE">Déclarations Naissance</option>
+            <option value="DECLARATION_DECES">Déclarations Décès</option>
+          </select>
+          <select id="searchStatut" onchange="filterSearch()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+            <option value="TOUS">Tous les statuts</option>
+            <option value="EN_ATTENTE_N1">En attente N+1</option>
+            <option value="EN_ATTENTE_RH">En attente RH</option>
+            <option value="VALIDEE">Validée</option>
+            <option value="REJETEE">Rejetée</option>
+          </select>
+          <button onclick="loadData()" class="bg-slate-800 text-white font-bold px-3 py-2 rounded-lg text-xs">
+            Rafraîchir
+          </button>
+        </div>
+        <div class="overflow-x-auto pt-2">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+              <tr>
+                <th class="px-4 py-2">Réf</th>
+                <th class="px-4 py-2">Agent</th>
+                <th class="px-4 py-2">Nature</th>
+                <th class="px-4 py-2">Détails</th>
+                <th class="px-4 py-2">Pièce Jointe</th>
+                <th class="px-4 py-2">Statut</th>
+              </tr>
+            </thead>
+            <tbody id="searchTable" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB : NOTES DE SERVICE -->
+    <div id="tab-notes" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+        <div class="border-b border-slate-200 pb-3">
+          <h2 class="text-base font-bold text-slate-900">Publication & Suivi des Destinataires des Notes de Service</h2>
+          <p class="text-xs text-slate-500">Choisissez le service destinataire avant publication.</p>
+        </div>
+
+        <!-- FORMULAIRE DE PUBLICATION -->
+        <form onsubmit="publishNote(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Titre / Objet de la Note *</label>
+            <input type="text" id="noteTitle" required placeholder="ex: NOTE N° 0026/MFP" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structure / Service Destinataire *</label>
+            <select id="noteService" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-800">
+              <option value="Tous les Services du Ministère">Tous les Services du Ministère</option>
+              <option value="Secrétariat général">Secrétariat général</option>
+              <option value="Direction des Ressources Humaines">Direction des Ressources Humaines (DRH)</option>
+              <option value="Direction des Affaires Générales">Direction des Affaires Générales (DAG)</option>
+            </select>
+          </div>
+          <button type="submit" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">
+            Publier et Transmettre aux Destinataires
+          </button>
+        </form>
+
+        <!-- TABLEAU HISTORIQUE NOTES + DESTINATAIRES -->
+        <div class="space-y-3 pt-2">
+          <h3 class="text-sm font-bold text-slate-900">Historique des Notes et Destinataires Cibles</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-2.5">ID Note</th>
+                  <th class="px-4 py-2.5">Intitulé / Objet</th>
+                  <th class="px-4 py-2.5">Émetteur</th>
+                  <th class="px-4 py-2.5">Service Destinataire</th>
+                  <th class="px-4 py-2.5">Liste des Agents Concernés</th>
+                  <th class="px-4 py-2.5">Date</th>
+                </tr>
+              </thead>
+              <tbody id="notesTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script>
+    const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%237c3aed' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
+    let user = null;
+    let requests = [];
+    let notes = [];
+    let users = [];
+
+    async function init() {
+      const saved = sessionStorage.getItem('currentUser');
+      if (!saved) { window.location.href = 'login.html'; return; }
+      user = JSON.parse(saved);
+      if (user.role !== 'ADMINISTRATEUR') { window.location.href = 'login.html'; return; }
+      document.getElementById('navName').textContent = user.name;
+      loadAvatar();
+      await loadData();
+      renderUsers();
+      filterSearch();
+      renderNotes();
+    }
+
+    function loadAvatar() {
+      const saved = localStorage.getItem('user_avatar_' + user.matricule);
+      document.getElementById('avatarImg').src = saved || DEFAULT_AVATAR;
+    }
+
+    function uploadAvatar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        localStorage.setItem('user_avatar_' + user.matricule, evt.target.result);
+        document.getElementById('avatarImg').src = evt.target.result;
+        alert("Photo de profil mise à jour !");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function loadData() {
+      const r = await API.getRequests();
+      requests = r.status === 'success' ? r.requests : [];
+      const n = await API.getNotes();
+      notes = n.status === 'success' ? n.notes : [];
+      const u = await API.getUsers();
+      users = u.status === 'success' ? u.users : [];
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('usersTable');
+      tbody.innerHTML = '';
+      users.forEach(u => {
+        // Mapper le code RBAC vers une valeur simple pour le dropdown
+        const roleSimple = {
+          ROLE_AGENT: 'AGENT',
+          ROLE_CHEF_SERVICE: 'RESPONSABLE',
+          ROLE_SOUS_DIRECTEUR: 'RESPONSABLE',
+          ROLE_DIRECTEUR: 'RESPONSABLE',
+          ROLE_DIRCAB: 'RESPONSABLE',
+          ROLE_DRH: 'DRH',
+          ROLE_ADMIN_DSI: 'ADMINISTRATEUR',
+          ROLE_SECRETAIRE: 'RESPONSABLE'
+        }[u.role] || 'AGENT';
+
+        const roleBadge = {
+          AGENT: 'bg-slate-100 text-slate-800',
+          RESPONSABLE: 'bg-orange-100 text-orange-800',
+          DRH: 'bg-blue-100 text-blue-800',
+          ADMINISTRATEUR: 'bg-purple-100 text-purple-800'
+        }[roleSimple] || 'bg-slate-100 text-slate-800';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold">${u.matricule}</td>
+          <td class="px-4 py-3 font-medium">${u.civilite} ${u.nom} ${u.prenom}</td>
+          <td class="px-4 py-3">
+            <select id="role_${u.matricule}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-40">
+              <option value="AGENT" ${roleSimple === 'AGENT' ? 'selected' : ''}>Agent</option>
+              <option value="RESPONSABLE" ${roleSimple === 'RESPONSABLE' ? 'selected' : ''}>Gestionnaire RH</option>
+              <option value="DRH" ${roleSimple === 'DRH' ? 'selected' : ''}>DRH</option>
+              <option value="ADMINISTRATEUR" ${roleSimple === 'ADMINISTRATEUR' ? 'selected' : ''}>Administrateur</option>
+            </select>
+            <div class="mt-1"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${roleBadge}">${roleSimple}</span></div>
+          </td>
+          <td class="px-4 py-3 text-slate-600">${u.structure}</td>
+          <td class="px-4 py-3">
+            <input type="text" id="pass_${u.matricule}" value="${u.password}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono">
+          </td>
+          <td class="px-4 py-3 text-center space-y-2">
+            <button onclick="saveUserChanges('${u.matricule}')" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
+              Enregistrer
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveUserChanges(mat) {
+      const u = users.find(x => x.matricule === mat);
+      if (!u) return;
+
+      const newPass = document.getElementById('pass_' + mat).value.trim();
+      const newRole = document.getElementById('role_' + mat).value;
+
+      const payload = { ...u, password: newPass || u.password, role: newRole };
+      const res = await API.updateUser(payload);
+      if (res.status === 'success') {
+        alert('Rôle et mot de passe mis à jour pour ' + mat);
+        await loadData();
+        renderUsers();
+      } else {
+        alert('Erreur : ' + (res.message || 'Mise à jour impossible'));
+      }
+    }
+
+    function toggleCreateForm() {
+      document.getElementById('createForm').classList.toggle('hidden');
+    }
+
+    async function createUser(e) {
+      e.preventDefault();
+      const res = await API.createUser({
+        matricule: document.getElementById('newMat').value.trim(),
+        nom: document.getElementById('newNom').value.trim(),
+        prenom: document.getElementById('newPrenom').value.trim(),
+        role: document.getElementById('newRole').value,
+        password: document.getElementById('newPass').value.trim(),
+        structure: document.getElementById('newStruct').value.trim(),
+        emploi: 'Fonctionnaire', civilite: 'M.', telephone: '+225 00000000'
+      });
+      if (res.status === 'success') {
+        alert('Compte agent créé avec succès.');
+        toggleCreateForm();
+        await loadData();
+        renderUsers();
+      } else {
+        alert('Erreur : ' + res.message);
+      }
+    }
+
+    function filterSearch() {
+      const q = (document.getElementById('searchQ').value || '').toLowerCase();
+      const type = document.getElementById('searchType').value;
+      const statut = document.getElementById('searchStatut').value;
+      const tbody = document.getElementById('searchTable');
+      tbody.innerHTML = '';
+
+      const results = requests.filter(r => {
+        const matchQ = r.id.toLowerCase().includes(q) || r.matricule.toLowerCase().includes(q) || r.agentName.toLowerCase().includes(q);
+        const matchT = type === 'TOUS' || r.nature === type;
+        const matchS = statut === 'TOUS' || r.statut === statut;
+        return matchQ && matchT && matchS;
+      });
+
+      if (!results.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500 italic">Aucun résultat.</td></tr>`;
+        return;
+      }
+
+      results.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2 font-mono font-bold">${r.id}</td>
+          <td class="px-4 py-2">${r.matricule} - ${r.agentName}</td>
+          <td class="px-4 py-2 text-slate-600">${r.nature}</td>
+          <td class="px-4 py-2">${r.typePerm || r.motif || r.nomChild || r.nomDefunt || ''}</td>
+          <td class="px-4 py-2 font-mono text-slate-500">${r.piece}</td>
+          <td class="px-4 py-2 font-bold">${r.statut}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderNotes() {
+      const tbody = document.getElementById('notesTable');
+      tbody.innerHTML = '';
+      notes.forEach(n => {
+        let targetAgents = users;
+        if (n.service && !n.service.includes('Tous')) {
+          targetAgents = users.filter(u => u.structure.toLowerCase().includes(n.service.toLowerCase()) || n.service.toLowerCase().includes(u.structure.toLowerCase()));
+        }
+        const agentList = targetAgents.map(u => u.nom + ' ' + u.prenom + ' (' + u.matricule + ')').join(', ') || 'Tous les agents';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold">NOTE-#${n.id}</td>
+          <td class="px-4 py-3 font-bold text-slate-900">${n.libelle}</td>
+          <td class="px-4 py-3 text-slate-600">${n.emetteur}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${n.service}</span></td>
+          <td class="px-4 py-3 text-xs text-slate-700 max-w-xs truncate" title="${agentList}">${agentList}</td>
+          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${n.date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function publishNote(e) {
+      e.preventDefault();
+      const title = document.getElementById('noteTitle').value;
+      const service = document.getElementById('noteService').value;
+      const res = await API.publishNote(title, service);
+      if (res.status === 'success') {
+        alert('Note publiée pour : ' + service);
+        document.getElementById('noteTitle').value = '';
+        await loadData();
+        renderNotes();
+      }
+    }
+
+    function showTab(name) {
+      ['users','search','notes'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        const btn = document.getElementById('nav-' + t);
+        if (btn) { btn.classList.remove('bg-purple-700','text-white'); btn.classList.add('text-slate-600'); }
+      });
+      document.getElementById('tab-' + name).classList.remove('hidden');
+      const active = document.getElementById('nav-' + name);
+      if (active) { active.classList.add('bg-purple-700','text-white'); active.classList.remove('text-slate-600'); }
+    }
+
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+
+    window.onload = init;
+  </script>
+
+</body>
+</html>

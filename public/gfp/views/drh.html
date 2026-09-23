@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace DRH - Ministère de la Fonction Publique</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('../assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    header, main, nav, div {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+
+  <!-- BANDEAU TRICOLORE -->
+  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
+        <div>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <p class="text-xs text-slate-500">Console de Décision Finale - Direction des Ressources Humaines</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-full border border-slate-200">
+          <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Changer la photo">
+            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-blue-600 shadow-sm">
+            <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
+              Changer
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)" class="hidden">
+          </div>
+          <div class="text-left pr-2">
+            <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
+            <p class="text-[11px] font-bold text-blue-700">DRH</p>
+          </div>
+        </div>
+        <button onclick="voirNotifications()" title="Notifications" class="relative px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+          Notifications <span id="notifBadge" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">0</span>
+        </button>
+        <button onclick="logout()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+          Déconnexion
+        </button>
+      </div>
+    </div>
+
+    <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+        <button onclick="showTab('permissions')" id="nav-permissions" class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white">Permissions d'Absence</button>
+        <button onclick="showTab('etatcivil')" id="nav-etatcivil" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Actes d'État Civil</button>
+        <button onclick="showTab('historique')" id="nav-historique" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Historique des Décisions</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- TAB : PERMISSIONS EN ATTENTE RH -->
+    <div id="tab-permissions" class="space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+        <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Demandes de Permission à Valider</h2>
+            <p class="text-xs text-slate-500">Dossiers ayant reçu l'avis favorable du Gestionnaire RH. Validation définitive DRH requise.</p>
+          </div>
+          <span id="permPendingCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+            0 dossier
+          </span>
+        </div>
+
+        <!-- INFO CIRCUIT -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 class="text-xs font-bold text-blue-800 uppercase mb-2">Circuit de Validation</h3>
+          <div class="flex items-center space-x-2 text-xs font-bold">
+            <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">1. Agent</span>
+            <span class="text-slate-400">→</span>
+            <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">2. Gestionnaire RH</span>
+            <span class="text-slate-400">→</span>
+            <span class="bg-blue-700 text-white px-2 py-1 rounded">3. DRH</span>
+          </div>
+          <p class="text-xs text-blue-700 mt-2">Votre décision est définitive et clôt le dossier.</p>
+        </div>
+
+        <div id="permContainer" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- TAB : ACTES D'ETAT CIVIL -->
+    <div id="tab-etatcivil" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+        <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Actes d'État Civil en Attente de Contrôle</h2>
+            <p class="text-xs text-slate-500">Déclarations de naissance et de décès soumises par les agents.</p>
+          </div>
+          <span id="etatCivilCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+            0 acte
+          </span>
+        </div>
+        <div id="etatCivilContainer" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- TAB : HISTORIQUE -->
+    <div id="tab-historique" class="hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200">
+          <h2 class="text-base font-bold text-slate-900">Historique de Toutes les Décisions RH</h2>
+          <p class="text-xs text-slate-500">Toutes les demandes traitées, validées ou rejetées.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+              <tr>
+                <th class="px-4 py-3">Réf Dossier</th>
+                <th class="px-4 py-3">Matricule & Agent</th>
+                <th class="px-4 py-3">Nature</th>
+                <th class="px-4 py-3">Type / Motif</th>
+                <th class="px-4 py-3">Statut Final</th>
+              </tr>
+            </thead>
+            <tbody id="historiqueTable" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script>
+    const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%231d4ed8' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
+    let user = null;
+    let requests = [];
+
+    async function init() {
+      const saved = sessionStorage.getItem('currentUser');
+      if (!saved) { window.location.href = 'login.html'; return; }
+      user = JSON.parse(saved);
+      if (user.role !== 'DRH') { window.location.href = 'login.html'; return; }
+      document.getElementById('navName').textContent = user.name;
+      loadAvatar();
+      await loadData();
+      renderAll();
+    }
+
+    function loadAvatar() {
+      const saved = localStorage.getItem('user_avatar_' + user.matricule);
+      document.getElementById('avatarImg').src = saved || DEFAULT_AVATAR;
+    }
+
+    function uploadAvatar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        localStorage.setItem('user_avatar_' + user.matricule, evt.target.result);
+        document.getElementById('avatarImg').src = evt.target.result;
+        alert("Photo de profil mise à jour !");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function loadData() {
+      const r = await API.getRequests();
+      requests = r.status === 'success' ? r.requests : [];
+      await refreshNotifBadge();
+    }
+
+    async function refreshNotifBadge() {
+      if (!user || !user.id_agent) return;
+      const n = await API.getNotifications(user.id_agent);
+      const badge = document.getElementById('notifBadge');
+      if (n.status === 'success' && n.unread_count > 0) {
+        badge.textContent = n.unread_count > 9 ? '9+' : n.unread_count;
+        badge.classList.remove('hidden');
+      } else if (badge) {
+        badge.classList.add('hidden');
+      }
+    }
+
+    async function voirNotifications() {
+      const n = await API.getNotifications(user.id_agent);
+      if (n.status === 'success' && n.notifications.length) {
+        alert(n.notifications.slice(0, 10).map(x => '• ' + x.titre_notif + ' (' + x.reference_dossier + ')').join('\n'));
+        await API.markNotificationsRead(user.id_agent);
+        await refreshNotifBadge();
+      } else {
+        alert('Aucune notification.');
+      }
+    }
+
+    setInterval(async () => { if (typeof loadData === 'function') { await loadData(); if (typeof renderValidation === 'function') renderValidation(); if (typeof renderAll === 'function') renderAll(); } }, 20000);
+
+    function renderAll() {
+      renderPermissions();
+      renderEtatCivil();
+      renderHistorique();
+    }
+
+    function renderPermissions() {
+      const pending = requests.filter(r => r.nature === 'DEMANDE_PERMISSION' && (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH'));
+      document.getElementById('permPendingCount').textContent = pending.length + ' dossier' + (pending.length > 1 ? 's' : '');
+      const container = document.getElementById('permContainer');
+      container.innerHTML = '';
+
+      if (!pending.length) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucune demande de permission en attente de décision finale.</div>`;
+        return;
+      }
+
+      pending.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'border border-blue-200 rounded-xl p-5 bg-blue-50 space-y-4';
+        const jours = r.jours || 1;
+        const circuitLabel = jours <= 2
+          ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique Direction accordé</span>`
+          : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
+
+        div.innerHTML = `
+          <div class="flex justify-between items-start flex-wrap gap-2">
+            <div class="space-y-1">
+              <span class="font-mono text-xs text-blue-600 font-bold">${r.id}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+              <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
+              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+              <p class="text-xs text-slate-500 mt-1">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong></p>
+              <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              <div class="mt-2">${circuitLabel}</div>
+              <p class="text-xs text-blue-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
+            </div>
+            <span class="bg-blue-100 text-blue-800 border border-blue-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
+          </div>
+          <div class="flex justify-end space-x-3 pt-3 border-t border-blue-200">
+            <button onclick="decide('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+              Refuser la Permission
+            </button>
+            <button onclick="decide('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+              Valider Définitivement
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderEtatCivil() {
+      const pending = requests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.statut === 'EN_ATTENTE_SERVICE'));
+      document.getElementById('etatCivilCount').textContent = pending.length + ' acte' + (pending.length > 1 ? 's' : '');
+      const container = document.getElementById('etatCivilContainer');
+      container.innerHTML = '';
+
+      if (!pending.length) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucun acte d'état civil en attente.</div>`;
+        return;
+      }
+
+      pending.forEach(r => {
+        const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
+        const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
+        const detail = isNaissance ? ('Enfant : ' + (r.nomChild || '')) : ('Défunt : ' + (r.nomDefunt || ''));
+        const color = isNaissance ? 'emerald' : 'slate';
+
+        const div = document.createElement('div');
+        div.className = `border border-${color}-200 rounded-xl p-5 bg-${color}-50 space-y-4`;
+        div.innerHTML = `
+          <div class="flex justify-between items-start flex-wrap gap-2">
+            <div class="space-y-1">
+              <span class="font-mono text-xs text-${color}-600 font-bold">${r.id} - ${label}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+              <p class="text-xs text-slate-600">${detail}</p>
+              <p class="text-xs text-slate-600">Date : <strong>${r.dateEvt || ''}</strong></p>
+              <p class="text-xs text-slate-600">Pièce scannée : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              <p class="text-xs text-teal-700 italic">RG24 : Contrôle, validation et mise à jour du dossier statutaire de l'agent.</p>
+            </div>
+            <span class="bg-teal-100 text-teal-800 border border-teal-300 text-xs px-3 py-1 rounded-full font-bold">
+              Contrôle & Validation DRH
+            </span>
+          </div>
+          <div class="flex justify-end space-x-3 pt-3 border-t border-${color}-200">
+            <button onclick="decide('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+              Rejeter
+            </button>
+            <button onclick="decide('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+              Enregistrer et Valider
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderHistorique() {
+      const done = requests.filter(r => r.statut === 'VALIDEE' || r.statut === 'REJETEE');
+      const tbody = document.getElementById('historiqueTable');
+      tbody.innerHTML = '';
+      if (!done.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500 italic">Aucun dossier clôturé.</td></tr>`;
+        return;
+      }
+      done.forEach(r => {
+        const badge = r.statut === 'VALIDEE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold">${r.id}</td>
+          <td class="px-4 py-3">${r.matricule} - ${r.agentName}</td>
+          <td class="px-4 py-3 text-slate-600">${r.nature}</td>
+          <td class="px-4 py-3">${r.typePerm || r.motif || r.nomChild || r.nomDefunt || ''}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${r.statut}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function showTab(name) {
+      ['permissions','etatcivil','historique'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        const btn = document.getElementById('nav-' + t);
+        if (btn) { btn.classList.remove('bg-blue-700','text-white'); btn.classList.add('text-slate-600'); }
+      });
+      document.getElementById('tab-' + name).classList.remove('hidden');
+      const active = document.getElementById('nav-' + name);
+      if (active) { active.classList.add('bg-blue-700','text-white'); active.classList.remove('text-slate-600'); }
+    }
+
+    async function decide(id, statut) {
+      const res = await API.updateStatus(id, statut);
+      if (res.status === 'success') {
+        alert(statut === 'VALIDEE' ? 'Dossier validé définitivement.' : 'Dossier rejeté.');
+        await loadData();
+        renderAll();
+      } else {
+        alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+      }
+    }
+
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+
+    window.onload = init;
+  </script>
+
+</body>
+</html>

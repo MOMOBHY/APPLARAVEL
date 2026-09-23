@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Gestionnaire RH - Ministère de la Fonction Publique</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('../assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    header, main, nav, div {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+
+  <!-- BANDEAU TRICOLORE -->
+  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
+        <div>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <p class="text-xs text-slate-500" id="headerSubTitle">Espace Gestionnaire RH · Visa Direction</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-full border border-slate-200">
+          <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Changer la photo">
+            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-orange-500 shadow-sm">
+            <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
+              Changer
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)" class="hidden">
+          </div>
+          <div class="text-left pr-2">
+            <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
+            <p class="text-[11px] font-bold text-orange-600" id="roleLabel">Gestionnaire RH</p>
+          </div>
+        </div>
+        <button onclick="voirNotifications()" title="Notifications" class="relative px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+          Notifications <span id="notifBadge" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">0</span>
+        </button>
+        <button onclick="logout()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+          Déconnexion
+        </button>
+      </div>
+    </div>
+
+    <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+        <button id="tabButton" class="px-3 py-2 rounded-md text-xs font-bold bg-orange-500 text-white">Vérification Gestionnaire RH</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+      <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+        <div>
+          <h2 id="pendingTitle" class="text-base font-bold text-slate-900">Dossiers en Attente de Traitement</h2>
+          <p id="pendingSubTitle" class="text-xs text-slate-500">Examinez chaque demande et accordez ou refusez votre avis.</p>
+        </div>
+        <span id="pendingCount" class="px-3 py-1 bg-orange-100 text-orange-800 border border-orange-300 rounded-full text-xs font-bold">
+          0 demande en attente
+        </span>
+      </div>
+
+      <div id="validationContainer" class="space-y-4">
+        <!-- JS -->
+      </div>
+    </div>
+
+    <div id="notifySection" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+      <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Décisions du DRH à Notifier aux Agents</h2>
+          <p class="text-xs text-slate-500">Le DRH a tranché : notifiez l'agent de la décision (acceptation ou rejet motivé).</p>
+        </div>
+        <span id="notifyCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+          0 à notifier
+        </span>
+      </div>
+
+      <div id="notifyContainer" class="space-y-4">
+        <!-- JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script>
+    const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23f97316' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
+    let user = null;
+    let requests = [];
+
+    async function init() {
+      const saved = sessionStorage.getItem('currentUser');
+      if (!saved) { window.location.href = 'login.html'; return; }
+      user = JSON.parse(saved);
+      if (!['RESPONSABLE', 'SOUS_DIRECTEUR', 'DIRECTEUR'].includes(user.role)) { window.location.href = 'login.html'; return; }
+
+      if (user.role === 'DIRECTEUR') {
+        document.getElementById('roleLabel').textContent = 'Directeur Central';
+        document.getElementById('headerSubTitle').textContent = 'Espace Direction Centrale · Visa Hiérarchique (≤ 2 jours)';
+        document.getElementById('tabButton').textContent = 'Visa Directeur';
+        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-indigo-700 text-white';
+        document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Visa Directeur';
+        document.getElementById('pendingSubTitle').textContent = 'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
+        document.getElementById('notifySection').classList.add('hidden');
+      } else if (user.role === 'SOUS_DIRECTEUR') {
+        document.getElementById('roleLabel').textContent = 'Sous-Directeur';
+        document.getElementById('headerSubTitle').textContent = 'Espace Sous-Direction · Visa Hiérarchique (≤ 2 jours)';
+        document.getElementById('tabButton').textContent = 'Visa Sous-Directeur';
+        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-indigo-700 text-white';
+        document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Visa Sous-Directeur';
+        document.getElementById('pendingSubTitle').textContent = 'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
+        document.getElementById('notifySection').classList.add('hidden');
+      } else {
+        document.getElementById('roleLabel').textContent = 'Gestionnaire RH';
+        document.getElementById('headerSubTitle').textContent = 'Espace Gestionnaire RH · Contrôle des dossiers & Notifications';
+        document.getElementById('tabButton').textContent = 'Vérification Gestionnaire RH';
+        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-orange-600 text-white';
+        document.getElementById('pendingTitle').textContent = 'Dossiers en Attente de Contrôle RH';
+        document.getElementById('pendingSubTitle').textContent = 'Vérifiez la conformité. Pour ≤ 2 jours, transmettez à la Direction (visa). Pour > 2 jours, transmettez directement au DRH.';
+        document.getElementById('notifySection').classList.remove('hidden');
+      }
+      document.getElementById('navName').textContent = user.name;
+      loadAvatar();
+      await loadData();
+      renderValidation();
+      renderNotify();
+    }
+
+    function loadAvatar() {
+      const saved = localStorage.getItem('user_avatar_' + user.matricule);
+      document.getElementById('avatarImg').src = saved || DEFAULT_AVATAR;
+    }
+
+    function uploadAvatar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        localStorage.setItem('user_avatar_' + user.matricule, evt.target.result);
+        document.getElementById('avatarImg').src = evt.target.result;
+        alert("Photo de profil mise à jour !");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function loadData() {
+      const r = await API.getRequests();
+      requests = r.status === 'success' ? r.requests : [];
+      await refreshNotifBadge();
+    }
+
+    async function refreshNotifBadge() {
+      if (!user || !user.id_agent) return;
+      const n = await API.getNotifications(user.id_agent);
+      const badge = document.getElementById('notifBadge');
+      if (n.status === 'success' && n.unread_count > 0) {
+        badge.textContent = n.unread_count > 9 ? '9+' : n.unread_count;
+        badge.classList.remove('hidden');
+      } else if (badge) {
+        badge.classList.add('hidden');
+      }
+    }
+
+    async function voirNotifications() {
+      const n = await API.getNotifications(user.id_agent);
+      if (n.status === 'success' && n.notifications.length) {
+        alert(n.notifications.slice(0, 10).map(x => '• ' + x.titre_notif + ' (' + x.reference_dossier + ')').join('\n'));
+        await API.markNotificationsRead(user.id_agent);
+        await refreshNotifBadge();
+      } else {
+        alert('Aucune notification.');
+      }
+    }
+
+    setInterval(async () => { if (typeof loadData === 'function') { await loadData(); if (typeof renderValidation === 'function') renderValidation(); if (typeof renderNotify === 'function') renderNotify(); if (typeof renderAll === 'function') renderAll(); } }, 20000);
+
+
+    function renderValidation() {
+      // Chaque rôle ne voit que ses propres demandes
+      let pending = [];
+      if (user.role === 'RESPONSABLE') {
+        // Gestionnaire RH : demandes en attente de sa vérification
+        pending = requests.filter(r => r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH');
+      } else if (user.role === 'DIRECTEUR') {
+        pending = requests.filter(r => r.etape === 'EN_ATTENTE_VISA_DIRECTEUR');
+      } else if (user.role === 'SOUS_DIRECTEUR') {
+        pending = requests.filter(r => r.etape === 'EN_ATTENTE_VISA_SOUS_DIRECTEUR');
+      }
+
+      document.getElementById('pendingCount').textContent = pending.length + ' demande' + (pending.length > 1 ? 's' : '') + ' en attente';
+
+      const container = document.getElementById('validationContainer');
+      container.innerHTML = '';
+
+      if (!pending.length) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucune demande en attente pour vous.</div>`;
+        return;
+      }
+
+      pending.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'border border-orange-200 rounded-xl p-5 bg-orange-50 space-y-4';
+        const jours = r.jours || 0;
+        const circuitCourt = jours <= 2;
+
+        // Libellé du circuit selon la durée
+        let circuitInfo = '';
+        if (user.role === 'RESPONSABLE') {
+          if (circuitCourt) {
+            circuitInfo = `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2 py-1 rounded font-bold">≤ 2 jours → Visa Direction requis avant DRH</span>`;
+          } else {
+            circuitInfo = `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2 py-1 rounded font-bold">> 2 jours → Transmission directe au DRH</span>`;
+          }
+        }
+
+        // Boutons selon le rôle
+        let boutons = '';
+        const btnRejet = (label) => `<button onclick="giveAvis('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">${label}</button>`;
+
+        if (user.role === 'RESPONSABLE') {
+          const labelOk = circuitCourt
+            ? 'Conforme — Transmettre au Directeur/Sous-Directeur'
+            : 'Conforme — Transmettre directement au DRH';
+          boutons = btnRejet('Dossier non conforme — Rejeter') + `
+            <button onclick="giveAvis('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+              ${labelOk}
+            </button>`;
+        } else if (user.role === 'DIRECTEUR' || user.role === 'SOUS_DIRECTEUR') {
+          boutons = btnRejet('Refuser le visa') + `
+            <button onclick="giveAvis('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+              Accorder mon visa — Transmettre au DRH
+            </button>`;
+        }
+
+        div.innerHTML = `
+          <div class="flex justify-between items-start flex-wrap gap-2">
+            <div class="space-y-1">
+              <span class="font-mono text-xs text-orange-600 font-bold">${r.id} - ${r.nature}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+              <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
+              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+              <p class="text-xs text-slate-500">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong></p>
+              <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              ${circuitInfo}
+            </div>
+          </div>
+          <div class="flex justify-end space-x-3 pt-3 border-t border-orange-200">
+            ${boutons}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function giveAvis(id, statut) {
+      const res = await API.updateStatus(id, statut);
+      if (res.status === 'success') {
+        const msg = statut === 'EN_ATTENTE_RH' ? 'Avis favorable accordé. Dossier transmis pour visa puis au DRH.' : 'Dossier rejeté.';
+        alert(msg);
+        await loadData();
+        renderValidation();
+        renderNotify();
+      } else {
+        alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+      }
+    }
+
+    function renderNotify() {
+      const aNotifier = requests.filter(r => r.nature === 'DEMANDE_PERMISSION' && (r.statut === 'VALIDEE' || r.statut === 'REJETEE') && !r.notifie);
+      document.getElementById('notifyCount').textContent = aNotifier.length + ' à notifier';
+
+      const container = document.getElementById('notifyContainer');
+      container.innerHTML = '';
+
+      if (!aNotifier.length) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucune décision du DRH en attente de notification.</div>`;
+        return;
+      }
+
+      aNotifier.forEach(r => {
+        const ok = r.statut === 'VALIDEE';
+        const div = document.createElement('div');
+        div.className = 'border rounded-xl p-5 space-y-4 ' + (ok ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50');
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="space-y-1">
+              <span class="font-mono text-xs font-bold">${r.id} - ${r.nature}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
+              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''} (${r.jours || '?'} jour(s))</strong></p>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full font-bold ${ok ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}">
+              DRH : ${r.statut}
+            </span>
+          </div>
+          <div class="flex justify-end pt-3 border-t border-slate-200">
+            <button onclick="notifierAgent('${r.id}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
+              Notifier l'agent
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function notifierAgent(id) {
+      const res = await API.notifierAgent(id);
+      if (res.status === 'success') {
+        alert("Agent notifié de la décision du DRH.");
+        await loadData();
+        renderValidation();
+        renderNotify();
+      } else {
+        alert('Erreur : ' + (res.message || 'notification impossible'));
+      }
+    }
+
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+
+    window.onload = init;
+  </script>
+
+</body>
+</html>
