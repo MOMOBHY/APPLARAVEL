@@ -176,19 +176,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountRole">Choisissez votre rôle *</label>
-            <select id="newAccountRole" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold">
-              <option value="ROLE_AGENT">Agent Fonctionnaire</option>
-              <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
-              <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
-              <option value="ROLE_DRH">DRH</option>
-              <option value="ROLE_DIRECTEUR">Directeur Central</option>
-              <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
-              <option value="ROLE_SECRETAIRE">Secrétaire de Direction</option>
-              <option value="ROLE_SERVICE_ADMINISTRATIF">Service Gestion Administrative</option>
-              <option value="ROLE_CHEF_DE_SERVICE">Chef de Service</option>
-              <option value="ROLE_DIRECTEUR_CABINET">Directeur de Cabinet</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Profil attribué</label>
+            <p class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700">Agent Fonctionnaire</p>
+            <p class="mt-1 text-[11px] text-slate-500">Les autres profils sont attribués par l’administration.</p>
           </div>
 
           <div>
@@ -621,7 +611,6 @@
                   <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
                   <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
                   <option value="ROLE_DIRECTEUR">Directeur Central</option>
-                  <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
                   <option value="ROLE_DRH">DRH</option>
                   <option value="ROLE_ADMIN_DSI">Administrateur Système</option>
                 </select>
@@ -829,11 +818,14 @@
       const mapping = {
         ROLE_AGENT: 'AGENT',
         ROLE_CHEF_SERVICE: 'RESPONSABLE',
+        ROLE_CHEF_DE_SERVICE: 'CHEF_SERVICE',
         ROLE_SOUS_DIRECTEUR: 'SOUS_DIRECTEUR',
         ROLE_DRH: 'DRH',
         ROLE_DIRECTEUR: 'DIRECTEUR',
         ROLE_DIRCAB: 'DIRCAB',
+        ROLE_DIRECTEUR_CABINET: 'DIRCAB',
         ROLE_SECRETAIRE: 'SECRETAIRE',
+        ROLE_SERVICE_ADMINISTRATIF: 'SERVICE',
         ROLE_ADMIN_DSI: 'ADMINISTRATEUR'
       };
       return mapping[roleCode] || 'AGENT';
@@ -847,7 +839,7 @@
         prenom: document.getElementById('newAccountPrenom')?.value.trim(),
         matricule: document.getElementById('newAccountMatricule')?.value.trim(),
         password: document.getElementById('newAccountPassword')?.value.trim(),
-        role: document.getElementById('newAccountRole')?.value || 'ROLE_AGENT'
+        role: 'ROLE_AGENT'
       };
 
       const errorNode = document.getElementById('createAccountError');
@@ -892,7 +884,7 @@
       "SOUS_DIRECTEUR": "SD001",
       "DRH": "000003B",
       "DIRECTEUR": "DIR001",
-      "DIRCAB": "DIR001",
+      "DIRCAB": "CAB001",
       "SECRETAIRE": "SEC001",
       "SERVICE": "SVC001",
       "CHEF_SERVICE": "CHEF001"

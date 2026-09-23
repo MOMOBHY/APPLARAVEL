@@ -33,11 +33,10 @@ class LegacyApiController extends Controller
         'SOUS_DIRECTEUR' => ['ROLE_SOUS_DIRECTEUR'],
         'DRH' => ['ROLE_DRH'],
         'DIRECTEUR' => ['ROLE_DIRECTEUR'],
-        'DIRCAB' => ['ROLE_DIRECTEUR'],
+        'DIRCAB' => ['ROLE_DIRECTEUR_CABINET'],
         'SECRETAIRE' => ['ROLE_SECRETAIRE'],
         'SERVICE' => ['ROLE_SERVICE_ADMINISTRATIF'],
         'CHEF_SERVICE' => ['ROLE_CHEF_DE_SERVICE'],
-        'DIRCAB' => ['ROLE_DIRECTEUR_CABINET', 'ROLE_DIRECTEUR'],
         'ADMINISTRATEUR' => ['ROLE_ADMIN_DSI'],
     ];
 
@@ -65,10 +64,10 @@ class LegacyApiController extends Controller
     /** Ancien code rôle (inscription) -> nouveaux codes. */
     private const LEGACY_ROLE_CODES = [
         'ROLE_AGENT' => ['ROLE_AGENT'],
-        'ROLE_CHEF_SERVICE' => ['ROLE_GESTIONNAIRE_RH', 'ROLE_SOUS_DIRECTEUR'],
+        'ROLE_CHEF_SERVICE' => ['ROLE_GESTIONNAIRE_RH'],
         'ROLE_SOUS_DIRECTEUR' => ['ROLE_SOUS_DIRECTEUR'],
         'ROLE_DIRECTEUR' => ['ROLE_DIRECTEUR'],
-        'ROLE_DIRCAB' => ['ROLE_DIRECTEUR'],
+        'ROLE_DIRCAB' => ['ROLE_DIRECTEUR_CABINET'],
         'ROLE_DRH' => ['ROLE_DRH'],
         'ROLE_SECRETAIRE' => ['ROLE_SECRETAIRE'],
         'ROLE_ADMIN_DSI' => ['ROLE_ADMIN_DSI'],
@@ -138,10 +137,10 @@ class LegacyApiController extends Controller
         ]);
 
         $matricule = strtoupper(trim($data['matricule']));
-        $roleCodes = $this->resolveRoleCodes($data['role']);
-        if ($roleCodes === null) {
-            return response()->json(['status' => 'error', 'message' => 'Rôle non reconnu.'], 422);
+        if ($data['role'] !== 'ROLE_AGENT') {
+            return response()->json(['status' => 'error', 'message' => 'L’auto-inscription est réservée aux comptes Agent.'], 422);
         }
+        $roleCodes = ['ROLE_AGENT'];
         if (Agent::where('matricule', $matricule)->exists() || User::where('matricule', $matricule)->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Ce matricule est déjà utilisé.'], 422);
         }
@@ -174,12 +173,16 @@ class LegacyApiController extends Controller
     // ---------------------------------------------------------------
     // Demandes & actes (ancien contrat)
     // ---------------------------------------------------------------
-    public function requests()
+    public function requests(Request $request)
     {
+        $user = $request->user();
         $reqs = [];
 
-        $perms = DemandePermission::with(['agent', 'type'])->latest('id')->get();
-        foreach ($perms as $p) {
+        $perms = DemandePermission::with(['agent', 'type'])->latest('id');
+        if (! $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_SOUS_DIRECTEUR', 'ROLE_DIRECTEUR', 'ROLE_DRH', 'ROLE_ADMIN_DSI')) {
+            $perms->where('agent_id', $user->agent_id);
+        }
+        foreach ($perms->get() as $p) {
             $reqs[] = [
                 'id' => $p->code_dossier,
                 'nature' => 'DEMANDE_PERMISSION',
@@ -203,7 +206,11 @@ class LegacyApiController extends Controller
             ];
         }
 
-        foreach (DeclarationNaissance::with('agent')->latest('id')->get() as $n) {
+        $naissances = DeclarationNaissance::with('agent')->latest('id');
+        if (! $user->hasRole('ROLE_SERVICE_ADMINISTRATIF', 'ROLE_DRH', 'ROLE_ADMIN_DSI')) {
+            $naissances->where('agent_id', $user->agent_id);
+        }
+        foreach ($naissances->get() as $n) {
             $reqs[] = [
                 'id' => $n->code_dossier_naiss ?? $n->code_dossier,
                 'nature' => 'DECLARATION_NAISSANCE',
@@ -222,7 +229,11 @@ class LegacyApiController extends Controller
             ];
         }
 
-        foreach (DeclarationDeces::with('agent')->latest('id')->get() as $d) {
+        $deces = DeclarationDeces::with('agent')->latest('id');
+        if (! $user->hasRole('ROLE_SERVICE_ADMINISTRATIF', 'ROLE_DRH', 'ROLE_ADMIN_DSI')) {
+            $deces->where('agent_id', $user->agent_id);
+        }
+        foreach ($deces->get() as $d) {
             $reqs[] = [
                 'id' => $d->code_dossier_deces ?? $d->code_dossier,
                 'nature' => 'DECLARATION_DECES',
@@ -656,7 +667,7 @@ class LegacyApiController extends Controller
     // ---------------------------------------------------------------
     public function notifications(Request $request)
     {
-        $agentId = $request->query('agent_id') ?? $request->user()->agent_id;
+        $agentId = $request->user()->agent_id;
         $query = Notification::where('agent_id', $agentId)->latest('id');
         $rows = (clone $query)->limit(30)->get()->map(fn (Notification $n) => [
             'id_notification' => $n->id,
@@ -680,7 +691,7 @@ class LegacyApiController extends Controller
 
     public function markNotificationsRead(Request $request)
     {
-        $agentId = $request->input('agent_id') ?? $request->user()->agent_id;
+        $agentId = $request->user()->agent_id;
         Notification::where('agent_id', $agentId)->update(['est_lu' => true]);
 
         return response()->json(['status' => 'success', 'message' => 'Notifications marquées comme lues.']);
