@@ -227,11 +227,12 @@ const API = {
     try {
       var src = (document.currentScript && document.currentScript.src) || '';
       var base = src ? src.slice(0, src.lastIndexOf('/js/api.js')) : '';
-      var url = (base ? base : '.') + '/assets/fond-ministere.svg';
-      document.body.style.backgroundImage = "url('" + url + "')";
+      var url = (base ? base : '.') + '/assets/ministere_bg.png';
+      document.body.style.backgroundImage = "linear-gradient(rgba(241, 245, 249, 0.48), rgba(241, 245, 249, 0.48)), url('" + url + "')";
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundPosition = 'center';
       document.body.style.backgroundAttachment = 'fixed';
+      document.body.style.backgroundRepeat = 'no-repeat';
     } catch (e) { /* fond optionnel */ }
   }
   if (document.readyState === 'loading') {
