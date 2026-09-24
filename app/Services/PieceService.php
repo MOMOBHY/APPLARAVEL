@@ -43,7 +43,7 @@ class PieceService
 
         return match ($piece->dossier_type) {
             'permission' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
-            'naissance', 'deces' => $user->hasRole('ROLE_SERVICE_ADMINISTRATIF', 'ROLE_DRH'),
+            'naissance', 'deces' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
             'note' => $user->hasRole('ROLE_SECRETAIRE', 'ROLE_DRH', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR'),
             default => false,
         };

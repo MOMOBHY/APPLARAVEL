@@ -67,7 +67,7 @@ class GfpSeeder extends Seeder
             Privilege::firstOrCreate(['code' => $p['code']], $p);
         }
 
-        foreach (['Événement Familial', 'Repos Médical', 'Permission Spéciale'] as $lib) {
+        foreach (['Événement Familial', 'Repos Médical', 'Permission Spéciale', 'Congé Maternité / Paternité'] as $lib) {
             TypePermission::firstOrCreate(['libelle' => $lib], ['duree_max' => 30]);
         }
 

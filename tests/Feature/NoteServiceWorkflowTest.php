@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\NoteHistorique;
 use App\Models\NoteService;
 use App\Models\User;
+use App\Notifications\NoteServiceTransmise;
 use Database\Seeders\GfpSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class NoteServiceWorkflowTest extends TestCase
@@ -48,12 +50,21 @@ class NoteServiceWorkflowTest extends TestCase
         $this->assertEquals(NoteService::EN_ATTENTE_SAISIE, $created['statut']);
         $noteId = $created['note_id'];
 
-        // Pas de diffusion sans validation (le legacy avance la saisie, pas la validation).
+        // La secrétaire saisit puis transmet directement aux destinataires (email + notification).
+        Notification::fake();
         $this->actingAs($secretaire, 'sanctum')
             ->postJson('/api/notes', ['action' => 'diffuse', 'note_id' => $noteId])
-            ->assertStatus(422);
+            ->assertOk();
+        $this->assertDatabaseHas('notes_service', ['id' => $noteId, 'statut' => NoteService::DIFFUSEE]);
+        Notification::assertSentTo($agentUser, NoteServiceTransmise::class);
 
-        // Seconde note pour la chaîne complète via les routes dédiées.
+        // Seconde note, non encore transmise : invisible pour l'agent.
+        $brouillon = $this->actingAs($drh, 'sanctum')->postJson('/api/notes', [
+            'objet' => 'Note encore au secrétariat',
+            'structure_ids' => [$structureId],
+        ])->assertCreated()->json();
+
+        // Troisième note pour la chaîne complète via les routes dédiées (validation facultative).
         $second = $this->actingAs($drh, 'sanctum')->postJson('/api/notes', [
             'objet' => 'Seconde note de test',
             'structure_ids' => [$structureId],
@@ -80,10 +91,12 @@ class NoteServiceWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('notes_service', ['id' => $noteId, 'statut' => NoteService::DIFFUSEE]);
 
-        // Consultation auto par l'agent destinataire (note diffusée visible, brouillon non visible).
+        // Consultation auto par l'agent destinataire (notes transmises visibles, note au secrétariat non visible).
         $this->actingAs($agentUser, 'sanctum')->getJson('/api/notes')->assertOk()
             ->assertJsonFragment(['numero' => $second['ref']])
-            ->assertJsonMissing(['numero' => $created['ref']]);
+            ->assertJsonFragment(['numero' => $created['ref']])
+            ->assertJsonMissing(['numero' => $brouillon['ref']])
+            ->assertJsonMissing(['numero_reference' => $brouillon['ref']]);
 
         // Destinataires exacts pour l'émetteur.
         $this->actingAs($drh, 'sanctum')->getJson("/api/notes/{$noteId}/destinataires")
@@ -103,12 +116,22 @@ class NoteServiceWorkflowTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_chef_service_emet_gestionnaire_refuse(): void
+    /** Émetteurs : DRH, Directeur de Cabinet, Directeur, Sous-Directeur ; le Chef de service est destinataire. */
+    public function test_directeur_de_cabinet_emet_chef_service_et_gestionnaire_refuses(): void
     {
-        $note = $this->actingAs($this->user('CHEF001'), 'sanctum')->postJson('/api/notes', [
-            'objet' => 'Note du chef de service',
+        $note = $this->actingAs($this->user('CAB001'), 'sanctum')->postJson('/api/notes', [
+            'objet' => 'Note du directeur de cabinet',
         ])->assertCreated()->json();
-        $this->assertEquals(\App\Models\NoteService::EN_ATTENTE_SAISIE, $note['statut']);
+        $this->assertEquals(NoteService::EN_ATTENTE_SAISIE, $note['statut']);
+
+        // Transmise à sa secrétaire (même structure).
+        $this->assertDatabaseHas('notifications', [
+            'agent_id' => $this->user('SEC001')->agent_id, 'reference_dossier' => $note['ref'], 'type' => 'ATTENTE_SAISIE',
+        ]);
+
+        $this->actingAs($this->user('CHEF001'), 'sanctum')->postJson('/api/notes', [
+            'objet' => 'Note du chef de service',
+        ])->assertForbidden();
 
         $this->actingAs($this->user('RH001'), 'sanctum')->postJson('/api/notes', [
             'objet' => 'Note du gestionnaire',
@@ -130,7 +153,7 @@ class NoteServiceWorkflowTest extends TestCase
 
         $this->actingAs($drh, 'sanctum')
             ->postJson("/api/notes/{$noteId}/refuser", ['motif' => 'Contenu inexact'])
-            ->assertOk()->assertJsonPath('data.statut', \App\Models\NoteService::REJETEE);
+            ->assertOk()->assertJsonPath('data.statut', NoteService::REJETEE);
 
         $this->actingAs($secretaire, 'sanctum')
             ->postJson('/api/notes', ['action' => 'diffuse', 'note_id' => $noteId])

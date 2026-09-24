@@ -5,19 +5,22 @@ namespace Tests\Feature;
 use App\Models\Agent;
 use App\Models\DemandePermission;
 use App\Models\Notification;
+use App\Models\Role;
 use App\Models\Structure;
 use App\Models\TypePermission;
 use App\Models\User;
 use App\Services\PermissionWorkflowService;
 use Database\Seeders\GfpSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
  * Workflow strict des permissions :
- * ≤ 3 j : AGENT → GESTIONNAIRE RH → DIRECTEUR/SOUS-DIRECTEUR → DRH → GESTIONNAIRE RH → AGENT.
- * > 3 j : AGENT → GESTIONNAIRE RH → DRH → GESTIONNAIRE RH → AGENT.
+ * ≤ 2 j : AGENT → GESTIONNAIRE RH → DIRECTEUR/SOUS-DIRECTEUR → DRH → GESTIONNAIRE RH → AGENT.
+ * > 2 j : AGENT → GESTIONNAIRE RH → DRH → GESTIONNAIRE RH → AGENT.
  * Le DRH est l'unique validateur final (pas de « Validateur RH »).
  */
 class PermissionWorkflowTest extends TestCase
@@ -91,13 +94,12 @@ class PermissionWorkflowTest extends TestCase
 
         $demande = PermissionWorkflowService::viser($demande, $this->agent('DIR001'), 'DIRECTEUR', true);
 
-        
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
         $demande = PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
     }
 
-    /** Test 3 : permission de 3 jours, circuit avec visa (Cas 1). */
+    /** Test 3 : permission de 3 jours (> 2 j), direct DRH sans visa (Cas 2). */
     public function test_permission_3_jours_direct_drh(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-03');
@@ -106,7 +108,6 @@ class PermissionWorkflowTest extends TestCase
         $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
         $this->assertEquals(DemandePermission::EN_ATTENTE_DRH, $demande->statut);
 
-        
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
         $demande = PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
@@ -126,7 +127,7 @@ class PermissionWorkflowTest extends TestCase
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
     }
 
-    /** Test 4 : plus de 3 jours, direct DRH avec rejet motivé et notification. */
+    /** Test 4 : plus de 2 jours, direct DRH avec rejet motivé et notification. */
     public function test_permission_6_jours_rejet_motive_notifie(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-06');
@@ -143,7 +144,7 @@ class PermissionWorkflowTest extends TestCase
         $this->assertStringContainsString('REJETÉE', $notif->message);
     }
 
-    /** Test 5 : ≤ 3 jours, contournement Gestionnaire → DRH interdit. */
+    /** Test 5 : ≤ 2 jours, contournement Gestionnaire → DRH interdit. */
     public function test_cas1_pas_de_raccourci_vers_drh(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-02');
@@ -158,7 +159,7 @@ class PermissionWorkflowTest extends TestCase
         }
     }
 
-    /** Test 6 : > 3 jours, aucun passage par Directeur/Sous-directeur. */
+    /** Test 6 : > 2 jours, aucun passage par Directeur/Sous-directeur. */
     public function test_cas2_sans_visa_direction(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-05');
@@ -180,7 +181,6 @@ class PermissionWorkflowTest extends TestCase
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-02');
         $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
-        
 
         $demande = PermissionWorkflowService::viser($demande, $this->agent('DIR001'), 'DIRECTEUR', true);
 
@@ -196,7 +196,7 @@ class PermissionWorkflowTest extends TestCase
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-02');
         $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
-        
+
         $demande = PermissionWorkflowService::viser($demande, $this->agent('DIR001'), 'DIRECTEUR', true);
 
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
@@ -352,5 +352,100 @@ class PermissionWorkflowTest extends TestCase
         $this->actingAs($admin, 'sanctum')
             ->postJson("/api/permissions/{$demande->id}/trancher", ['valide' => true])
             ->assertForbidden();
+    }
+
+    /** Cas 1 : un refus de visa revient au gestionnaire RH, qui notifie l'agent avec le motif. */
+    public function test_refus_de_visa_notifie_par_le_gestionnaire(): void
+    {
+        $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-02');
+        $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
+        $demande = PermissionWorkflowService::viser($demande, $this->agent('DIR001'), 'DIRECTEUR', false, 'Service en sous-effectif');
+
+        $this->assertEquals(DemandePermission::REJETEE, $demande->statut);
+        $this->assertDatabaseHas('notifications', ['agent_id' => $this->agent('RH001')->id, 'reference_dossier' => $demande->code_dossier, 'type' => 'A_NOTIFIER']);
+        $this->assertDatabaseMissing('notifications', ['agent_id' => $demande->agent_id, 'reference_dossier' => $demande->code_dossier, 'type' => 'REJET']);
+
+        PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
+        $notif = Notification::where('agent_id', $demande->agent_id)->where('reference_dossier', $demande->code_dossier)
+            ->where('type', 'REJET')->firstOrFail();
+        $this->assertStringContainsString('visa refusé', $notif->message);
+        $this->assertStringContainsString('Service en sous-effectif', $notif->message);
+    }
+
+    /** Cas 1 : le visa revient au responsable de la structure de l'agent, pas à n'importe quel directeur. */
+    public function test_visa_reserve_au_responsable_de_la_structure(): void
+    {
+        $autreSd = Agent::create(['matricule' => 'SD999', 'civilite' => 'M.', 'nom' => 'AUTRE', 'prenom' => 'Sousdirecteur']);
+        User::create(['name' => 'Autre SD', 'email' => 'sd999@x.ci', 'matricule' => 'SD999', 'password' => 'x', 'agent_id' => $autreSd->id])
+            ->roles()->attach(Role::where('code', 'ROLE_SOUS_DIRECTEUR')->firstOrFail());
+        $agent = Agent::create([
+            'matricule' => 'TESTSD2', 'civilite' => 'M.', 'nom' => 'TESTSD', 'prenom' => 'Deux',
+            'structure_id' => Structure::where('code', 'SD-PERS')->firstOrFail()->id,
+        ]);
+        $demande = PermissionWorkflowService::soumettre($agent, [
+            'type_permission_id' => TypePermission::first()->id,
+            'date_debut' => '2026-10-01', 'date_fin' => '2026-10-01', 'motif' => 'Test structure',
+        ]);
+        $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
+
+        try {
+            PermissionWorkflowService::viser($demande, $autreSd, 'SOUS_DIRECTEUR', true);
+            $this->fail("Un sous-directeur d'une autre structure ne doit pas viser.");
+        } catch (HttpException $e) {
+            $this->assertEquals(403, $e->getStatusCode());
+        }
+
+        $demande = PermissionWorkflowService::viser($demande->refresh(), $this->agent('SD001'), 'SOUS_DIRECTEUR', true);
+        $this->assertEquals(DemandePermission::EN_ATTENTE_DRH, $demande->statut);
+    }
+
+    /** Un rejet à la vérification est notifié par le gestionnaire lui-même : pas de seconde notification. */
+    public function test_rejet_du_gestionnaire_deja_notifie(): void
+    {
+        $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-05');
+        $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'rejeter', 'Pièce manquante');
+
+        $this->assertNotNull($demande->notifie_le);
+        try {
+            PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
+            $this->fail('Double notification interdite.');
+        } catch (HttpException $e) {
+            $this->assertEquals(422, $e->getStatusCode());
+        }
+    }
+
+    /** Le gestionnaire choisit le niveau de visa, consulte le justificatif et l'agent corrige après retour. */
+    public function test_gestionnaire_choisit_le_visa_consulte_la_piece_et_agent_corrige(): void
+    {
+        Storage::fake('local');
+        $agentUser = User::where('matricule', 'AGT001')->firstOrFail();
+        $gestionnaire = User::where('matricule', 'RH001')->firstOrFail();
+
+        $this->actingAs($agentUser, 'sanctum')->postJson('/api/permissions', [
+            'typePerm' => 'Repos Médical', 'motif' => 'Consultation médicale',
+            'dateDebut' => '2026-10-01', 'dateFin' => '2026-10-02',
+            'piece' => UploadedFile::fake()->create('certificat.pdf', 50, 'application/pdf'),
+        ])->assertCreated();
+
+        $ligne = collect($this->actingAs($gestionnaire, 'sanctum')->getJson('/api/requests')->json('requests'))
+            ->firstWhere('nature', 'DEMANDE_PERMISSION');
+        $this->assertNotNull($ligne['piece_id']);
+        $this->actingAs($gestionnaire, 'sanctum')->get("/api/pieces/{$ligne['piece_id']}")->assertOk();
+
+        // Retour pour correction, puis l'agent modifie sa demande.
+        $this->actingAs($gestionnaire, 'sanctum')->postJson("/api/permissions/{$ligne['dossier_id']}/verifier", [
+            'decision' => 'corriger', 'motif' => 'Dates à préciser',
+        ])->assertOk()->assertJsonPath('data.statut', DemandePermission::RETOUR_CORRECTION);
+        $this->actingAs($agentUser, 'sanctum')->postJson("/api/permissions/{$ligne['dossier_id']}/corriger", [
+            'date_debut' => '2026-10-05', 'date_fin' => '2026-10-05', 'motif' => 'Consultation médicale corrigée',
+        ])->assertOk()->assertJsonPath('data.statut', DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH);
+
+        // Structure « Service » : le gestionnaire choisit malgré tout le Sous-Directeur.
+        $this->actingAs($gestionnaire, 'sanctum')->postJson("/api/permissions/{$ligne['dossier_id']}/verifier", [
+            'decision' => 'conforme', 'visa' => 'SOUS_DIRECTEUR',
+        ])->assertOk()->assertJsonPath('data.statut', DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR);
+        $this->actingAs(User::where('matricule', 'SD001')->firstOrFail(), 'sanctum')
+            ->postJson('/api/status', ['id' => $ligne['id'], 'statut' => 'EN_ATTENTE_RH'])->assertOk();
+        $this->assertDatabaseHas('demandes_permission', ['id' => $ligne['dossier_id'], 'statut' => DemandePermission::EN_ATTENTE_DRH]);
     }
 }

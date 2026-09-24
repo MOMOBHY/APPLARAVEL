@@ -110,7 +110,6 @@
             <option value="DIRECTEUR">Directeur Central</option>
             <option value="DIRCAB">Directeur de Cabinet</option>
             <option value="SECRETAIRE">Secrétaire de Direction</option>
-            <option value="SERVICE">Service Gestion Administrative</option>
             <option value="CHEF_SERVICE">Chef de Service</option>
           </select>
         </div>
@@ -176,9 +175,19 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Profil attribué</label>
-            <p class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700">Agent Fonctionnaire</p>
-            <p class="mt-1 text-[11px] text-slate-500">Les autres profils sont attribués par l’administration.</p>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountRole">Choisissez votre rôle *</label>
+            <select id="newAccountRole" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold">
+              <option value="ROLE_AGENT">Agent Fonctionnaire</option>
+              <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
+              <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
+              <option value="ROLE_DRH">DRH</option>
+              <option value="ROLE_DIRECTEUR">Directeur Central</option>
+              <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
+              <option value="ROLE_SECRETAIRE">Secrétaire de Direction</option>
+              <option value="ROLE_SERVICE_ADMINISTRATIF">Service Gestion Administrative</option>
+              <option value="ROLE_CHEF_DE_SERVICE">Chef de Service</option>
+              <option value="ROLE_DIRECTEUR_CABINET">Directeur de Cabinet</option>
+            </select>
           </div>
 
           <div>
@@ -333,11 +342,11 @@
               <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Type de Permission *</label>
                 <select id="agentPermType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
-                  <option value="Événement Familial Ordinaire">Événement Familial Ordinaire (<= 3 jours)</option>
-                  <option value="Repos Médical Court">Repos Médical Court (<= 3 jours)</option>
-                  <option value="Congé Maternité / Paternité">Congé Maternité ou Paternité (> 3 jours)</option>
-                  <option value="Permission Spéciale d Absence">Permission Spéciale d'Absence (> 3 jours)</option>
-                  <option value="Événement Familial Long (> 3 jours)">Événement Familial Long (> 3 jours)</option>
+                  <option value="Événement Familial Ordinaire">Événement Familial Ordinaire (≤ 2 jours)</option>
+                  <option value="Repos Médical Court">Repos Médical Court (≤ 2 jours)</option>
+                  <option value="Congé Maternité / Paternité">Congé Maternité ou Paternité (> 2 jours)</option>
+                  <option value="Permission Spéciale d Absence">Permission Spéciale d'Absence (> 2 jours)</option>
+                  <option value="Événement Familial Long (> 2 jours)">Événement Familial Long (> 2 jours)</option>
                 </select>
               </div>
               <div class="grid grid-cols-3 gap-4">
@@ -387,11 +396,15 @@
                   <input type="date" id="agentNaissDate" value="2025-08-20" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
                 </div>
                 <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lieu de Naissance *</label>
+                  <input type="text" id="agentNaissLieu" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
                   <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Extrait d'Acte Scanné *</label>
                   <input type="file" id="agentNaissFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
                 </div>
                 <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-lg text-sm">
-                  Transmettre à la DRH
+                  Transmettre au Gestionnaire RH
                 </button>
               </form>
             </div>
@@ -408,15 +421,27 @@
                   <input type="text" id="agentDecesPrenom" value="Bakary" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
                 </div>
                 <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lien de Parenté *</label>
+                  <select id="agentDecesLien" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+                    <option value="ascendant">Ascendant (Père / Mère)</option>
+                    <option value="descendant">Descendant (Enfant)</option>
+                    <option value="conjoint">Conjoint(e)</option>
+                  </select>
+                </div>
+                <div>
                   <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Décès *</label>
                   <input type="date" id="agentDecesDate" value="2025-08-15" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lieu du Décès *</label>
+                  <input type="text" id="agentDecesLieu" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Certificat de Décès Scanné *</label>
                   <input type="file" id="agentDecesFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
                 </div>
                 <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm">
-                  Transmettre à la DRH
+                  Transmettre au Gestionnaire RH
                 </button>
               </form>
             </div>
@@ -450,7 +475,24 @@
           </div>
         </div>
 
-        <!-- 2. DÉCISIONS DU DRH À NOTIFIER -->
+        <!-- 2. VÉRIFICATION DES DÉCLARATIONS D'ÉTAT CIVIL -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Vérification des Déclarations d'État Civil (Naissance & Décès)</h2>
+              <p class="text-xs text-slate-500">Vérifiez la complétude des informations et la présence/validité des justificatifs. Transmettez à la DRH si conforme.</p>
+            </div>
+            <span id="rhActesPendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+              0 déclaration
+            </span>
+          </div>
+
+          <div id="rhActesContainer" class="space-y-4">
+            <!-- JS -->
+          </div>
+        </div>
+
+        <!-- 3. DÉCISIONS DU DRH À NOTIFIER -->
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
             <div>
@@ -508,8 +550,8 @@
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
           <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
             <div>
-              <h2 class="text-base font-bold text-slate-900">Déclarations d'Actes d'État Civil (Naissance & Décès - RG24)</h2>
-              <p class="text-xs text-slate-500">Transmises directement à la DRH pour contrôle, validation et mise à jour du dossier statutaire de l'agent.</p>
+              <h2 class="text-base font-bold text-slate-900">Déclarations d'Actes d'État Civil (Naissance & Décès)</h2>
+              <p class="text-xs text-slate-500">Dossiers vérifiés par le Gestionnaire RH. Contrôle, décision finale et mise à jour du dossier statutaire de l'agent.</p>
             </div>
             <span id="drhEtatCivilPendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
               0 acte
@@ -517,25 +559,6 @@
           </div>
 
           <div id="drhActesContainer" class="space-y-4">
-            <!-- JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- SECTION SERVICE GESTION ADMINISTRATIVE -->
-      <div id="role-service-views" class="hidden space-y-6">
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
-            <div>
-              <h2 class="text-base font-bold text-slate-900">Contrôle des Déclarations d'État Civil</h2>
-              <p class="text-xs text-slate-500">Vérifiez les informations et justificatifs, transmettez à la DRH ou retournez à l'agent.</p>
-            </div>
-            <span id="servicePendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
-              0 dossier
-            </span>
-          </div>
-
-          <div id="serviceActesContainer" class="space-y-4">
             <!-- JS -->
           </div>
         </div>
@@ -611,6 +634,7 @@
                   <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
                   <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
                   <option value="ROLE_DIRECTEUR">Directeur Central</option>
+                  <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
                   <option value="ROLE_DRH">DRH</option>
                   <option value="ROLE_ADMIN_DSI">Administrateur Système</option>
                 </select>
@@ -797,7 +821,7 @@
       }
 
       if (nature === 'DECLARATION_NAISSANCE' || nature === 'DECLARATION_DECES') {
-        if (etape === 'EN_ATTENTE_SERVICE_GESTION_ADMINISTRATIVE') return 'Destination immédiate : Service chargé de la gestion administrative.';
+        if (etape === 'EN_ATTENTE_GESTIONNAIRE_RH' || etape === 'EN_ATTENTE_SERVICE') return 'Destination immédiate : Gestionnaire RH (vérification du dossier).';
         if (etape === 'EN_ATTENTE_RH') return 'Destination immédiate : DRH (décision finale).';
         if (etape === 'RETOUR_CORRECTION') return 'Retournée à l’agent pour correction.';
         if (statut === 'VALIDEE') return 'Destination immédiate : notification envoyée à l’agent déclarant.';
@@ -818,14 +842,11 @@
       const mapping = {
         ROLE_AGENT: 'AGENT',
         ROLE_CHEF_SERVICE: 'RESPONSABLE',
-        ROLE_CHEF_DE_SERVICE: 'CHEF_SERVICE',
         ROLE_SOUS_DIRECTEUR: 'SOUS_DIRECTEUR',
         ROLE_DRH: 'DRH',
         ROLE_DIRECTEUR: 'DIRECTEUR',
         ROLE_DIRCAB: 'DIRCAB',
-        ROLE_DIRECTEUR_CABINET: 'DIRCAB',
         ROLE_SECRETAIRE: 'SECRETAIRE',
-        ROLE_SERVICE_ADMINISTRATIF: 'SERVICE',
         ROLE_ADMIN_DSI: 'ADMINISTRATEUR'
       };
       return mapping[roleCode] || 'AGENT';
@@ -839,7 +860,7 @@
         prenom: document.getElementById('newAccountPrenom')?.value.trim(),
         matricule: document.getElementById('newAccountMatricule')?.value.trim(),
         password: document.getElementById('newAccountPassword')?.value.trim(),
-        role: 'ROLE_AGENT'
+        role: document.getElementById('newAccountRole')?.value || 'ROLE_AGENT'
       };
 
       const errorNode = document.getElementById('createAccountError');
@@ -886,7 +907,6 @@
       "DIRECTEUR": "DIR001",
       "DIRCAB": "CAB001",
       "SECRETAIRE": "SEC001",
-      "SERVICE": "SVC001",
       "CHEF_SERVICE": "CHEF001"
     };
 
@@ -925,7 +945,7 @@
 
     function handleLogout() {
       currentUser = null;
-      sessionStorage.removeItem('gfp_session_token');
+      API.logout();
       document.getElementById('view-app').classList.add('hidden');
       document.getElementById('view-login').classList.remove('hidden');
     }
@@ -1045,12 +1065,12 @@
         div.className = `p-3 text-xs space-y-1 transition hover:bg-slate-50 ${bgClass}`;
         div.innerHTML = `
           <div class="flex justify-between items-start">
-            <span class="font-bold text-slate-900">${n.titre_notif}</span>
-            <span class="px-2 py-0.5 rounded text-[9px] font-bold ${typeBadge}">${n.type_notif}</span>
+            <span class="font-bold text-slate-900">${escapeHtml(n.titre_notif)}</span>
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold ${typeBadge}">${escapeHtml(n.type_notif)}</span>
           </div>
-          <p class="text-slate-600 text-[11px] leading-relaxed">${n.message_notif}</p>
+          <p class="text-slate-600 text-[11px] leading-relaxed">${escapeHtml(n.message_notif)}</p>
           <div class="flex justify-between items-center pt-1 text-[10px] text-slate-400 font-mono">
-            <span>Réf: ${n.reference_dossier || 'Général'}</span>
+            <span>Réf: ${escapeHtml(n.reference_dossier || 'Général')}</span>
             <span>${formatDateTime(n.date_creation)}</span>
           </div>
         `;
@@ -1104,7 +1124,6 @@
       if (document.getElementById('role-visa-views')) document.getElementById('role-visa-views').classList.add('hidden');
       document.getElementById('role-drh-views').classList.add('hidden');
       document.getElementById('role-admin-views').classList.add('hidden');
-      document.getElementById('role-service-views').classList.add('hidden');
       document.getElementById('note-workflow-view').classList.add('hidden');
 
       const navContainer = document.getElementById('navTabsContainer');
@@ -1121,7 +1140,7 @@
         renderAdminUsersTable();
         renderAdminSentNotesTable();
         filterAdminSearch();
-        setupNoteWorkflow(true, true);
+        setupNoteWorkflow(false, false);
       } else if (role === 'SECRETAIRE') {
         document.getElementById('note-workflow-view').classList.remove('hidden');
         navContainer.innerHTML = `
@@ -1130,12 +1149,10 @@
         setupNoteWorkflow(false, true);
       } else if (role === 'RESPONSABLE') {
         document.getElementById('role-responsable-views').classList.remove('hidden');
-        document.getElementById('note-workflow-view').classList.remove('hidden');
         navContainer.innerHTML = `
           <button class="px-3 py-2 rounded-md text-xs font-bold bg-orange-600 text-white whitespace-nowrap shrink-0">Espace Gestionnaire RH</button>
         `;
         renderResponsableViews();
-        setupNoteWorkflow(true, false);
       } else if (role === 'SOUS_DIRECTEUR' || role === 'DIRECTEUR') {
         document.getElementById('role-visa-views').classList.remove('hidden');
         document.getElementById('note-workflow-view').classList.remove('hidden');
@@ -1145,24 +1162,16 @@
         `;
         renderVisaViews();
         setupNoteWorkflow(true, false);
-      } else if (role === 'CHEF_SERVICE') {
+      } else if (role === 'DIRCAB') {
         document.getElementById('note-workflow-view').classList.remove('hidden');
         navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Notes de Service</button>
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white whitespace-nowrap shrink-0">Notes de Service — Directeur de Cabinet</button>
         `;
         setupNoteWorkflow(true, false);
-      } else if (role === 'SERVICE') {
-        document.getElementById('role-service-views').classList.remove('hidden');
-        navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-teal-700 text-white whitespace-nowrap shrink-0">Contrôle État Civil</button>
-        `;
-        renderServiceViews();
-      } else if (role === 'DRH' || role === 'DIRCAB') {
+      } else if (role === 'DRH') {
         document.getElementById('role-drh-views').classList.remove('hidden');
-        if (role === 'DRH' || role === 'DIRCAB') {
-          document.getElementById('note-workflow-view').classList.remove('hidden');
-          setupNoteWorkflow(true, false);
-        }
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        setupNoteWorkflow(true, false);
         navContainer.innerHTML = `
           <button class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white whitespace-nowrap shrink-0">Console de Décision Finale DRH</button>
         `;
@@ -1182,14 +1191,14 @@
     function setupNoteWorkflow(canEmit, canDiffuse) {
       document.getElementById('legacy-admin-notes').classList.add('hidden');
       document.getElementById('noteWorkflowDescription').textContent = canDiffuse
-        ? 'Les notes en attente de saisie sont prêtes à être mises en forme puis diffusées aux destinataires.'
-        : 'Rédigez l’objet de la note et transmettez-la à la secrétaire pour saisie et diffusion.';
+        ? 'Saisissez les notes reçues puis transmettez-les aux destinataires (Directeurs, Sous-Directeurs, Chefs de service, agents) : notification et email.'
+        : 'Rédigez l’objet de la note et transmettez-la à votre secrétaire, qui la saisit et la transmet aux destinataires.';
       document.getElementById('noteDraftForm').classList.toggle('hidden', !canEmit);
       document.getElementById('noteWorkflowTitle').textContent = canDiffuse && !canEmit
         ? 'Saisie et diffusion des Notes de Service'
         : 'Émission et suivi des Notes de Service';
       const select = document.getElementById('workflowNoteStructures');
-      select.innerHTML = dbStructures.map(s => `<option value="${s.id_structure}">${s.nom_structure}</option>`).join('');
+      select.innerHTML = dbStructures.map(s => `<option value="${escapeHtml(s.id_structure)}">${escapeHtml(s.nom_structure)}</option>`).join('');
       renderNoteWorkflow(canDiffuse);
     }
 
@@ -1198,12 +1207,12 @@
       if (!tbody) return;
       tbody.innerHTML = dbNotes.map(n => `
         <tr>
-          <td class="px-4 py-3 font-mono font-bold">${n.numero || n.id}</td>
-          <td class="px-4 py-3 font-bold">${n.libelle}</td>
-          <td class="px-4 py-3">${n.emetteur}</td>
-          <td class="px-4 py-3">${n.service}</td>
-          <td class="px-4 py-3 font-bold ${n.statut === 'DIFFUSEE' ? 'text-emerald-700' : 'text-orange-700'}">${n.statut || 'DIFFUSEE'}</td>
-          <td class="px-4 py-3">${canDiffuse && n.statut !== 'DIFFUSEE' ? `<button onclick="handleDiffuseNote(${n.id})" class="px-2 py-1 bg-emerald-700 text-white rounded font-bold">Diffuser</button>` : '-'}</td>
+          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(n.numero || n.id)}</td>
+          <td class="px-4 py-3 font-bold">${escapeHtml(n.libelle)}</td>
+          <td class="px-4 py-3">${escapeHtml(n.emetteur)}</td>
+          <td class="px-4 py-3">${escapeHtml(n.service)}</td>
+          <td class="px-4 py-3 font-bold ${n.statut === 'DIFFUSEE' ? 'text-emerald-700' : 'text-orange-700'}">${escapeHtml(n.statut || 'DIFFUSEE')}</td>
+          <td class="px-4 py-3">${canDiffuse && ['EN_ATTENTE_SAISIE', 'EN_ATTENTE_VALIDATION', 'VALIDEE'].includes(n.statut) ? `<button onclick="handleDiffuseNote(${Number(n.id)})" class="px-2 py-1 bg-emerald-700 text-white rounded font-bold">Saisir et transmettre</button>` : '-'}</td>
         </tr>`).join('') || '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500 italic">Aucune note enregistrée.</td></tr>';
     }
 
@@ -1217,8 +1226,8 @@
         document.getElementById('workflowNoteTitle').value = '';
         await loadBackendData();
         setupNoteWorkflow(
-          currentUser.role === 'ADMINISTRATEUR' || currentUser.roles_codes.some(code => ['ROLE_SOUS_DIRECTEUR', 'ROLE_DIRECTEUR', 'ROLE_DRH', 'ROLE_CHEF_DE_SERVICE', 'ROLE_DIRECTEUR_CABINET'].includes(code)),
-          currentUser.role === 'ADMINISTRATEUR' || currentUser.roles_codes.includes('ROLE_SECRETAIRE')
+          currentUser.roles_codes.some(code => ['ROLE_SOUS_DIRECTEUR', 'ROLE_DIRECTEUR', 'ROLE_DRH', 'ROLE_DIRECTEUR_CABINET'].includes(code)),
+          currentUser.roles_codes.includes('ROLE_SECRETAIRE')
         );
       } else {
         alert(res.message || 'La note n’a pas pu être enregistrée.');
@@ -1228,7 +1237,7 @@
     async function handleDiffuseNote(noteId) {
       const res = await API.diffuseNote(noteId);
       if (res.status === 'success') {
-        alert('Note diffusée aux structures destinataires.');
+        alert('Note saisie et transmise aux destinataires (notification et email).');
         await loadBackendData();
         setupNoteWorkflow(false, true);
         await loadNotifications();
@@ -1244,18 +1253,18 @@
 
       dbUsers.forEach(u => {
         const tr = document.createElement('tr');
-        const rolesBadges = (u.roles || []).map(r => `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">${r.libelle_role}</span>`).join(" ");
+        const rolesBadges = (u.roles || []).map(r => `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">${escapeHtml(r.libelle_role)}</span>`).join(" ");
 
         tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">${u.matricule}</td>
-          <td class="px-4 py-3 font-medium text-slate-900">${u.civilite} ${u.nom} ${u.prenom}</td>
-          <td class="px-4 py-3 text-slate-600">${u.structure} • ${u.fonction}</td>
-          <td class="px-4 py-3">${rolesBadges || u.role}</td>
+          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(u.matricule)}</td>
+          <td class="px-4 py-3 font-medium text-slate-900">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}</td>
+          <td class="px-4 py-3 text-slate-600">${escapeHtml(u.structure)} • ${escapeHtml(u.fonction)}</td>
+          <td class="px-4 py-3">${rolesBadges || escapeHtml(u.role)}</td>
           <td class="px-4 py-3 font-mono text-slate-800">
-            <input type="text" id="pass_input_${u.matricule}" value="${u.password}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-24 font-mono">
+            <input type="text" id="pass_input_${escapeHtml(u.matricule)}" value="${escapeHtml(u.password)}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-24 font-mono">
           </td>
           <td class="px-4 py-3 text-center space-x-1">
-            <button onclick="updateUserPassword('${u.matricule}')" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
+            <button data-mat="${escapeHtml(u.matricule)}" onclick="updateUserPassword(this.dataset.mat)" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
               Enregistrer
             </button>
           </td>
@@ -1341,35 +1350,41 @@
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td class="px-6 py-4 font-mono font-bold text-xs">${r.id}</td>
-            <td class="px-6 py-4 font-medium text-xs">${r.nature}</td>
-            <td class="px-6 py-4 text-xs">${r.typePerm || r.motif || r.nomChild || r.nomDefunt}</td>
+            <td class="px-6 py-4 font-mono font-bold text-xs">${escapeHtml(r.id)}</td>
+            <td class="px-6 py-4 font-medium text-xs">${escapeHtml(r.nature)}</td>
+            <td class="px-6 py-4 text-xs">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt)}</td>
             <td class="px-6 py-4 text-xs">
               ${r.dateDebut ? (r.dateDebut + ' au ' + r.dateFin + ' (' + r.jours + 'j)') : r.dateEvt}
               <br>
               <span class="text-[10px] text-slate-400">Soumis le ${formatDateTime(r.dateSoumission)}</span>
             </td>
-            <td class="px-6 py-4 text-xs font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${r.niveau_requis || 'DRH'}</td>
+            <td class="px-6 py-4 text-xs font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${escapeHtml(r.niveau_requis || 'DRH')}</td>
             <td class="px-6 py-4">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">
-                ${r.statut}
+                ${escapeHtml(r.statut)}
               </span>
               <p class="mt-1 text-[10px] text-slate-500">${getActorRoutingMessage(r)}</p>
+              ${r.etape === 'RETOUR_CORRECTION' ? `
+                <p class="mt-1 text-[10px] text-red-700 font-bold">Motif du retour : ${escapeHtml(r.motif_retour)}</p>
+                <button data-corriger class="mt-1 px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
+              ${r.statut === 'REJETEE' && r.motif_rejet ? `<p class="mt-1 text-[10px] text-red-700">Motif du rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
             </td>
           `;
+          const btnCorriger = tr.querySelector('[data-corriger]');
+          if (btnCorriger) btnCorriger.onclick = () => ouvrirCorrection(r, rafraichirVue);
           tbody.appendChild(tr);
         });
       }
 
       const notesContainer = document.getElementById('agentNotesContainer');
       notesContainer.innerHTML = "";
-      dbNotes.forEach(n => {
+      dbNotes.filter(n => n.statut === 'DIFFUSEE' || n.statut === 'ARCHIVEE').forEach(n => {
         const d = document.createElement('div');
         d.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
         d.innerHTML = `
-          <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${n.numero || 'NOTE'}</span>
-          <h3 class="font-bold text-sm text-slate-900 mt-1">${n.libelle}</h3>
-          <p class="text-xs text-slate-500 mt-1">Signé par ${n.emetteur} • Transmis par le secrétariat le ${n.date}</p>
+          <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${escapeHtml(n.numero || 'NOTE')}</span>
+          <h3 class="font-bold text-sm text-slate-900 mt-1">${escapeHtml(n.libelle)}</h3>
+          <p class="text-xs text-slate-500 mt-1">Signé par ${escapeHtml(n.emetteur)} • Transmis par le secrétariat le ${escapeHtml(n.date)}</p>
         `;
         notesContainer.appendChild(d);
       });
@@ -1393,32 +1408,24 @@
           const circuitCourt = jours <= 2;
 
           const circuitBadge = circuitCourt
-            ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Transmission Direction pour Visa préalable</span>`
+            ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : visa du Sous-Directeur ou du Directeur (à choisir) avant le DRH</span>`
             : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission DIRECTE au DRH</span>`;
-
-          const labelOk = circuitCourt
-            ? "Conforme — Transmettre au Directeur/Sous-Directeur"
-            : "Conforme — Transmettre directement au DRH";
 
           div.innerHTML = `
             <div class="flex justify-between items-start flex-wrap gap-2">
               <div class="space-y-1">
-                <span class="font-mono text-xs text-orange-600 font-bold">${r.id} - ${r.nature}</span>
-                <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-                <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
-                <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+                <span class="font-mono text-xs text-orange-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+                <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+                <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
+                <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
                 <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
-                <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+                <p class="text-xs text-slate-600">Motif : ${escapeHtml(r.motif)}</p>
+                <p class="text-xs text-slate-600">Justificatif : ${pieceHtml(r)}</p>
                 <div class="mt-2">${circuitBadge}</div>
               </div>
             </div>
-            <div class="flex justify-end space-x-3 pt-3 border-t border-orange-200">
-              <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
-                Dossier non conforme — Rejeter
-              </button>
-              <button onclick="updateStatusAPI('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-                ${labelOk}
-              </button>
+            <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-orange-200">
+              ${boutonsGestionnaire(r)}
             </div>
           `;
           container.appendChild(div);
@@ -1443,23 +1450,72 @@
             div.innerHTML = `
               <div class="flex justify-between items-start flex-wrap gap-2">
                 <div class="space-y-1">
-                  <span class="font-mono text-xs font-bold">${r.id}</span>
-                  <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-                  <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''} (${r.jours || '?'} jour(s))</strong></p>
-                  <p class="text-xs text-slate-600">Décision finale du DRH : <strong class="${ok ? 'text-emerald-700' : 'text-red-700'}">${r.statut}</strong></p>
-                  ${r.motif_rejet ? `<p class="text-xs text-red-600 font-bold">Motif de rejet : ${r.motif_rejet}</p>` : ''}
+                  <span class="font-mono text-xs font-bold">${escapeHtml(r.id)}</span>
+                  <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+                  <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')} (${escapeHtml(r.jours || '?')} jour(s))</strong></p>
+                  <p class="text-xs text-slate-600">Décision finale du DRH : <strong class="${ok ? 'text-emerald-700' : 'text-red-700'}">${escapeHtml(r.statut)}</strong></p>
+                  ${r.motif_rejet ? `<p class="text-xs text-red-600 font-bold">Motif de rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
                 </div>
                 <span class="text-xs px-3 py-1 rounded-full font-bold ${ok ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}">
-                  DRH : ${r.statut}
+                  DRH : ${escapeHtml(r.statut)}
                 </span>
               </div>
               <div class="flex justify-end pt-3 border-t border-slate-200">
-                <button onclick="handleNotifierAgent('${r.id}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
+                <button onclick="handleNotifierAgent('${escapeHtml(r.id)}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
                   Notifier l'agent
                 </button>
               </div>
             `;
             notifyContainer.appendChild(div);
+          });
+        }
+      }
+
+      // 3. Déclarations d'État Civil à vérifier (Naissance & Décès)
+      const pendingActes = dbRequests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH' || r.statut === 'EN_ATTENTE_SERVICE'));
+      const countActesEl = document.getElementById('rhActesPendingCount');
+      if (countActesEl) countActesEl.textContent = pendingActes.length + " déclaration" + (pendingActes.length > 1 ? "s" : "");
+
+      const actesContainer = document.getElementById('rhActesContainer');
+      if (actesContainer) {
+        actesContainer.innerHTML = "";
+        if (pendingActes.length === 0) {
+          actesContainer.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune déclaration d'état civil en attente de vérification.</p>`;
+        } else {
+          pendingActes.forEach(r => {
+            const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
+            const label = isNaissance ? "Déclaration de Naissance" : "Déclaration de Décès";
+            const detail = isNaissance ? ("Enfant : " + (r.nomChild || "")) : ("Défunt : " + (r.nomDefunt || ""));
+            const div = document.createElement('div');
+            div.className = "border border-teal-200 rounded-xl p-5 bg-teal-50 space-y-4";
+            div.innerHTML = `
+              <div class="flex justify-between items-start flex-wrap gap-2">
+                <div class="space-y-1">
+                  <span class="font-mono text-xs text-teal-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
+                  <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+                  <p class="text-xs text-slate-700">${escapeHtml(detail)}</p>
+                  <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong> ${r.lieu ? 'à ' + escapeHtml(r.lieu) : ''}</p>
+                  <p class="text-xs text-slate-600">Justificatif scanné : ${pieceHtml(r)}</p>
+                  <div class="mt-2">
+                    <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                      Circuit : Agent → Gestionnaire RH → DRH → Agent
+                    </span>
+                  </div>
+                </div>
+                <span class="bg-teal-200 text-teal-900 text-xs px-3 py-1 rounded-full font-bold">
+                  En Attente Vérification RH
+                </span>
+              </div>
+              <div class="flex justify-end space-x-3 pt-3 border-t border-teal-200">
+                <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+                  Dossier Incomplet (Retourner)
+                </button>
+                <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg shadow">
+                  Vérifié Conforme — Transmettre à la DRH
+                </button>
+              </div>
+            `;
+            actesContainer.appendChild(div);
           });
         }
       }
@@ -1491,12 +1547,12 @@
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-indigo-700 font-bold">${r.id} - ${r.nature}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-              <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
-              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${r.jours || 1} jour(s)</strong></p>
+              <span class="font-mono text-xs text-indigo-700 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
+              <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${escapeHtml(r.jours || 1)} jour(s)</strong></p>
               <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
-              <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
               <p class="text-xs text-indigo-700 italic mt-1">Rappel : Votre visa hiérarchique transmettra le dossier au DRH qui prendra la décision finale.</p>
             </div>
             <span class="bg-indigo-100 text-indigo-800 border border-indigo-300 text-xs px-3 py-1 rounded-full font-bold">
@@ -1504,10 +1560,10 @@
             </span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-indigo-200">
-            <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+            <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Refuser le visa
             </button>
-            <button onclick="updateStatusAPI('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Accorder mon visa — Transmettre au DRH
             </button>
           </div>
@@ -1525,43 +1581,6 @@
       } else {
         alert("Erreur lors de la notification : " + (res.message || "impossible"));
       }
-    }
-
-    function renderServiceViews() {
-      const pending = dbRequests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && r.statut === 'EN_ATTENTE_SERVICE');
-      document.getElementById('servicePendingCount').textContent = pending.length + " dossier";
-      const container = document.getElementById('serviceActesContainer');
-      container.innerHTML = "";
-      if (pending.length === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune déclaration en attente de contrôle.</p>`;
-        return;
-      }
-      pending.forEach(r => {
-        const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
-        const div = document.createElement('div');
-        div.className = "border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3";
-        div.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="font-mono text-xs text-teal-700 font-bold">${r.id} • ${r.nature}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent: ${r.agentName} (${r.matricule})</h3>
-              <p class="text-xs text-slate-600 mt-1">Détail: ${r.nomChild || r.nomDefunt || ''} | Événement: ${r.dateEvt || ''} | Lieu: ${r.lieu || ''}</p>
-              <p class="text-xs text-slate-600 mt-1">Pièce: <span class="font-mono">${r.piece || ''}</span></p>
-              <p class="text-xs text-emerald-700 font-bold mt-1">${getActorRoutingMessage(r)}</p>
-            </div>
-            <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded font-bold">Contrôle service</span>
-          </div>
-          <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200">
-            <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 text-xs font-bold rounded">
-              Retourner (incomplet)
-            </button>
-            <button onclick="updateStatusAPI('${r.id}', 'EN_ATTENTE_RH')" class="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded shadow">
-              Conforme — Transmettre DRH
-            </button>
-          </div>
-        `;
-        container.appendChild(div);
-      });
     }
 
     function renderDrhViews() {
@@ -1586,12 +1605,12 @@
           div.innerHTML = `
             <div class="flex justify-between items-start flex-wrap gap-2">
               <div class="space-y-1">
-                <span class="font-mono text-xs text-blue-600 font-bold">${r.id}</span>
-                <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-                <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
-                <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+                <span class="font-mono text-xs text-blue-600 font-bold">${escapeHtml(r.id)}</span>
+                <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+                <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
+                <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
                 <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
-                <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+                <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
                 <div class="mt-2">${circuitLabel}</div>
                 <p class="text-xs text-blue-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
               </div>
@@ -1600,10 +1619,10 @@
               </span>
             </div>
             <div class="flex justify-end space-x-3 pt-3 border-t border-blue-200">
-              <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+              <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
                 Rejeter la Demande
               </button>
-              <button onclick="updateStatusAPI('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+              <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
                 Valider Définitivement
               </button>
             </div>
@@ -1612,8 +1631,8 @@
         });
       }
 
-      // 2. Déclarations d'Actes d'État Civil (RG24)
-      const pendingActes = dbRequests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.statut === 'EN_ATTENTE_SERVICE'));
+      // 2. Déclarations d'Actes d'État Civil
+      const pendingActes = dbRequests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_RH'));
       const countActesEl = document.getElementById('drhEtatCivilPendingCount');
       if (countActesEl) countActesEl.textContent = pendingActes.length + " acte" + (pendingActes.length > 1 ? "s" : "");
 
@@ -1621,7 +1640,7 @@
       if (actesContainer) {
         actesContainer.innerHTML = "";
         if (pendingActes.length === 0) {
-          actesContainer.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune déclaration d'état civil en attente.</p>`;
+          actesContainer.innerHTML = `<p class="text-slate-500 text-sm italic text-center py-6">Aucune déclaration d'état civil en attente de décision finale.</p>`;
         } else {
           pendingActes.forEach(r => {
             const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
@@ -1633,22 +1652,27 @@
             div.innerHTML = `
               <div class="flex justify-between items-start flex-wrap gap-2">
                 <div class="space-y-1">
-                  <span class="font-mono text-xs text-${color}-700 font-bold">${r.id} - ${label}</span>
-                  <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-                  <p class="text-xs text-slate-600">${detail}</p>
-                  <p class="text-xs text-slate-600">Date de l'événement : <strong>${r.dateEvt || ''}</strong></p>
-                  <p class="text-xs text-slate-600">Pièce scannée : <span class="font-mono text-slate-500">${r.piece}</span></p>
-                  <p class="text-xs text-teal-700 italic">RG24 : Contrôle, validation et mise à jour du dossier statutaire de l'agent.</p>
+                  <span class="font-mono text-xs text-${color}-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
+                  <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+                  <p class="text-xs text-slate-600">${escapeHtml(detail)}</p>
+                  <p class="text-xs text-slate-600">Date de l'événement : <strong>${escapeHtml(r.dateEvt || '')}</strong></p>
+                  <p class="text-xs text-slate-600">Pièce scannée : ${pieceHtml(r)}</p>
+                  <div class="mt-2">
+                    <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                      Circuit : Agent → Gestionnaire RH → DRH → Agent
+                    </span>
+                  </div>
+                  <p class="text-xs text-teal-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
                 </div>
                 <span class="bg-teal-100 text-teal-800 border border-teal-300 text-xs px-3 py-1 rounded-full font-bold">
-                  Contrôle & Validation DRH
+                  Décision Finale DRH
                 </span>
               </div>
               <div class="flex justify-end space-x-3 pt-3 border-t border-${color}-200">
-                <button onclick="updateStatusAPI('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
-                  Rejeter l'acte
+                <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+                  Rejeter la Déclaration
                 </button>
-                <button onclick="updateStatusAPI('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+                <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
                   Enregistrer et Valider
                 </button>
               </div>
@@ -1667,14 +1691,14 @@
       dbNotes.forEach(n => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">${n.numero || 'NOTE-#' + n.id}</td>
-          <td class="px-4 py-3 font-bold text-slate-900">${n.libelle}</td>
-          <td class="px-4 py-3 text-slate-600">${n.emetteur}</td>
-          <td class="px-4 py-3 text-slate-500">${n.secretaire || 'Secrétariat'}</td>
+          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(n.numero || 'NOTE-#' + n.id)}</td>
+          <td class="px-4 py-3 font-bold text-slate-900">${escapeHtml(n.libelle)}</td>
+          <td class="px-4 py-3 text-slate-600">${escapeHtml(n.emetteur)}</td>
+          <td class="px-4 py-3 text-slate-500">${escapeHtml(n.secretaire || 'Secrétariat')}</td>
           <td class="px-4 py-3">
-            <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${n.service}</span>
+            <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${escapeHtml(n.service)}</span>
           </td>
-          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${n.date}</td>
+          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${escapeHtml(n.date)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1699,12 +1723,12 @@
       results.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-2 font-mono font-bold">${r.id}</td>
-          <td class="px-4 py-2 font-medium">${r.matricule} - ${r.agentName}</td>
-          <td class="px-4 py-2 text-slate-600">${r.nature}</td>
-          <td class="px-4 py-2">${r.typePerm || r.motif || r.nomChild || r.nomDefunt}</td>
-          <td class="px-4 py-2 font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${r.niveau_requis || 'DRH'}</td>
-          <td class="px-4 py-2 font-bold">${r.statut}</td>
+          <td class="px-4 py-2 font-mono font-bold">${escapeHtml(r.id)}</td>
+          <td class="px-4 py-2 font-medium">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
+          <td class="px-4 py-2 text-slate-600">${escapeHtml(r.nature)}</td>
+          <td class="px-4 py-2">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt)}</td>
+          <td class="px-4 py-2 font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${escapeHtml(r.niveau_requis || 'DRH')}</td>
+          <td class="px-4 py-2 font-bold">${escapeHtml(r.statut)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1720,14 +1744,14 @@
 
     async function handleAgentSubmitPermission(e) {
       e.preventDefault();
-      const data = {
-        typePerm: document.getElementById('agentPermType').value,
-        motif: document.getElementById('agentPermMotif').value,
-        dateDebut: document.getElementById('agentPermStart').value,
-        dateFin: document.getElementById('agentPermEnd').value,
-        jours: parseInt(document.getElementById('agentPermJours').value, 10) || 1,
-        piece: "Justificatif_Permission.pdf"
-      };
+      const data = new FormData();
+      data.append('typePerm', document.getElementById('agentPermType').value);
+      data.append('motif', document.getElementById('agentPermMotif').value);
+      data.append('dateDebut', document.getElementById('agentPermStart').value);
+      data.append('dateFin', document.getElementById('agentPermEnd').value);
+      data.append('jours', parseInt(document.getElementById('agentPermJours').value, 10) || 1);
+      const piece = document.getElementById('agentPermFile').files[0];
+      if (piece) data.append('piece', piece);
 
       const res = await API.submitPermission(data);
       if (res.status === 'success') {
@@ -1737,44 +1761,53 @@
         await loadNotifications();
         renderAgentViews();
         switchAgentTab('dashboard');
+      } else {
+        alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
       }
     }
 
     async function handleAgentSubmitNaissance(e) {
       e.preventDefault();
-      const data = {
-        nature: 'NAISSANCE',
-        nom: document.getElementById('agentNaissNom').value,
-        prenom: document.getElementById('agentNaissPrenom').value,
-        date: document.getElementById('agentNaissDate').value
-      };
+      const data = new FormData();
+      data.append('nature', 'NAISSANCE');
+      data.append('nom', document.getElementById('agentNaissNom').value);
+      data.append('prenom', document.getElementById('agentNaissPrenom').value);
+      data.append('date', document.getElementById('agentNaissDate').value);
+      data.append('lieu', document.getElementById('agentNaissLieu').value);
+      data.append('extrait', document.getElementById('agentNaissFile').files[0]);
       const res = await API.submitDeclaration(data);
       if (res.status === 'success') {
         playNotificationSound();
-        alert("Déclaration de naissance transmise sous la référence " + res.code + ". Une alerte a été transmise à la DRH.");
+        alert("Déclaration de naissance transmise sous la référence " + res.code + ". Le dossier est transmis au Gestionnaire RH pour vérification.");
         await loadBackendData();
         await loadNotifications();
         renderAgentViews();
         switchAgentTab('dashboard');
+      } else {
+        alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
       }
     }
 
     async function handleAgentSubmitDeces(e) {
       e.preventDefault();
-      const data = {
-        nature: 'DECES',
-        nom: document.getElementById('agentDecesNom').value,
-        prenom: document.getElementById('agentDecesPrenom').value,
-        date: document.getElementById('agentDecesDate').value
-      };
+      const data = new FormData();
+      data.append('nature', 'DECES');
+      data.append('nom', document.getElementById('agentDecesNom').value);
+      data.append('prenom', document.getElementById('agentDecesPrenom').value);
+      data.append('lien_parente', document.getElementById('agentDecesLien').value);
+      data.append('date', document.getElementById('agentDecesDate').value);
+      data.append('lieu', document.getElementById('agentDecesLieu').value);
+      data.append('certificat', document.getElementById('agentDecesFile').files[0]);
       const res = await API.submitDeclaration(data);
       if (res.status === 'success') {
         playNotificationSound();
-        alert("Déclaration de décès transmise sous la référence " + res.code + ". Une alerte a été transmise à la DRH.");
+        alert("Déclaration de décès transmise sous la référence " + res.code + ". Le dossier est transmis au Gestionnaire RH pour vérification.");
         await loadBackendData();
         await loadNotifications();
         renderAgentViews();
         switchAgentTab('dashboard');
+      } else {
+        alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
       }
     }
 
@@ -1792,17 +1825,32 @@
       }
     }
 
+    async function rafraichirVue() {
+      await loadBackendData();
+      await loadNotifications();
+      loadUserInterface();
+    }
+
     async function updateStatusAPI(reqId, newStatut) {
-      const res = await API.updateStatus(reqId, newStatut);
+      let motif = null;
+      if (newStatut === 'REJETEE') {
+        motif = prompt('Motif du rejet ou du retour pour correction (obligatoire) :');
+        if (!motif || !motif.trim()) {
+          alert('Le motif est obligatoire pour rejeter ou retourner un dossier.');
+          return;
+        }
+        motif = motif.trim();
+      }
+      const res = await API.updateStatus(reqId, newStatut, motif);
       if (res.status === 'success') {
         playNotificationSound();
         const routeInfo = (() => {
-          if (newStatut === 'EN_ATTENTE_RH') return 'Le dossier va ensuite chez le DRH.';
-          if (newStatut === 'VALIDEE') return 'Le dossier est validé et la notification va vers l’agent demandeur.';
-          if (newStatut === 'REJETEE') return 'Le dossier est rejeté et la notification va vers l’agent demandeur.';
-          return 'Le dossier continue son parcours selon le niveau de validation.';
+          if (newStatut === 'EN_ATTENTE_RH') return 'Le dossier est transmis au DRH.';
+          if (newStatut === 'VALIDEE') return 'Le dossier est validé et notifié à l’agent.';
+          if (newStatut === 'REJETEE') return 'Le dossier est rejeté/retourné avec motif et notifié à l’agent.';
+          return 'Le dossier continue son parcours.';
         })();
-        alert("Statut du dossier " + reqId + " mis à jour : " + newStatut + ". " + routeInfo);
+        alert("Statut du dossier " + reqId + " mis à jour. " + routeInfo);
         await loadBackendData();
         await loadNotifications();
         loadUserInterface();

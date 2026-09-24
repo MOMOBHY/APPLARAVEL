@@ -12,21 +12,47 @@ use Illuminate\Support\Str;
 /**
  * Workflow des permissions selon la durée.
  *
- * Cas 1 (≤ 2 j) : AGENT → GESTIONNAIRE RH → SOUS-DIRECTEUR/DIRECTEUR (visa)
- *   → DRH → GESTIONNAIRE RH → AGENT.
+ * Cas 1 (≤ 2 j) : AGENT → GESTIONNAIRE RH → SOUS-DIRECTEUR/DIRECTEUR (visa, selon
+ *   la structure) → DRH → GESTIONNAIRE RH → AGENT.
  * Cas 2 (> 2 j) : AGENT → GESTIONNAIRE RH → DRH → GESTIONNAIRE RH → AGENT.
+ * Toute décision (DRH ou refus de visa) revient au gestionnaire RH, qui notifie
+ * l'agent (motif obligatoire en cas de rejet).
  *
  * Les acteurs sont résolus depuis les données (structure, rôles), jamais en dur.
  * Chaque transition est historisée et notifiée.
  */
 class PermissionWorkflowService
 {
+    public const JOURS_MAX = 30;
+
+    /** Rôles qui suivent l'ensemble des demandes (les autres ne voient que les leurs). */
+    public const ROLES_SUIVI = ['ROLE_GESTIONNAIRE_RH', 'ROLE_SOUS_DIRECTEUR', 'ROLE_DIRECTEUR', 'ROLE_DRH', 'ROLE_ADMIN_DSI'];
+
     public static function nombreJours(string $debut, string $fin): int
     {
         $d1 = Carbon::parse($debut)->startOfDay();
         $d2 = Carbon::parse($fin)->startOfDay();
 
-        return max(1, $d1->diffInDays($d2) + 1);
+        return max(1, (int) $d1->diffInDays($d2) + 1);
+    }
+
+    /**
+     * Durée retenue (choix explicite de l'agent, sinon calculée sur les dates)
+     * et date de fin correspondante. La limite s'applique dans les deux cas.
+     *
+     * @return array{0: int, 1: string}
+     */
+    protected static function periode(array $data): array
+    {
+        $jours = array_key_exists('nombre_jours', $data) && $data['nombre_jours'] !== null
+            ? (int) $data['nombre_jours']
+            : self::nombreJours($data['date_debut'], $data['date_fin']);
+
+        if ($jours < 1 || $jours > self::JOURS_MAX) {
+            abort(422, 'Le nombre de jours doit être compris entre 1 et '.self::JOURS_MAX.'.');
+        }
+
+        return [$jours, Carbon::parse($data['date_debut'])->startOfDay()->addDays($jours - 1)->toDateString()];
     }
 
     // ---------------------------------------------------------------
@@ -34,15 +60,7 @@ class PermissionWorkflowService
     // ---------------------------------------------------------------
     public static function soumettre(Agent $agent, array $data): DemandePermission
     {
-        if (array_key_exists('nombre_jours', $data) && $data['nombre_jours'] !== null) {
-            $jours = (int) $data['nombre_jours'];
-            if ($jours < 1 || $jours > 30) {
-                abort(422, 'Le nombre de jours doit être compris entre 1 et 30.');
-            }
-            $data['date_fin'] = Carbon::parse($data['date_debut'])->startOfDay()->addDays($jours - 1)->toDateString();
-        } else {
-            $jours = self::nombreJours($data['date_debut'], $data['date_fin']);
-        }
+        [$jours, $data['date_fin']] = self::periode($data);
 
         $demande = DemandePermission::create([
             'code_dossier' => 'PERM-'.now()->year.'-'.strtoupper(Str::random(6)),
@@ -69,24 +87,23 @@ class PermissionWorkflowService
         return $demande;
     }
 
-    /** L'agent corrige une demande retournée puis la resoumet au gestionnaire. */
-    public static function corrigerEtResoumettre(DemandePermission $demande, Agent $agent, array $data): DemandePermission
+    /** Contrôle à faire avant tout dépôt de pièce : demande retournée, corrigée par son auteur. */
+    public static function exigerCorrigeable(DemandePermission $demande, ?Agent $agent): void
     {
         if ($demande->statut !== DemandePermission::RETOUR_CORRECTION) {
             abort(422, 'Seule une demande retournée pour correction peut être corrigée.');
         }
-        if ($demande->agent_id !== $agent->id) {
+        if ($agent === null || $demande->agent_id !== $agent->id) {
             abort(403, 'Seul le demandeur peut corriger sa demande.');
         }
+    }
 
-        $jours = self::nombreJours($data['date_debut'], $data['date_fin']);
-        if (array_key_exists('nombre_jours', $data) && $data['nombre_jours'] !== null) {
-            $jours = (int) $data['nombre_jours'];
-            if ($jours < 1 || $jours > 30) {
-                abort(422, 'Le nombre de jours doit être compris entre 1 et 30.');
-            }
-            $data['date_fin'] = Carbon::parse($data['date_debut'])->startOfDay()->addDays($jours - 1)->toDateString();
-        }
+    /** L'agent corrige une demande retournée puis la resoumet au gestionnaire. */
+    public static function corrigerEtResoumettre(DemandePermission $demande, Agent $agent, array $data): DemandePermission
+    {
+        self::exigerCorrigeable($demande, $agent);
+
+        [$jours, $data['date_fin']] = self::periode($data);
         $ancien = $demande->statut;
         $demande->update([
             'type_permission_id' => $data['type_permission_id'] ?? $demande->type_permission_id,
@@ -117,9 +134,13 @@ class PermissionWorkflowService
     // ---------------------------------------------------------------
     /**
      * @param  'conforme'|'rejeter'|'corriger'  $decision
+     * @param  'SOUS_DIRECTEUR'|'DIRECTEUR'|null  $visa  niveau de visa choisi par le gestionnaire (cas 1) ; à défaut, déduit de la structure
      */
-    public static function verifierRh(DemandePermission $demande, Agent $gestionnaire, string $decision, ?string $motif = null): DemandePermission
+    public static function verifierRh(DemandePermission $demande, Agent $gestionnaire, string $decision, ?string $motif = null, ?string $visa = null): DemandePermission
     {
+        if ($visa !== null && ! in_array($visa, ['SOUS_DIRECTEUR', 'DIRECTEUR'], true)) {
+            abort(422, 'Niveau de visa inconnu : SOUS_DIRECTEUR ou DIRECTEUR attendu.');
+        }
         if ($demande->statut !== DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH) {
             abort(422, 'Vérification impossible à ce stade.');
         }
@@ -132,8 +153,11 @@ class PermissionWorkflowService
         $demande->date_verif_rh = now();
 
         if ($decision === 'rejeter') {
+            // Le gestionnaire notifie lui-même l'agent : rien ne reste « à notifier ».
             $demande->statut = DemandePermission::REJETEE;
             $demande->motif_rejet = $motif;
+            $demande->notifie_le = now();
+            $demande->notifie_par_id = $gestionnaire->id;
             $demande->save();
             self::tracer($demande, $gestionnaire, 'ROLE_GESTIONNAIRE_RH', 'REJET_RH', $ancien, $demande->statut, $motif);
             self::notifier($demande->agent_id, 'Demande rejetée par le gestionnaire RH',
@@ -156,7 +180,7 @@ class PermissionWorkflowService
         $demande->avis_gestionnaire = 'CONFORME';
 
         if ($demande->isCircuitCourt()) {
-            [$direction, $visa] = self::directionPour($demande->agent);
+            [$direction, $visa] = self::directionPour($demande->agent, $visa);
             $demande->visa_attendu = $visa;
             $demande->statut = $visa === 'SOUS_DIRECTEUR'
                 ? DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR
@@ -200,19 +224,24 @@ class PermissionWorkflowService
         if (! $favorable && blank($motif)) {
             abort(422, 'Motif obligatoire en cas de refus de visa.');
         }
+        // Visa « selon la structure » : seul le responsable résolu pour l'agent peut viser.
+        [$attendu] = self::directionPour($demande->agent, $roleActeur);
+        if ($attendu && $attendu->id !== $directeur->id) {
+            abort(403, "Visa réservé au responsable hiérarchique de la structure de l'agent ({$attendu->fullName()}).");
+        }
 
         $ancien = $demande->statut;
         $demande->visa_direction_id = $directeur->id;
         $demande->date_visa = now();
 
         if (! $favorable) {
+            // Comme pour une décision DRH, c'est le gestionnaire RH qui notifie l'agent.
             $demande->statut = DemandePermission::REJETEE;
             $demande->avis_direction = 'DEFAVORABLE';
             $demande->motif_rejet = $motif;
             $demande->save();
             self::tracer($demande, $directeur, 'ROLE_'.strtoupper($roleActeur), 'REFUS_VISA', $ancien, $demande->statut, $motif);
-            self::notifier($demande->agent_id, 'Visa hiérarchique refusé',
-                "Votre demande {$demande->code_dossier} a reçu un avis défavorable : {$motif}", 'REJET', $demande->code_dossier);
+            self::alerterGestionnaire($demande, "Visa hiérarchique refusé pour le dossier {$demande->code_dossier}. À notifier à l'agent.");
 
             return $demande;
         }
@@ -261,16 +290,20 @@ class PermissionWorkflowService
         self::tracer($demande, $drh, 'ROLE_DRH', $valide ? 'VALIDATION_DRH' : 'REJET_DRH', $ancien, $demande->statut,
             $valide ? 'Demande validée.' : $motif);
 
+        self::alerterGestionnaire($demande, "Le DRH a tranché le dossier {$demande->code_dossier} ({$demande->statut}). À notifier à l'agent.");
+
+        return $demande;
+    }
+
+    /** Retour au gestionnaire RH qui a vérifié le dossier : c'est lui qui notifie l'agent. */
+    protected static function alerterGestionnaire(DemandePermission $demande, string $message): void
+    {
         $gestionnaire = $demande->gestionnaire_id
             ? Agent::find($demande->gestionnaire_id)
             : self::gestionnairePour($demande->agent);
         if ($gestionnaire) {
-            self::notifier($gestionnaire->id, 'Décision DRH à notifier',
-                "Le DRH a tranché le dossier {$demande->code_dossier} ({$demande->statut}). À notifier à l'agent.",
-                'A_NOTIFIER', $demande->code_dossier);
+            self::notifier($gestionnaire->id, 'Décision à notifier', $message, 'A_NOTIFIER', $demande->code_dossier);
         }
-
-        return $demande;
     }
 
     // ---------------------------------------------------------------
@@ -293,14 +326,16 @@ class PermissionWorkflowService
         $demande->loadMissing('type');
         $type = $demande->type?->libelle ?? 'Permission';
         $periode = $demande->date_debut?->format('d/m/Y').' au '.$demande->date_fin?->format('d/m/Y');
-        $dateDecision = $demande->date_decision?->format('d/m/Y à H:i') ?? now()->format('d/m/Y à H:i');
+        $refusVisa = $demande->decideur_drh_id === null && $demande->avis_direction === 'DEFAVORABLE';
+        $auteur = $refusVisa ? 'la hiérarchie (visa refusé)' : 'le DRH';
+        $dateDecision = ($refusVisa ? $demande->date_visa : $demande->date_decision)?->format('d/m/Y à H:i') ?? now()->format('d/m/Y à H:i');
         self::tracer($demande, $gestionnaire, 'ROLE_GESTIONNAIRE_RH', 'NOTIFICATION_AGENT', $demande->statut, $demande->statut,
             $valide ? "Acceptation notifiée à l'agent." : "Rejet notifié : {$demande->motif_rejet}");
         self::notifier($demande->agent_id,
             $valide ? 'Demande acceptée' : 'Demande rejetée',
             $valide
                 ? "Votre demande {$demande->code_dossier} ({$type}, {$periode}) a été VALIDÉE par le DRH le {$dateDecision}."
-                : "Votre demande {$demande->code_dossier} ({$type}, {$periode}) a été REJETÉE par le DRH le {$dateDecision}. Motif : {$demande->motif_rejet}",
+                : "Votre demande {$demande->code_dossier} ({$type}, {$periode}) a été REJETÉE par {$auteur} le {$dateDecision}. Motif : {$demande->motif_rejet}",
             $valide ? 'VALIDATION' : 'REJET',
             $demande->code_dossier);
 
@@ -320,13 +355,16 @@ class PermissionWorkflowService
     }
 
     /**
+     * Signataire du visa pour l'agent. Le niveau est celui choisi par le
+     * gestionnaire RH, sinon déduit de la structure (Sous-Direction → sous-directeur).
+     *
+     * @param  'SOUS_DIRECTEUR'|'DIRECTEUR'|null  $niveau
      * @return array{0: ?Agent, 1: 'SOUS_DIRECTEUR'|'DIRECTEUR'}
      */
-    public static function directionPour(Agent $agent): array
+    public static function directionPour(Agent $agent, ?string $niveau = null): array
     {
-        $estSousDirection = $agent->structure?->type === 'Sous-Direction';
-        $code = $estSousDirection ? 'ROLE_SOUS_DIRECTEUR' : 'ROLE_DIRECTEUR';
-        $visa = $estSousDirection ? 'SOUS_DIRECTEUR' : 'DIRECTEUR';
+        $visa = $niveau ?? ($agent->structure?->type === 'Sous-Direction' ? 'SOUS_DIRECTEUR' : 'DIRECTEUR');
+        $code = 'ROLE_'.$visa;
 
         // Responsable désigné de la structure en priorité, sinon même
         // structure, sinon n'importe quel titulaire du rôle.

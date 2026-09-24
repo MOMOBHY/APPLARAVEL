@@ -6,7 +6,35 @@ function authHeaders(headers = {}) {
   return token ? { ...base, Authorization: `Bearer ${token}` } : base;
 }
 
+// Échappe toute donnée saisie par un utilisateur avant insertion dans du HTML (anti-XSS).
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function postJson(url, payload) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload)
+  });
+  return response.json();
+}
+
+// FormData (multipart) dès qu'un fichier est joint, sinon JSON.
+function requestBody(data) {
+  if (data instanceof FormData) return { headers: authHeaders(), body: data };
+  return { headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(data) };
+}
+
 const API = {
+  // Révoque le jeton côté serveur (sinon il reste valide indéfiniment).
+  async logout() {
+    try {
+      await fetch(`${API_BASE_URL}/logout`, { method: 'POST', headers: authHeaders() });
+    } catch (e) { /* déconnexion locale malgré tout */ }
+    sessionStorage.removeItem('gfp_session_token');
+  },
+
   // Authentification
   async login(matricule, role, password = '') {
     try {
@@ -24,6 +52,45 @@ const API = {
     }
   },
 
+  // Gestionnaire RH : conforme (visa SOUS_DIRECTEUR ou DIRECTEUR si ≤ 2 j), corriger (retour) ou rejeter.
+  async verifierPermission(dossierId, decision, motif = null, visa = null) {
+    try {
+      const payload = { decision };
+      if (motif) payload.motif = motif;
+      if (visa) payload.visa = visa;
+      return await postJson(`${API_BASE_URL}/permissions/${dossierId}/verifier`, payload);
+    } catch (e) {
+      console.error('Erreur API verifierPermission', e);
+      return { status: 'error' };
+    }
+  },
+
+  // Agent : corrige un dossier retourné (FormData, justificatif facultatif).
+  async corrigerDossier(nature, dossierId, formData) {
+    const segment = { DEMANDE_PERMISSION: 'permissions', DECLARATION_NAISSANCE: 'naissances', DECLARATION_DECES: 'deces' }[nature];
+    try {
+      const response = await fetch(`${API_BASE_URL}/${segment}/${dossierId}/corriger`, { method: 'POST', ...requestBody(formData) });
+      return await response.json();
+    } catch (e) {
+      console.error('Erreur API corrigerDossier', e);
+      return { status: 'error' };
+    }
+  },
+
+  // Ouvre un justificatif (téléchargement authentifié, droits contrôlés par le serveur).
+  async ouvrirPiece(pieceId) {
+    const fenetre = window.open('', '_blank');
+    try {
+      const response = await fetch(`${API_BASE_URL}/pieces/${pieceId}`, { headers: authHeaders() });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Accès refusé.');
+      const url = URL.createObjectURL(await response.blob());
+      if (fenetre) fenetre.location.href = url; else window.location.href = url;
+    } catch (e) {
+      if (fenetre) fenetre.close();
+      alert('Justificatif indisponible : ' + e.message);
+    }
+  },
+
   // Gestion des Demandes et Actes
   async getRequests() {
     try {
@@ -37,12 +104,7 @@ const API = {
 
   async submitPermission(data) {
     try {
-      const response = await fetch(`${API_BASE_URL}/permissions`, {
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(data)
-      });
+      const response = await fetch(`${API_BASE_URL}/permissions`, { method: 'POST', ...requestBody(data) });
       return await response.json();
     } catch (e) {
       console.error('Erreur API submitPermission', e);
@@ -52,11 +114,7 @@ const API = {
 
   async submitDeclaration(data) {
     try {
-      const response = await fetch(`${API_BASE_URL}/declarations`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(data)
-      });
+      const response = await fetch(`${API_BASE_URL}/declarations`, { method: 'POST', ...requestBody(data) });
       return await response.json();
     } catch (e) {
       console.error('Erreur API submitDeclaration', e);
@@ -64,12 +122,14 @@ const API = {
     }
   },
 
-  async updateStatus(id, statut) {
+  async updateStatus(id, statut, motif = null) {
     try {
+      const payload = { id, statut };
+      if (motif) payload.motif = motif;
       const response = await fetch(`${API_BASE_URL}/status`, {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id, statut })
+        body: JSON.stringify(payload)
       });
       return await response.json();
     } catch (e) {
@@ -223,9 +283,11 @@ const API = {
 
 // Fond d'écran du ministère, flouté, sur toutes les pages (api.js est chargé partout).
 (function () {
+  // document.currentScript n'existe que pendant l'exécution initiale du script.
+  var scriptSrc = (document.currentScript && document.currentScript.src) || '';
   function appliquerFond() {
     try {
-      var src = (document.currentScript && document.currentScript.src) || '';
+      var src = scriptSrc;
       var base = src ? src.slice(0, src.lastIndexOf('/js/api.js')) : '';
       var url = (base ? base : '.') + '/assets/ministere_bg.png';
       document.body.style.backgroundImage = "linear-gradient(rgba(241, 245, 249, 0.48), rgba(241, 245, 249, 0.48)), url('" + url + "')";
@@ -241,3 +303,120 @@ const API = {
     appliquerFond();
   }
 })();
+
+// -----------------------------------------------------------
+// Composants partagés (justificatif, correction d'un dossier retourné)
+// -----------------------------------------------------------
+function pieceHtml(r) {
+  const nom = `<span class="font-mono text-slate-500">${escapeHtml(r.piece)}</span>`;
+  return r.piece_id
+    ? `${nom} <button type="button" onclick="API.ouvrirPiece(${Number(r.piece_id)})" class="ml-1 px-2 py-0.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-[10px] font-bold">Consulter</button>`
+    : nom;
+}
+
+// Gestionnaire RH : décision sur une demande de permission (motif demandé pour un retour ou un rejet).
+async function actionGestionnaire(dossierId, decision, visa = null) {
+  let motif = null;
+  if (decision !== 'conforme') {
+    motif = prompt(decision === 'corriger' ? 'Motif du retour pour correction (obligatoire) :' : 'Motif du rejet (obligatoire) :');
+    if (!motif || !motif.trim()) { alert('Le motif est obligatoire.'); return false; }
+    motif = motif.trim();
+  }
+  const res = await API.verifierPermission(dossierId, decision, motif, visa);
+  if (res.status !== 'success') {
+    alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+    return false;
+  }
+  const destination = { SOUS_DIRECTEUR: 'au Sous-Directeur pour visa', DIRECTEUR: 'au Directeur pour visa' }[visa] || 'au DRH';
+  alert({ conforme: 'Dossier conforme transmis ' + destination + '.', corriger: "Dossier retourné à l'agent pour correction.", rejeter: "Demande rejetée, l'agent est notifié avec le motif." }[decision]);
+  return true;
+}
+
+// Boutons du Gestionnaire RH pour une demande de permission en attente de vérification.
+function boutonsGestionnaire(r) {
+  const btn = (classes, action, label) => `<button onclick="actionGestionnaire(${Number(r.dossier_id)}, ${action}).then(ok => ok && rafraichirVue())" class="px-3 py-2 ${classes} text-xs font-bold rounded-lg">${label}</button>`;
+  const transmission = (r.jours || 1) <= 2
+    ? btn('bg-indigo-700 hover:bg-indigo-800 text-white shadow', "'conforme', 'SOUS_DIRECTEUR'", 'Transmettre au Sous-Directeur')
+      + btn('bg-emerald-700 hover:bg-emerald-800 text-white shadow', "'conforme', 'DIRECTEUR'", 'Transmettre au Directeur')
+    : btn('bg-emerald-700 hover:bg-emerald-800 text-white shadow', "'conforme'", 'Conforme — Transmettre au DRH');
+  return btn('bg-red-100 text-red-700 hover:bg-red-200 border border-red-300', "'rejeter'", 'Rejeter')
+    + btn('bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300', "'corriger'", 'Retourner pour correction')
+    + transmission;
+}
+
+function ouvrirCorrection(r, onDone) {
+  const estPermission = r.nature === 'DEMANDE_PERMISSION';
+  const estNaissance = r.nature === 'DECLARATION_NAISSANCE';
+  const champ = (id, label, type = 'text') => `<label class="block text-xs font-bold text-slate-700 uppercase">${label}
+      <input id="${id}" type="${type}" class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal normal-case"></label>`;
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4';
+  overlay.innerHTML = `
+    <form class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-3 max-h-[90vh] overflow-y-auto">
+      <h2 class="font-bold text-base text-slate-900">Corriger le dossier <span class="font-mono" data-ref></span></h2>
+      <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">Motif du retour : <strong data-motif></strong></p>
+      ${estPermission ? `
+        <div class="grid grid-cols-2 gap-2">${champ('corrDebut', 'Date début', 'date')}${champ('corrFin', 'Date fin', 'date')}</div>
+        <label class="block text-xs font-bold text-slate-700 uppercase">Motif
+          <textarea id="corrMotif" rows="3" class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal normal-case"></textarea></label>
+      ` : `
+        <div class="grid grid-cols-2 gap-2">${champ('corrNom', 'Nom')}${champ('corrPrenom', 'Prénom')}</div>
+        ${estNaissance ? '' : `<label class="block text-xs font-bold text-slate-700 uppercase">Lien de parenté
+          <select id="corrLien" class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+            <option value="ascendant">Ascendant (Père / Mère)</option><option value="descendant">Descendant (Enfant)</option><option value="conjoint">Conjoint(e)</option>
+          </select></label>`}
+        <div class="grid grid-cols-2 gap-2">${champ('corrDate', 'Date', 'date')}${champ('corrLieu', 'Lieu')}</div>
+      `}
+      ${champ('corrFichier', 'Nouveau justificatif (facultatif, PDF/JPG/PNG)', 'file')}
+      <p data-erreur class="hidden text-xs text-red-600 font-bold"></p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" data-annuler class="px-3 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
+        <button type="submit" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg">Renvoyer au Gestionnaire RH</button>
+      </div>
+    </form>`;
+  document.body.appendChild(overlay);
+  const $ = sel => overlay.querySelector(sel);
+  $('[data-ref]').textContent = r.id;
+  $('[data-motif]').textContent = r.motif_retour || 'non précisé';
+  if (estPermission) {
+    $('#corrDebut').value = r.dateDebut || '';
+    $('#corrFin').value = r.dateFin || '';
+    $('#corrMotif').value = r.motif || '';
+  } else {
+    $('#corrNom').value = r.nom || '';
+    $('#corrPrenom').value = r.prenom || '';
+    $('#corrDate').value = r.dateEvt || '';
+    $('#corrLieu').value = r.lieu || '';
+    if (!estNaissance) $('#corrLien').value = r.lien_parente || 'ascendant';
+  }
+  $('[data-annuler]').onclick = () => overlay.remove();
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = new FormData();
+    const fichier = $('#corrFichier').files[0];
+    if (estPermission) {
+      data.append('date_debut', $('#corrDebut').value);
+      data.append('date_fin', $('#corrFin').value);
+      data.append('motif', $('#corrMotif').value);
+      if (fichier) data.append('piece', fichier);
+    } else {
+      const prefixe = estNaissance ? 'enfant' : 'defunt';
+      data.append('nom_' + prefixe, $('#corrNom').value);
+      data.append('prenom_' + prefixe, $('#corrPrenom').value);
+      data.append(estNaissance ? 'date_naissance_enfant' : 'date_deces', $('#corrDate').value);
+      data.append(estNaissance ? 'lieu_naissance_enfant' : 'lieu_deces', $('#corrLieu').value);
+      if (!estNaissance) data.append('lien_parente', $('#corrLien').value);
+      if (fichier) data.append(estNaissance ? 'extrait' : 'certificat', fichier);
+    }
+    const res = await API.corrigerDossier(r.nature, r.dossier_id, data);
+    if (res.status === 'success') {
+      overlay.remove();
+      alert('Dossier corrigé et renvoyé au Gestionnaire RH.');
+      if (onDone) await onDone();
+    } else {
+      const erreur = $('[data-erreur]');
+      erreur.textContent = res.message || 'Correction impossible.';
+      erreur.classList.remove('hidden');
+    }
+  };
+}

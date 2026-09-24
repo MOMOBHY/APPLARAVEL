@@ -7,21 +7,58 @@ use App\Models\NoteHistorique;
 use App\Models\NoteService;
 use App\Models\Notification;
 use App\Models\Structure;
+use App\Models\User;
+use App\Notifications\NoteServiceTransmise;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Throwable;
 
 /**
  * Workflow des notes de service, indépendant des permissions (pas de
  * Gestionnaire RH dans ce circuit) :
- * AUTORITÉ (rédaction) → SECRÉTAIRE (saisie/mise en forme/enregistrement)
- * → VALIDATION (autorité) → DIFFUSION → DESTINATAIRES (consultation).
+ * AUTORITÉ ÉMETTRICE (DRH, Directeur de Cabinet, Directeur, Sous-Directeur)
+ * → SA SECRÉTAIRE (saisie) → TRANSMISSION par email et notification aux
+ * destinataires (Directeurs, Sous-Directeurs, Chefs de service, agents).
+ * La validation par l'autorité reste possible mais n'est pas requise.
  */
 class NoteWorkflowService
 {
+    /** Autorités habilitées à émettre une note de service. */
+    public const ROLES_EMETTEURS = ['ROLE_DRH', 'ROLE_DIRECTEUR_CABINET', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR'];
+
+    /** Rôles du circuit interne, qui consultent toutes les notes quel que soit leur état. */
+    public const ROLES_INTERNES = ['ROLE_ADMIN_DSI', 'ROLE_DRH', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR', 'ROLE_SECRETAIRE'];
+
+    /**
+     * Notes consultables par l'utilisateur : tout pour le circuit interne ;
+     * sinon les notes diffusées/archivées de sa structure et celles qu'il a émises.
+     *
+     * @return Builder<NoteService>
+     */
+    public static function visiblesPour(User $user): Builder
+    {
+        $query = NoteService::query();
+        if ($user->hasRole(...self::ROLES_INTERNES)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $visibles) use ($user) {
+            $visibles->where(function (Builder $diffusees) use ($user) {
+                $diffusees->whereIn('statut', [NoteService::DIFFUSEE, NoteService::ARCHIVEE])
+                    ->whereHas('structures', fn (Builder $s) => $s->where('structures.id', $user->agent?->structure_id));
+            });
+            if ($user->agent_id) {
+                $visibles->orWhere('signataire_id', $user->agent_id);
+            }
+        });
+    }
+
     /** Étape 1 — rédaction par une autorité habilitée. */
     public static function rediger(Agent $autorite, array $data, ?string $fichierPath): NoteService
     {
         $note = NoteService::create([
-            'numero_reference' => 'NOTE N° '.str_pad((string) (NoteService::count() + 1), 4, '0', STR_PAD_LEFT).'/MFP/CAB/'.now()->year,
+            'numero_reference' => self::prochainNumero(),
             'objet' => $data['objet'],
             'contenu' => $data['contenu'] ?? null,
             'fichier_path' => $fichierPath,
@@ -52,7 +89,7 @@ class NoteWorkflowService
         self::tracer($note, $autorite, 'AUTORITE', 'TRANSMISSION_SECRETARIAT', $ancien, $note->statut,
             'Note transmise au secrétariat.');
 
-        foreach (self::secretaires() as $secretaire) {
+        foreach (self::secretairesDe($autorite) as $secretaire) {
             self::notifier($secretaire->id, 'Note à saisir',
                 "La note {$note->numero_reference} attend saisie et mise en forme.", 'ATTENTE_SAISIE', $note->numero_reference);
         }
@@ -60,12 +97,18 @@ class NoteWorkflowService
         return $note->refresh();
     }
 
-    /** Étape 2 — saisie / mise en forme / enregistrement par le secrétaire. */
-    public static function saisir(NoteService $note, Agent $secretaire, array $data): NoteService
+    /** Contrôle à faire avant tout dépôt de fichier : la note attend la saisie du secrétariat. */
+    public static function exigerSaisissable(NoteService $note): void
     {
         if ($note->statut !== NoteService::EN_ATTENTE_SAISIE) {
             abort(422, 'Saisie impossible à ce stade.');
         }
+    }
+
+    /** Étape 2 — saisie / mise en forme / enregistrement par le secrétaire. */
+    public static function saisir(NoteService $note, Agent $secretaire, array $data): NoteService
+    {
+        self::exigerSaisissable($note);
 
         $ancien = $note->statut;
         $note->update([
@@ -81,9 +124,9 @@ class NoteWorkflowService
         self::tracer($note, $secretaire, 'ROLE_SECRETAIRE', 'SAISIE_MISE_EN_FORME', $ancien, $note->statut,
             'Note saisie, mise en forme et enregistrée.');
 
-        self::notifier($note->signataire_id, 'Note prête à valider',
-            "La note {$note->numero_reference} est saisie, votre validation est requise avant diffusion.",
-            'ATTENTE_VALIDATION', $note->numero_reference);
+        self::notifier($note->signataire_id, 'Note saisie par le secrétariat',
+            "La note {$note->numero_reference} est saisie et prête à être transmise aux destinataires.",
+            'INFO', $note->numero_reference);
 
         return $note->refresh();
     }
@@ -130,11 +173,11 @@ class NoteWorkflowService
         return $note->refresh();
     }
 
-    /** Étape 4 — diffusion (note validée uniquement). */
+    /** Étape 3 — transmission aux destinataires par la secrétaire, une fois la note saisie. */
     public static function diffuser(NoteService $note, Agent $secretaire): NoteService
     {
-        if ($note->statut !== NoteService::VALIDEE) {
-            abort(422, 'Seule une note validée peut être diffusée.');
+        if (! in_array($note->statut, [NoteService::EN_ATTENTE_VALIDATION, NoteService::VALIDEE], true)) {
+            abort(422, 'Seule une note saisie (et non refusée) peut être transmise.');
         }
 
         $ancien = $note->statut;
@@ -146,10 +189,17 @@ class NoteWorkflowService
         self::tracer($note, $secretaire, 'ROLE_SECRETAIRE', 'DIFFUSION', $ancien, $note->statut,
             'Note diffusée aux structures destinataires.');
 
-        $agents = Agent::whereIn('structure_id', $note->structures()->pluck('structures.id'))->get();
+        $agents = Agent::with('user')->whereIn('structure_id', $note->structures()->pluck('structures.id'))->get();
         foreach ($agents as $agent) {
             self::notifier($agent->id, 'Nouvelle note de service',
                 "{$note->numero_reference} : {$note->objet}", 'NOTE_SERVICE', $note->numero_reference);
+        }
+
+        // Transmission par email ; une panne de messagerie ne bloque pas la diffusion.
+        try {
+            NotificationFacade::send($agents->pluck('user')->filter(), new NoteServiceTransmise($note->loadMissing('signataire')));
+        } catch (Throwable $e) {
+            report($e);
         }
 
         return $note->refresh();
@@ -175,6 +225,28 @@ class NoteWorkflowService
             ->get(['id', 'matricule', 'nom', 'prenom', 'structure_id']);
 
         return ['structures' => $structures, 'agents' => $agents];
+    }
+
+    /**
+     * Numéro suivant libre : le secrétariat peut avoir attribué manuellement
+     * un numéro qui entrerait sinon en collision avec le compteur.
+     */
+    protected static function prochainNumero(): string
+    {
+        $rang = NoteService::count() + 1;
+        do {
+            $numero = 'NOTE N° '.str_pad((string) $rang++, 4, '0', STR_PAD_LEFT).'/MFP/CAB/'.now()->year;
+        } while (NoteService::where('numero_reference', $numero)->exists());
+
+        return $numero;
+    }
+
+    /** « Sa secrétaire » : secrétaires de la structure de l'autorité, sinon tout le secrétariat. */
+    protected static function secretairesDe(Agent $autorite): Collection
+    {
+        $siennes = self::secretaires()->where('structure_id', $autorite->structure_id);
+
+        return $siennes->isNotEmpty() ? $siennes : self::secretaires();
     }
 
     protected static function secretaires(): Collection

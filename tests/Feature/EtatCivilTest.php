@@ -40,7 +40,7 @@ class EtatCivilTest extends TestCase
             ])->assertStatus(422);
     }
 
-    public function test_naissance_circuit_service_puis_drh(): void
+    public function test_naissance_circuit_gestionnaire_rh_puis_drh(): void
     {
         $creation = $this->actingAs($this->user('AGT001'), 'sanctum')->postJson('/api/naissances', [
             'nom_enfant' => 'KOUASSI',
@@ -50,35 +50,37 @@ class EtatCivilTest extends TestCase
             'extrait' => UploadedFile::fake()->create('extrait.pdf', 100, 'application/pdf'),
         ])->assertCreated()->json('data');
 
-        $this->assertEquals(EtatCivilService::EN_ATTENTE_SERVICE, $creation['statut']);
+        $this->assertEquals(EtatCivilService::EN_ATTENTE_GESTIONNAIRE_RH, $creation['statut']);
         $this->assertDatabaseHas('pieces_jointes', ['dossier_type' => 'naissance', 'reference_dossier' => $creation['code_dossier']]);
 
         $id = $creation['id'];
 
-        // Ni la DRH ni le Gestionnaire RH ne contrôlent : service dédié uniquement.
+        // Seul le Gestionnaire RH vérifie : ni la DRH ni un Directeur/Sous-Directeur ne font la vérification initiale
         $this->actingAs($this->user('DRH001'), 'sanctum')
             ->postJson("/api/naissances/{$id}/controler", ['decision' => 'conforme'])
             ->assertForbidden();
-        $this->actingAs($this->user('RH001'), 'sanctum')
+        $this->actingAs($this->user('SD001'), 'sanctum')
             ->postJson("/api/naissances/{$id}/controler", ['decision' => 'conforme'])
             ->assertForbidden();
 
-        $this->actingAs($this->user('SVC001'), 'sanctum')
+        // Le Gestionnaire RH vérifie la complétude et transmet à la DRH
+        $this->actingAs($this->user('RH001'), 'sanctum')
             ->postJson("/api/naissances/{$id}/controler", ['decision' => 'conforme'])
             ->assertOk()->assertJsonPath('data.statut', EtatCivilService::EN_ATTENTE_RH);
 
-        // Le service ne fait pas la validation finale.
-        $this->actingAs($this->user('SVC001'), 'sanctum')
+        // Le Gestionnaire RH ne peut pas valider définitivement
+        $this->actingAs($this->user('RH001'), 'sanctum')
             ->postJson("/api/naissances/{$id}/valider", ['valide' => true])
             ->assertForbidden();
 
+        // Seul le DRH valide définitivement
         $this->actingAs($this->user('DRH001'), 'sanctum')
             ->postJson("/api/naissances/{$id}/valider", ['valide' => true])
             ->assertOk()->assertJsonPath('data.statut', 'VALIDEE');
 
         $actions = DeclarationHistorique::where('type_dossier', 'NAISSANCE')
             ->where('dossier_id', $id)->pluck('action')->all();
-        foreach (['SOUMISSION', 'CONTROLE_CONFORME', 'VALIDATION'] as $attendue) {
+        foreach (['SOUMISSION', 'VERIFICATION_CONFORME', 'VALIDATION'] as $attendue) {
             $this->assertContains($attendue, $actions);
         }
     }
@@ -95,20 +97,24 @@ class EtatCivilTest extends TestCase
         ])->assertCreated()->json('data');
         $id = $creation['id'];
 
-        $this->actingAs($this->user('SVC001'), 'sanctum')
+        // Le Gestionnaire RH retourne le dossier incomplet
+        $this->actingAs($this->user('RH001'), 'sanctum')
             ->postJson("/api/deces/{$id}/controler", ['decision' => 'retourner', 'motif' => 'Certificat illisible'])
             ->assertOk()->assertJsonPath('data.statut', 'RETOUR_CORRECTION');
 
+        // L'agent corrige et renvoie au Gestionnaire RH
         $this->actingAs($this->user('AGT001'), 'sanctum')
             ->postJson("/api/deces/{$id}/corriger", [
                 'lieu_deces' => 'Abidjan',
                 'certificat' => UploadedFile::fake()->create('cert2.pdf', 100, 'application/pdf'),
-            ])->assertOk()->assertJsonPath('data.statut', EtatCivilService::EN_ATTENTE_SERVICE);
+            ])->assertOk()->assertJsonPath('data.statut', EtatCivilService::EN_ATTENTE_GESTIONNAIRE_RH);
 
-        $this->actingAs($this->user('SVC001'), 'sanctum')
+        // Le Gestionnaire RH valide la conformité
+        $this->actingAs($this->user('RH001'), 'sanctum')
             ->postJson("/api/deces/{$id}/controler", ['decision' => 'conforme'])
-            ->assertOk();
+            ->assertOk()->assertJsonPath('data.statut', EtatCivilService::EN_ATTENTE_RH);
 
+        // Le DRH rejette avec motif obligatoire
         $this->actingAs($this->user('DRH001'), 'sanctum')
             ->postJson("/api/deces/{$id}/valider", ['valide' => false, 'motif' => 'Lien non établi'])
             ->assertOk()->assertJsonPath('data.statut', 'REJETEE');
@@ -146,9 +152,9 @@ class EtatCivilTest extends TestCase
         $autreUser = User::create(['name' => 'Tiers', 'email' => 'tiers01@x.ci', 'matricule' => 'TIERS01', 'password' => 'x', 'agent_id' => $autre->id]);
         $this->actingAs($autreUser, 'sanctum')->get("/api/pieces/{$piece->id}")->assertForbidden();
 
-        // Déclarant, service et DRH oui.
+        // Déclarant, Gestionnaire RH et DRH oui.
         $this->actingAs($this->user('AGT001'), 'sanctum')->get("/api/pieces/{$piece->id}")->assertOk();
-        $this->actingAs($this->user('SVC001'), 'sanctum')->get("/api/pieces/{$piece->id}")->assertOk();
+        $this->actingAs($this->user('RH001'), 'sanctum')->get("/api/pieces/{$piece->id}")->assertOk();
         $this->actingAs($this->user('DRH001'), 'sanctum')->get("/api/pieces/{$piece->id}")->assertOk();
     }
 }

@@ -13,15 +13,21 @@ class DecesController extends Controller
     public function index(Request $request)
     {
         $query = DeclarationDeces::with('agent')->latest();
-        if (! $request->user()->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH', 'ROLE_ADMIN_DSI')) {
+        if (! $request->user()->hasRole(...EtatCivilService::ROLES_SUIVI)) {
             $query->where('agent_id', $request->user()->agent_id);
         }
 
         return response()->json(['status' => 'success', 'data' => $query->paginate(20)]);
     }
 
-    public function show(DeclarationDeces $deces)
+    public function show(Request $request, DeclarationDeces $deces)
     {
+        $user = $request->user();
+        abort_unless(
+            $deces->agent_id === $user->agent_id || $user->hasRole(...EtatCivilService::ROLES_SUIVI),
+            403, 'Accès non autorisé à cette déclaration.'
+        );
+
         $deces->setAttribute('historique', DeclarationHistorique::where('type_dossier', 'DECES')
             ->where('dossier_id', $deces->id)->latest('id')->get());
 
@@ -77,6 +83,8 @@ class DecesController extends Controller
             'lieu_deces' => ['nullable', 'string', 'max:255'],
             'certificat' => ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO],
         ]);
+
+        EtatCivilService::exigerCorrigeable($deces, $request->user()->agent);
 
         $piecePath = null;
         if ($request->hasFile('certificat')) {

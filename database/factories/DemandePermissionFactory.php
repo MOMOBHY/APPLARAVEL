@@ -22,7 +22,7 @@ class DemandePermissionFactory extends Factory
             'date_fin' => now()->addDay()->toDateString(),
             'nombre_jours' => 2,
             'motif' => fake()->sentence(),
-            'statut' => DemandePermission::SOUMISE,
+            'statut' => DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH,
         ];
     }
 }

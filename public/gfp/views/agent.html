@@ -200,7 +200,7 @@
               <input type="file" id="naissFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
             </div>
             <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-lg text-sm">
-              Transmettre Déclaration Naissance
+              Transmettre au Gestionnaire RH
             </button>
           </form>
         </div>
@@ -215,6 +215,14 @@
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom du Défunt *</label>
               <input type="text" id="decesPrenom" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lien de Parenté *</label>
+              <select id="decesLien" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+                <option value="ascendant">Ascendant (Père / Mère)</option>
+                <option value="descendant">Descendant (Enfant)</option>
+                <option value="conjoint">Conjoint(e)</option>
+              </select>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
@@ -231,7 +239,7 @@
               <input type="file" id="decesFile" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
             </div>
             <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm">
-              Transmettre Déclaration Décès
+              Transmettre au Gestionnaire RH
             </button>
           </form>
         </div>
@@ -299,7 +307,6 @@
       tbody.innerHTML = '';
       if (!mine.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune demande enregistrée.</td></tr>`;
-        return;
       }
       mine.forEach(r => {
         let badge = 'bg-orange-100 text-orange-800 border-orange-300';
@@ -309,28 +316,40 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-6 py-4 font-mono font-bold text-xs">${r.id}</td>
-          <td class="px-6 py-4 text-xs font-medium">${r.nature}</td>
-          <td class="px-6 py-4 text-xs">${r.typePerm || r.motif || r.nomChild || r.nomDefunt || ''}</td>
+          <td class="px-6 py-4 font-mono font-bold text-xs">${escapeHtml(r.id)}</td>
+          <td class="px-6 py-4 text-xs font-medium">${escapeHtml(r.nature)}</td>
+          <td class="px-6 py-4 text-xs">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
           <td class="px-6 py-4 text-xs">${r.dateDebut ? (r.dateDebut + ' au ' + r.dateFin) : (r.dateEvt || '')}</td>
-          <td class="px-6 py-4 text-xs font-mono text-slate-600">${r.piece}</td>
-          <td class="px-6 py-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">${r.statut}</span></td>
+          <td class="px-6 py-4 text-xs font-mono text-slate-600">${escapeHtml(r.piece)}</td>
+          <td class="px-6 py-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">${escapeHtml(r.statut)}</span>
+            ${r.etape === 'RETOUR_CORRECTION' ? `
+              <p class="mt-1 text-[10px] text-red-700 font-bold">Motif du retour : ${escapeHtml(r.motif_retour)}</p>
+              <button data-corriger class="mt-1 px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
+            ${r.statut === 'REJETEE' && r.motif_rejet ? `<p class="mt-1 text-[10px] text-red-700">Motif du rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
+          </td>
         `;
+        const btnCorriger = tr.querySelector('[data-corriger]');
+        if (btnCorriger) btnCorriger.onclick = () => ouvrirCorrection(r, rafraichirVue);
         tbody.appendChild(tr);
       });
 
       const notesContainer = document.getElementById('notesContainer');
       notesContainer.innerHTML = '';
-      notes.forEach(n => {
+      notes.filter(n => n.statut === 'DIFFUSEE' || n.statut === 'ARCHIVEE').forEach(n => {
         const d = document.createElement('div');
         d.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm';
         d.innerHTML = `
-          <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${n.service}</span>
-          <h3 class="font-bold text-sm text-slate-900 mt-1">${n.libelle}</h3>
-          <p class="text-xs text-slate-500 mt-1">Publié le ${n.date} par ${n.emetteur}</p>
+          <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${escapeHtml(n.service)}</span>
+          <h3 class="font-bold text-sm text-slate-900 mt-1">${escapeHtml(n.libelle)}</h3>
+          <p class="text-xs text-slate-500 mt-1">Publié le ${escapeHtml(n.date)} par ${escapeHtml(n.emetteur)}</p>
         `;
         notesContainer.appendChild(d);
       });
+    }
+
+    async function rafraichirVue() {
+      await loadData();
+      renderDashboard();
     }
 
     function showTab(name) {
@@ -354,33 +373,61 @@
 
     async function submitPermission(e) {
       e.preventDefault();
-      const res = await API.submitPermission({
-        typePerm: document.getElementById('permType').value,
-        motif: document.getElementById('permMotif').value,
-        dateDebut: document.getElementById('permStart').value,
-        dateFin: document.getElementById('permEnd').value,
-        jours: parseInt(document.getElementById('permJours').value, 10) || 1,
-        piece: 'Justificatif.pdf'
-      });
+      const data = new FormData();
+      data.append('typePerm', document.getElementById('permType').value);
+      data.append('motif', document.getElementById('permMotif').value);
+      data.append('dateDebut', document.getElementById('permStart').value);
+      data.append('dateFin', document.getElementById('permEnd').value);
+      data.append('jours', parseInt(document.getElementById('permJours').value, 10) || 1);
+      const piece = document.getElementById('permFile').files[0];
+      if (piece) data.append('piece', piece);
+      const res = await API.submitPermission(data);
       if (res.status === 'success') {
         alert('Demande soumise sous la référence : ' + res.code + ' (' + res.jours + ' jour(s))');
         await loadData(); renderDashboard(); showTab('dashboard');
+      } else {
+        alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
       }
     }
 
     async function submitNaissance(e) {
       e.preventDefault();
-      const res = await API.submitDeclaration({ nature: 'NAISSANCE', nom: document.getElementById('naissNom').value, prenom: document.getElementById('naissPrenom').value, date: document.getElementById('naissDate').value });
-      if (res.status === 'success') { alert('Déclaration enregistrée : ' + res.code); await loadData(); renderDashboard(); showTab('dashboard'); }
+      const data = new FormData();
+      data.append('nature', 'NAISSANCE');
+      data.append('nom', document.getElementById('naissNom').value);
+      data.append('prenom', document.getElementById('naissPrenom').value);
+      data.append('date', document.getElementById('naissDate').value);
+      data.append('lieu', document.getElementById('naissLieu').value);
+      data.append('extrait', document.getElementById('naissFile').files[0]);
+      const res = await API.submitDeclaration(data);
+      if (res.status === 'success') {
+        alert('Déclaration de naissance transmise sous la référence ' + res.code + '. Le dossier est transmis au Gestionnaire RH pour vérification.');
+        await loadData(); renderDashboard(); showTab('dashboard');
+      } else {
+        alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
+      }
     }
 
     async function submitDeces(e) {
       e.preventDefault();
-      const res = await API.submitDeclaration({ nature: 'DECES', nom: document.getElementById('decesNom').value, prenom: document.getElementById('decesPrenom').value, date: document.getElementById('decesDate').value });
-      if (res.status === 'success') { alert('Déclaration enregistrée : ' + res.code); await loadData(); renderDashboard(); showTab('dashboard'); }
+      const data = new FormData();
+      data.append('nature', 'DECES');
+      data.append('nom', document.getElementById('decesNom').value);
+      data.append('prenom', document.getElementById('decesPrenom').value);
+      data.append('lien_parente', document.getElementById('decesLien').value);
+      data.append('date', document.getElementById('decesDate').value);
+      data.append('lieu', document.getElementById('decesLieu').value);
+      data.append('certificat', document.getElementById('decesFile').files[0]);
+      const res = await API.submitDeclaration(data);
+      if (res.status === 'success') {
+        alert('Déclaration de décès transmise sous la référence ' + res.code + '. Le dossier est transmis au Gestionnaire RH pour vérification.');
+        await loadData(); renderDashboard(); showTab('dashboard');
+      } else {
+        alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
+      }
     }
 
-    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }
 
     window.onload = init;
   </script>

@@ -96,6 +96,22 @@
       </div>
     </div>
 
+    <div id="actesSection" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+      <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Déclarations d'État Civil en Attente de Vérification</h2>
+          <p class="text-xs text-slate-500">Vérifiez uniquement la complétude des informations et la présence/validité des justificatifs. Transmettez à la DRH si conforme.</p>
+        </div>
+        <span id="actesCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+          0 déclaration en attente
+        </span>
+      </div>
+
+      <div id="actesContainer" class="space-y-4">
+        <!-- JS -->
+      </div>
+    </div>
+
     <div id="notifySection" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
       <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
         <div>
@@ -135,6 +151,7 @@
         document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Visa Directeur';
         document.getElementById('pendingSubTitle').textContent = 'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
         document.getElementById('notifySection').classList.add('hidden');
+        document.getElementById('actesSection').classList.add('hidden');
       } else if (user.role === 'SOUS_DIRECTEUR') {
         document.getElementById('roleLabel').textContent = 'Sous-Directeur';
         document.getElementById('headerSubTitle').textContent = 'Espace Sous-Direction · Visa Hiérarchique (≤ 2 jours)';
@@ -143,19 +160,22 @@
         document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Visa Sous-Directeur';
         document.getElementById('pendingSubTitle').textContent = 'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
         document.getElementById('notifySection').classList.add('hidden');
+        document.getElementById('actesSection').classList.add('hidden');
       } else {
         document.getElementById('roleLabel').textContent = 'Gestionnaire RH';
         document.getElementById('headerSubTitle').textContent = 'Espace Gestionnaire RH · Contrôle des dossiers & Notifications';
         document.getElementById('tabButton').textContent = 'Vérification Gestionnaire RH';
         document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-orange-600 text-white';
-        document.getElementById('pendingTitle').textContent = 'Dossiers en Attente de Contrôle RH';
+        document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Contrôle RH';
         document.getElementById('pendingSubTitle').textContent = 'Vérifiez la conformité. Pour ≤ 2 jours, transmettez à la Direction (visa). Pour > 2 jours, transmettez directement au DRH.';
         document.getElementById('notifySection').classList.remove('hidden');
+        document.getElementById('actesSection').classList.remove('hidden');
       }
       document.getElementById('navName').textContent = user.name;
       loadAvatar();
       await loadData();
       renderValidation();
+      renderActes();
       renderNotify();
     }
 
@@ -213,7 +233,7 @@
       let pending = [];
       if (user.role === 'RESPONSABLE') {
         // Gestionnaire RH : demandes en attente de sa vérification
-        pending = requests.filter(r => r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH');
+        pending = requests.filter(r => r.nature === 'DEMANDE_PERMISSION' && r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH');
       } else if (user.role === 'DIRECTEUR') {
         pending = requests.filter(r => r.etape === 'EN_ATTENTE_VISA_DIRECTEUR');
       } else if (user.role === 'SOUS_DIRECTEUR') {
@@ -240,7 +260,7 @@
         let circuitInfo = '';
         if (user.role === 'RESPONSABLE') {
           if (circuitCourt) {
-            circuitInfo = `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2 py-1 rounded font-bold">≤ 2 jours → Visa Direction requis avant DRH</span>`;
+            circuitInfo = `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2 py-1 rounded font-bold">≤ 2 jours → Visa du Sous-Directeur ou du Directeur (à choisir) avant DRH</span>`;
           } else {
             circuitInfo = `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2 py-1 rounded font-bold">> 2 jours → Transmission directe au DRH</span>`;
           }
@@ -248,19 +268,13 @@
 
         // Boutons selon le rôle
         let boutons = '';
-        const btnRejet = (label) => `<button onclick="giveAvis('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">${label}</button>`;
+        const btnRejet = (label) => `<button onclick="giveAvis('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">${label}</button>`;
 
         if (user.role === 'RESPONSABLE') {
-          const labelOk = circuitCourt
-            ? 'Conforme — Transmettre au Directeur/Sous-Directeur'
-            : 'Conforme — Transmettre directement au DRH';
-          boutons = btnRejet('Dossier non conforme — Rejeter') + `
-            <button onclick="giveAvis('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-              ${labelOk}
-            </button>`;
+          boutons = boutonsGestionnaire(r);
         } else if (user.role === 'DIRECTEUR' || user.role === 'SOUS_DIRECTEUR') {
           boutons = btnRejet('Refuser le visa') + `
-            <button onclick="giveAvis('${r.id}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="giveAvis('${escapeHtml(r.id)}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Accorder mon visa — Transmettre au DRH
             </button>`;
         }
@@ -268,16 +282,17 @@
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-orange-600 font-bold">${r.id} - ${r.nature}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-              <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
-              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+              <span class="font-mono text-xs text-orange-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
+              <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
               <p class="text-xs text-slate-500">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong></p>
-              <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              <p class="text-xs text-slate-600">Motif : ${escapeHtml(r.motif)}</p>
+              <p class="text-xs text-slate-600">Justificatif : ${user.role === 'RESPONSABLE' ? pieceHtml(r) : escapeHtml(r.piece)}</p>
               ${circuitInfo}
             </div>
           </div>
-          <div class="flex justify-end space-x-3 pt-3 border-t border-orange-200">
+          <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-orange-200">
             ${boutons}
           </div>
         `;
@@ -285,8 +300,21 @@
       });
     }
 
+    async function rafraichirVue() {
+      await loadData();
+      renderValidation();
+      renderActes();
+      renderNotify();
+    }
+
     async function giveAvis(id, statut) {
-      const res = await API.updateStatus(id, statut);
+      let motif = null;
+      if (statut === 'REJETEE') {
+        motif = prompt('Motif du rejet (obligatoire) :');
+        if (!motif || !motif.trim()) { alert('Le motif est obligatoire pour rejeter un dossier.'); return; }
+        motif = motif.trim();
+      }
+      const res = await API.updateStatus(id, statut, motif);
       if (res.status === 'success') {
         const msg = statut === 'EN_ATTENTE_RH' ? 'Avis favorable accordé. Dossier transmis pour visa puis au DRH.' : 'Dossier rejeté.';
         alert(msg);
@@ -317,16 +345,16 @@
         div.innerHTML = `
           <div class="flex justify-between items-start">
             <div class="space-y-1">
-              <span class="font-mono text-xs font-bold">${r.id} - ${r.nature}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''} (${r.jours || '?'} jour(s))</strong></p>
+              <span class="font-mono text-xs font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')} (${escapeHtml(r.jours || '?')} jour(s))</strong></p>
             </div>
             <span class="text-xs px-3 py-1 rounded-full font-bold ${ok ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}">
-              DRH : ${r.statut}
+              DRH : ${escapeHtml(r.statut)}
             </span>
           </div>
           <div class="flex justify-end pt-3 border-t border-slate-200">
-            <button onclick="notifierAgent('${r.id}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="notifierAgent('${escapeHtml(r.id)}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
               Notifier l'agent
             </button>
           </div>
@@ -335,19 +363,100 @@
       });
     }
 
+    function renderActes() {
+      if (user.role !== 'RESPONSABLE') return;
+      const pending = requests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH' || r.statut === 'EN_ATTENTE_SERVICE'));
+      const countEl = document.getElementById('actesCount');
+      if (countEl) countEl.textContent = pending.length + ' déclaration' + (pending.length > 1 ? 's' : '') + ' en attente';
+      const container = document.getElementById('actesContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!pending.length) {
+        container.innerHTML = `<div class="text-center py-6 text-slate-500 italic text-sm">Aucune déclaration d'état civil en attente de vérification.</div>`;
+        return;
+      }
+      pending.forEach(r => {
+        const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
+        const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
+        const detail = isNaissance ? ('Enfant : ' + (r.nomChild || '')) : ('Défunt : ' + (r.nomDefunt || ''));
+        const div = document.createElement('div');
+        div.className = 'border border-teal-200 rounded-xl p-5 bg-teal-50 space-y-4';
+        div.innerHTML = `
+          <div class="flex justify-between items-start flex-wrap gap-2">
+            <div class="space-y-1">
+              <span class="font-mono text-xs text-teal-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p class="text-xs text-slate-700">${escapeHtml(detail)}</p>
+              <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong> ${r.lieu ? 'à ' + escapeHtml(r.lieu) : ''}</p>
+              <p class="text-xs text-slate-600">Justificatif scanné : ${pieceHtml(r)}</p>
+              <div class="mt-2">
+                <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                  Circuit : Agent → Gestionnaire RH → DRH → Agent
+                </span>
+              </div>
+            </div>
+            <span class="bg-teal-200 text-teal-900 text-xs px-3 py-1 rounded-full font-bold">
+              En Attente Vérification RH
+            </span>
+          </div>
+          <div class="flex justify-end space-x-3 pt-3 border-t border-teal-200">
+            <button onclick="retournerActe('${escapeHtml(r.id)}')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+              Dossier Incomplet (Retourner)
+            </button>
+            <button onclick="transmettreActeDRH('${escapeHtml(r.id)}')" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg shadow">
+              Vérifié Conforme — Transmettre à la DRH
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function retournerActe(id) {
+      const motif = prompt("Motif de retour du dossier pour correction (informations ou justificatif manquant) :");
+      if (!motif || !motif.trim()) {
+        alert("Le motif est obligatoire pour retourner un dossier.");
+        return;
+      }
+      const res = await API.updateStatus(id, 'REJETEE', motif.trim());
+      if (res.status === 'success') {
+        alert("Dossier retourné à l'agent avec motif.");
+        await loadData();
+        renderValidation();
+        renderActes();
+        renderNotify();
+      } else {
+        alert("Erreur : " + (res.message || "impossible de retourner le dossier"));
+      }
+    }
+
+    async function transmettreActeDRH(id) {
+      const res = await API.updateStatus(id, 'EN_ATTENTE_RH');
+      if (res.status === 'success') {
+        alert("Dossier vérifié conforme et transmis à la DRH.");
+        await loadData();
+        renderValidation();
+        renderActes();
+        renderNotify();
+      } else {
+        alert("Erreur : " + (res.message || "impossible de transmettre"));
+      }
+    }
+
     async function notifierAgent(id) {
       const res = await API.notifierAgent(id);
       if (res.status === 'success') {
         alert("Agent notifié de la décision du DRH.");
         await loadData();
         renderValidation();
+        renderActes();
         renderNotify();
       } else {
         alert('Erreur : ' + (res.message || 'notification impossible'));
       }
     }
 
-    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }
 
     window.onload = init;
   </script>

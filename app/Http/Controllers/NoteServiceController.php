@@ -6,20 +6,14 @@ use App\Models\NoteService;
 use App\Services\NoteWorkflowService;
 use App\Services\PieceService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class NoteServiceController extends Controller
 {
     /** Consultation : agents destinataires (diffusées/archivées), émetteur, admin, secrétaire. */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $query = NoteService::with(['structures', 'signataire'])->latest();
-
-        $interne = $user->hasRole('ROLE_ADMIN_DSI', 'ROLE_DRH', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR', 'ROLE_SECRETAIRE');
-        if (! $interne) {
-            $query->whereIn('statut', [NoteService::DIFFUSEE, NoteService::ARCHIVEE])
-                ->whereHas('structures', fn ($q) => $q->where('structures.id', $user->agent->structure_id));
-        }
+        $query = NoteWorkflowService::visiblesPour($request->user())->with(['structures', 'signataire'])->latest();
 
         if ($request->expectsJson()) {
             return response()->json(['status' => 'success', 'data' => $query->paginate(20)]);
@@ -28,8 +22,13 @@ class NoteServiceController extends Controller
         return view('notes.index', ['notes' => $query->paginate(20)]);
     }
 
-    public function show(NoteService $note)
+    public function show(Request $request, NoteService $note)
     {
+        abort_unless(
+            NoteWorkflowService::visiblesPour($request->user())->whereKey($note->id)->exists(),
+            403, 'Accès non autorisé à cette note.'
+        );
+
         $note->load(['structures', 'signataire', 'historique']);
 
         return response()->json(['status' => 'success', 'data' => $note]);
@@ -70,11 +69,13 @@ class NoteServiceController extends Controller
     {
         $data = $request->validate([
             'contenu' => ['nullable', 'string', 'min:5'],
-            'numero_reference' => ['nullable', 'string', 'max:80'],
+            'numero_reference' => ['nullable', 'string', 'max:80', Rule::unique('notes_service', 'numero_reference')->ignore($note->id)],
             'structure_ids' => ['nullable', 'array'],
             'structure_ids.*' => ['exists:structures,id'],
             'fichier' => ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO],
         ]);
+
+        NoteWorkflowService::exigerSaisissable($note);
 
         if ($request->hasFile('fichier')) {
             $piece = PieceService::deposer($request->file('fichier'), 'note', $note->id, $note->numero_reference, $request->user()->agent);

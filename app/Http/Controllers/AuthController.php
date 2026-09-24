@@ -6,7 +6,9 @@ use App\Models\Agent;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -21,16 +23,19 @@ class AuthController extends Controller
             ->where('matricule', strtoupper(trim($data['matricule'])))->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            return response()->json(['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'], 401);
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'], 401);
+            }
+
+            return back()->withErrors(['matricule' => 'Matricule ou mot de passe incorrect.'])->onlyInput('matricule');
         }
 
         $user->update(['derniere_connexion' => now()]);
-        $token = $user->createToken('gfp')->plainTextToken;
 
         if ($request->expectsJson()) {
             return response()->json([
                 'status' => 'success',
-                'token' => $token,
+                'token' => $user->createToken('gfp')->plainTextToken,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -42,7 +47,9 @@ class AuthController extends Controller
             ]);
         }
 
-        session(['gfp_token' => $token]);
+        // Formulaire Blade : session web (le jeton Sanctum n'est jamais renvoyé par le navigateur).
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
     }
@@ -83,8 +90,17 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()?->currentAccessToken()?->delete();
-        session()->forget('gfp_token');
+        // Une session web porte un TransientToken, qui n'est pas supprimable.
+        $token = $request->user()?->currentAccessToken();
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         if ($request->expectsJson()) {
             return response()->json(['status' => 'success']);

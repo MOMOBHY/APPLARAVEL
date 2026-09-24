@@ -37,8 +37,14 @@ class PermissionController extends Controller
         return view('permissions.index', ['demandes' => $query->paginate(20)]);
     }
 
-    public function show(DemandePermission $permission)
+    public function show(Request $request, DemandePermission $permission)
     {
+        $user = $request->user();
+        abort_unless(
+            $permission->agent_id === $user->agent_id || $user->hasRole(...PermissionWorkflowService::ROLES_SUIVI),
+            403, 'Accès non autorisé à cette demande.'
+        );
+
         $permission->load(['agent.structure', 'type', 'historique']);
 
         return response()->json(['status' => 'success', 'data' => $permission]);
@@ -88,6 +94,8 @@ class PermissionController extends Controller
             'piece' => ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO],
         ]);
 
+        PermissionWorkflowService::exigerCorrigeable($permission, $request->user()->agent);
+
         if ($request->hasFile('piece')) {
             $piece = PieceService::deposer($request->file('piece'), 'permission', $permission->id, $permission->code_dossier, $request->user()->agent);
             $data['piece_path'] = $piece->chemin_stockage;
@@ -98,16 +106,17 @@ class PermissionController extends Controller
         return response()->json(['status' => 'success', 'data' => $demande]);
     }
 
-    /** Gestionnaire RH : conforme | rejeter | corriger (retour correction). */
+    /** Gestionnaire RH : conforme (visa SOUS_DIRECTEUR ou DIRECTEUR au choix si ≤ 2 j) | rejeter | corriger (retour correction). */
     public function verifier(Request $request, DemandePermission $permission)
     {
         $data = $request->validate([
             'decision' => ['required', 'in:conforme,rejeter,corriger'],
             'motif' => ['nullable', 'string', 'min:3'],
+            'visa' => ['nullable', 'in:SOUS_DIRECTEUR,DIRECTEUR'],
         ]);
 
         $demande = PermissionWorkflowService::verifierRh(
-            $permission, $request->user()->agent, $data['decision'], $data['motif'] ?? null
+            $permission, $request->user()->agent, $data['decision'], $data['motif'] ?? null, $data['visa'] ?? null
         );
 
         return response()->json(['status' => 'success', 'data' => $demande]);

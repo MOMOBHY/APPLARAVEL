@@ -11,8 +11,8 @@ use App\Http\Controllers\PieceController;
 use Illuminate\Support\Facades\Route;
 
 // Ancien contrat (frontend historique servi depuis /gfp).
-Route::post('/login', [LegacyApiController::class, 'login']);
-Route::post('/register', [LegacyApiController::class, 'register']);
+Route::post('/login', [LegacyApiController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/register', [LegacyApiController::class, 'register'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/naissances/{naissance}/soumettre', [NaissanceController::class, 'soumettre']);
     Route::post('/naissances/{naissance}/corriger', [NaissanceController::class, 'corriger']);
     Route::post('/naissances/{naissance}/controler', [NaissanceController::class, 'controler'])
-        ->middleware('role:ROLE_SERVICE_ADMINISTRATIF');
+        ->middleware('role:ROLE_GESTIONNAIRE_RH');
     Route::post('/naissances/{naissance}/valider', [NaissanceController::class, 'valider'])
         ->middleware('role:ROLE_DRH');
     Route::post('/naissances/{naissance}/archiver', [NaissanceController::class, 'archiver'])
@@ -65,7 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/deces/{deces}/soumettre', [DecesController::class, 'soumettre']);
     Route::post('/deces/{deces}/corriger', [DecesController::class, 'corriger']);
     Route::post('/deces/{deces}/controler', [DecesController::class, 'controler'])
-        ->middleware('role:ROLE_SERVICE_ADMINISTRATIF');
+        ->middleware('role:ROLE_GESTIONNAIRE_RH');
     Route::post('/deces/{deces}/valider', [DecesController::class, 'valider'])
         ->middleware('role:ROLE_DRH');
     Route::post('/deces/{deces}/archiver', [DecesController::class, 'archiver'])
@@ -73,11 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/notes/{note}', [NoteServiceController::class, 'show']);
     Route::post('/notes/{note}/transmettre', [NoteServiceController::class, 'transmettre'])
-        ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_CHEF_DE_SERVICE,ROLE_DIRECTEUR_CABINET');
+        ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
     Route::post('/notes/{note}/valider', [NoteServiceController::class, 'valider'])
-        ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_CHEF_DE_SERVICE,ROLE_DIRECTEUR_CABINET');
+        ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
     Route::post('/notes/{note}/refuser', [NoteServiceController::class, 'refuser'])
-        ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_CHEF_DE_SERVICE,ROLE_DIRECTEUR_CABINET');
+        ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
     Route::post('/notes/{note}/archiver', [NoteServiceController::class, 'archiver'])
         ->middleware('role:ROLE_SECRETAIRE,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
 

@@ -13,15 +13,21 @@ class NaissanceController extends Controller
     public function index(Request $request)
     {
         $query = DeclarationNaissance::with('agent')->latest();
-        if (! $request->user()->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH', 'ROLE_ADMIN_DSI')) {
+        if (! $request->user()->hasRole(...EtatCivilService::ROLES_SUIVI)) {
             $query->where('agent_id', $request->user()->agent_id);
         }
 
         return response()->json(['status' => 'success', 'data' => $query->paginate(20)]);
     }
 
-    public function show(DeclarationNaissance $naissance)
+    public function show(Request $request, DeclarationNaissance $naissance)
     {
+        $user = $request->user();
+        abort_unless(
+            $naissance->agent_id === $user->agent_id || $user->hasRole(...EtatCivilService::ROLES_SUIVI),
+            403, 'Accès non autorisé à cette déclaration.'
+        );
+
         $this->historique($naissance);
 
         return response()->json(['status' => 'success', 'data' => $naissance]);
@@ -74,6 +80,8 @@ class NaissanceController extends Controller
             'lieu_naissance_enfant' => ['nullable', 'string', 'max:255'],
             'extrait' => ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO],
         ]);
+
+        EtatCivilService::exigerCorrigeable($naissance, $request->user()->agent);
 
         $piecePath = null;
         if ($request->hasFile('extrait')) {

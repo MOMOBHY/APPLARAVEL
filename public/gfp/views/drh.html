@@ -248,22 +248,22 @@
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-blue-600 font-bold">${r.id}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-              <p class="text-xs text-slate-600">Type : <strong>${r.typePerm || r.motif || ''}</strong></p>
-              <p class="text-xs text-slate-600">Période : <strong>${r.dateDebut || ''} au ${r.dateFin || ''}</strong> — <strong>${jours} jour(s)</strong></p>
+              <span class="font-mono text-xs text-blue-600 font-bold">${escapeHtml(r.id)}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
+              <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
               <p class="text-xs text-slate-500 mt-1">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong></p>
-              <p class="text-xs text-slate-600">Pièce jointe : <span class="font-mono text-slate-500">${r.piece}</span></p>
+              <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
               <div class="mt-2">${circuitLabel}</div>
               <p class="text-xs text-blue-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
             </div>
             <span class="bg-blue-100 text-blue-800 border border-blue-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-blue-200">
-            <button onclick="decide('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Refuser la Permission
             </button>
-            <button onclick="decide('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Valider Définitivement
             </button>
           </div>
@@ -273,13 +273,13 @@
     }
 
     function renderEtatCivil() {
-      const pending = requests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.statut === 'EN_ATTENTE_SERVICE'));
+      const pending = requests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_RH'));
       document.getElementById('etatCivilCount').textContent = pending.length + ' acte' + (pending.length > 1 ? 's' : '');
       const container = document.getElementById('etatCivilContainer');
       container.innerHTML = '';
 
       if (!pending.length) {
-        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucun acte d'état civil en attente.</div>`;
+        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucun acte d'état civil en attente de décision finale.</div>`;
         return;
       }
 
@@ -294,22 +294,27 @@
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-${color}-600 font-bold">${r.id} - ${label}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${r.agentName} <span class="font-mono text-slate-500">(${r.matricule})</span></h3>
-              <p class="text-xs text-slate-600">${detail}</p>
-              <p class="text-xs text-slate-600">Date : <strong>${r.dateEvt || ''}</strong></p>
-              <p class="text-xs text-slate-600">Pièce scannée : <span class="font-mono text-slate-500">${r.piece}</span></p>
-              <p class="text-xs text-teal-700 italic">RG24 : Contrôle, validation et mise à jour du dossier statutaire de l'agent.</p>
+              <span class="font-mono text-xs text-${color}-600 font-bold">${escapeHtml(r.id)} - ${label}</span>
+              <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p class="text-xs text-slate-600">${escapeHtml(detail)}</p>
+              <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong></p>
+              <p class="text-xs text-slate-600">Pièce scannée : ${pieceHtml(r)}</p>
+              <div class="mt-2">
+                <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                  Circuit : Agent → Gestionnaire RH → DRH → Agent
+                </span>
+              </div>
+              <p class="text-xs text-teal-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
             </div>
             <span class="bg-teal-100 text-teal-800 border border-teal-300 text-xs px-3 py-1 rounded-full font-bold">
-              Contrôle & Validation DRH
+              Décision Finale DRH
             </span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-${color}-200">
-            <button onclick="decide('${r.id}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
-              Rejeter
+            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+              Rejeter la Déclaration
             </button>
-            <button onclick="decide('${r.id}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Enregistrer et Valider
             </button>
           </div>
@@ -330,11 +335,11 @@
         const badge = r.statut === 'VALIDEE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">${r.id}</td>
-          <td class="px-4 py-3">${r.matricule} - ${r.agentName}</td>
-          <td class="px-4 py-3 text-slate-600">${r.nature}</td>
-          <td class="px-4 py-3">${r.typePerm || r.motif || r.nomChild || r.nomDefunt || ''}</td>
-          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${r.statut}</span></td>
+          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(r.id)}</td>
+          <td class="px-4 py-3">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
+          <td class="px-4 py-3 text-slate-600">${escapeHtml(r.nature)}</td>
+          <td class="px-4 py-3">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${escapeHtml(r.statut)}</span></td>
         `;
         tbody.appendChild(tr);
       });
@@ -352,9 +357,18 @@
     }
 
     async function decide(id, statut) {
-      const res = await API.updateStatus(id, statut);
+      let motif = null;
+      if (statut === 'REJETEE') {
+        motif = prompt('Motif du rejet (obligatoire) :');
+        if (!motif || !motif.trim()) {
+          alert('Le motif est obligatoire pour rejeter un dossier.');
+          return;
+        }
+        motif = motif.trim();
+      }
+      const res = await API.updateStatus(id, statut, motif);
       if (res.status === 'success') {
-        alert(statut === 'VALIDEE' ? 'Dossier validé définitivement.' : 'Dossier rejeté.');
+        alert(statut === 'VALIDEE' ? 'Dossier validé et dossier statutaire mis à jour.' : 'Dossier rejeté avec motif.');
         await loadData();
         renderAll();
       } else {
@@ -362,7 +376,7 @@
       }
     }
 
-    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }
 
     window.onload = init;
   </script>

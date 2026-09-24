@@ -317,10 +317,10 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">${u.matricule}</td>
-          <td class="px-4 py-3 font-medium">${u.civilite} ${u.nom} ${u.prenom}</td>
+          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(u.matricule)}</td>
+          <td class="px-4 py-3 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}</td>
           <td class="px-4 py-3">
-            <select id="role_${u.matricule}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-40">
+            <select id="role_${escapeHtml(u.matricule)}" data-initial="${roleSimple}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-40">
               <option value="AGENT" ${roleSimple === 'AGENT' ? 'selected' : ''}>Agent</option>
               <option value="RESPONSABLE" ${roleSimple === 'RESPONSABLE' ? 'selected' : ''}>Gestionnaire RH</option>
               <option value="DRH" ${roleSimple === 'DRH' ? 'selected' : ''}>DRH</option>
@@ -328,12 +328,12 @@
             </select>
             <div class="mt-1"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${roleBadge}">${roleSimple}</span></div>
           </td>
-          <td class="px-4 py-3 text-slate-600">${u.structure}</td>
+          <td class="px-4 py-3 text-slate-600">${escapeHtml(u.structure)}</td>
           <td class="px-4 py-3">
-            <input type="text" id="pass_${u.matricule}" value="${u.password}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono">
+            <input type="text" id="pass_${escapeHtml(u.matricule)}" value="${escapeHtml(u.password)}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono">
           </td>
           <td class="px-4 py-3 text-center space-y-2">
-            <button onclick="saveUserChanges('${u.matricule}')" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
+            <button data-mat="${escapeHtml(u.matricule)}" onclick="saveUserChanges(this.dataset.mat)" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
               Enregistrer
             </button>
           </td>
@@ -347,9 +347,11 @@
       if (!u) return;
 
       const newPass = document.getElementById('pass_' + mat).value.trim();
-      const newRole = document.getElementById('role_' + mat).value;
+      const select = document.getElementById('role_' + mat);
 
-      const payload = { ...u, password: newPass || u.password, role: newRole };
+      const payload = { matricule: mat };
+      if (newPass) payload.password = newPass;
+      if (select.value !== select.dataset.initial) payload.role = select.value;
       const res = await API.updateUser(payload);
       if (res.status === 'success') {
         alert('Rôle et mot de passe mis à jour pour ' + mat);
@@ -407,12 +409,12 @@
       results.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-2 font-mono font-bold">${r.id}</td>
-          <td class="px-4 py-2">${r.matricule} - ${r.agentName}</td>
-          <td class="px-4 py-2 text-slate-600">${r.nature}</td>
-          <td class="px-4 py-2">${r.typePerm || r.motif || r.nomChild || r.nomDefunt || ''}</td>
-          <td class="px-4 py-2 font-mono text-slate-500">${r.piece}</td>
-          <td class="px-4 py-2 font-bold">${r.statut}</td>
+          <td class="px-4 py-2 font-mono font-bold">${escapeHtml(r.id)}</td>
+          <td class="px-4 py-2">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
+          <td class="px-4 py-2 text-slate-600">${escapeHtml(r.nature)}</td>
+          <td class="px-4 py-2">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
+          <td class="px-4 py-2 font-mono text-slate-500">${escapeHtml(r.piece)}</td>
+          <td class="px-4 py-2 font-bold">${escapeHtml(r.statut)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -430,12 +432,12 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">NOTE-#${n.id}</td>
-          <td class="px-4 py-3 font-bold text-slate-900">${n.libelle}</td>
-          <td class="px-4 py-3 text-slate-600">${n.emetteur}</td>
-          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${n.service}</span></td>
-          <td class="px-4 py-3 text-xs text-slate-700 max-w-xs truncate" title="${agentList}">${agentList}</td>
-          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${n.date}</td>
+          <td class="px-4 py-3 font-mono font-bold">NOTE-#${escapeHtml(n.id)}</td>
+          <td class="px-4 py-3 font-bold text-slate-900">${escapeHtml(n.libelle)}</td>
+          <td class="px-4 py-3 text-slate-600">${escapeHtml(n.emetteur)}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${escapeHtml(n.service)}</span></td>
+          <td class="px-4 py-3 text-xs text-slate-700 max-w-xs truncate" title="${escapeHtml(agentList)}">${escapeHtml(agentList)}</td>
+          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${escapeHtml(n.date)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -451,6 +453,8 @@
         document.getElementById('noteTitle').value = '';
         await loadData();
         renderNotes();
+      } else {
+        alert('Publication impossible : ' + (res.message || 'action non autorisée.'));
       }
     }
 
@@ -465,7 +469,7 @@
       if (active) { active.classList.add('bg-purple-700','text-white'); active.classList.remove('text-slate-600'); }
     }
 
-    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }
 
     window.onload = init;
   </script>
