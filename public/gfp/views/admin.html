@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace Administrateur - Ministère de la Fonction Publique</title>
+  <title>Espace Administrateur - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -27,6 +27,7 @@
       z-index: 1;
     }
   </style>
+  <link rel="stylesheet" href="../assets/theme.css">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
 
@@ -43,7 +44,7 @@
       <div class="flex items-center space-x-3">
         <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
         <div>
-          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight max-w-md"><span class="hidden md:inline">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</span><span class="md:hidden" title="MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION">MFPMA</span></h1>
           <p class="text-xs text-slate-500">Panneau d'Administration du ministère</p>
         </div>
       </div>
@@ -51,7 +52,7 @@
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-full border border-slate-200">
           <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Changer la photo">
-            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-purple-600 shadow-sm">
+            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-emerald-700 shadow-sm">
             <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
               Changer
             </div>
@@ -59,7 +60,7 @@
           </div>
           <div class="text-left pr-2">
             <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
-            <p class="text-[11px] font-bold text-purple-700">Administrateur Système</p>
+            <p class="text-[11px] font-bold text-slate-700">Administrateur Système</p>
           </div>
         </div>
         <button onclick="logout()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
@@ -70,7 +71,7 @@
 
     <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
       <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-        <button onclick="showTab('users')" id="nav-users" class="px-3 py-2 rounded-md text-xs font-bold bg-purple-700 text-white">Gestion des Utilisateurs</button>
+        <button onclick="showTab('users')" id="nav-users" class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white">Gestion des Utilisateurs</button>
         <button onclick="showTab('search')" id="nav-search" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Consultation Globale</button>
         <button onclick="showTab('notes')" id="nav-notes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Notes de Service</button>
       </div>
@@ -81,20 +82,28 @@
 
     <!-- TAB : GESTION DES UTILISATEURS -->
     <div id="tab-users" class="space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-900">Mots de passe oubliés — demandes à autoriser</h2>
+          <span id="reinitCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">0</span>
+        </div>
+        <div id="reinitContainer" class="space-y-2"></div>
+      </div>
+
       <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
         <div class="flex justify-between items-center border-b border-slate-200 pb-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Gestion des Utilisateurs & Mots de Passe</h2>
             <p class="text-xs text-slate-500">Visualisez, créez, et modifiez les comptes agents du système.</p>
           </div>
-          <button onclick="toggleCreateForm()" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold shadow">
+          <button onclick="toggleCreateForm()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow">
             + Créer un Nouvel Agent
           </button>
         </div>
 
         <!-- FORMULAIRE CREATION -->
-        <div id="createForm" class="hidden bg-purple-50 p-4 border border-purple-200 rounded-xl">
-          <h3 class="font-bold text-sm text-slate-900 border-b border-purple-200 pb-2 mb-3">Nouveau Compte Agent</h3>
+        <div id="createForm" class="hidden bg-slate-50 p-4 border border-slate-200 rounded-xl">
+          <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2 mb-3">Nouveau Compte Agent</h3>
           <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule *</label>
@@ -127,7 +136,7 @@
             </div>
             <div class="md:col-span-3 flex justify-end space-x-2 pt-2">
               <button type="button" onclick="toggleCreateForm()" class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
-              <button type="submit" class="px-4 py-1.5 bg-purple-700 text-white font-bold text-xs rounded-lg shadow">Enregistrer</button>
+              <button type="submit" class="px-4 py-1.5 bg-emerald-700 text-white font-bold text-xs rounded-lg shadow">Enregistrer</button>
             </div>
           </form>
         </div>
@@ -262,6 +271,7 @@
       loadAvatar();
       await loadData();
       renderUsers();
+      await renderReinitialisations();
       filterSearch();
       renderNotes();
     }
@@ -310,9 +320,9 @@
 
         const roleBadge = {
           AGENT: 'bg-slate-100 text-slate-800',
-          RESPONSABLE: 'bg-orange-100 text-orange-800',
-          DRH: 'bg-blue-100 text-blue-800',
-          ADMINISTRATEUR: 'bg-purple-100 text-purple-800'
+          RESPONSABLE: 'bg-slate-100 text-slate-800',
+          DRH: 'bg-slate-100 text-slate-800',
+          ADMINISTRATEUR: 'bg-slate-100 text-slate-800'
         }[roleSimple] || 'bg-slate-100 text-slate-800';
 
         const tr = document.createElement('tr');
@@ -333,12 +343,37 @@
             <input type="text" id="pass_${escapeHtml(u.matricule)}" value="${escapeHtml(u.password)}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono">
           </td>
           <td class="px-4 py-3 text-center space-y-2">
-            <button data-mat="${escapeHtml(u.matricule)}" onclick="saveUserChanges(this.dataset.mat)" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
+            <button data-mat="${escapeHtml(u.matricule)}" onclick="saveUserChanges(this.dataset.mat)" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded shadow">
               Enregistrer
             </button>
           </td>
         `;
         tbody.appendChild(tr);
+      });
+    }
+
+    async function renderReinitialisations() {
+      const res = await API.getReinitialisations();
+      const demandes = res.status === 'success' ? res.demandes : [];
+      document.getElementById('reinitCount').textContent = demandes.length + ' en attente';
+      const container = document.getElementById('reinitContainer');
+      container.innerHTML = demandes.length ? '' : '<p class="text-xs text-slate-500 italic">Aucune demande en attente.</p>';
+      demandes.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'flex flex-wrap justify-between items-center gap-2 border border-slate-200 rounded-lg p-3 text-xs';
+        div.innerHTML = `
+          <div><span class="font-mono font-bold">${escapeHtml(d.matricule)}</span> — ${escapeHtml(d.nom)}
+            <span class="text-slate-500">(${escapeHtml(d.roles)}) · demandé le ${escapeHtml(d.date)}</span></div>
+          <div class="flex gap-2">
+            <button data-action="refuser" class="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded font-bold">Refuser</button>
+            <button data-action="autoriser" class="px-3 py-1 bg-emerald-700 text-white rounded font-bold">Autoriser</button>
+          </div>`;
+        div.querySelectorAll('button').forEach(btn => btn.onclick = async () => {
+          const r = await API.traiterReinitialisation(d.id, btn.dataset.action);
+          if (r.status !== 'success') alert('Action impossible : ' + (r.message || 'erreur inconnue.'));
+          await renderReinitialisations();
+        });
+        container.appendChild(div);
       });
     }
 
@@ -462,11 +497,11 @@
       ['users','search','notes'].forEach(t => {
         document.getElementById('tab-' + t).classList.add('hidden');
         const btn = document.getElementById('nav-' + t);
-        if (btn) { btn.classList.remove('bg-purple-700','text-white'); btn.classList.add('text-slate-600'); }
+        if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
       });
       document.getElementById('tab-' + name).classList.remove('hidden');
       const active = document.getElementById('nav-' + name);
-      if (active) { active.classList.add('bg-purple-700','text-white'); active.classList.remove('text-slate-600'); }
+      if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
     }
 
     async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }

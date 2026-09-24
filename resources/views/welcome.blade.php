@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GFP — Ministère de la Fonction Publique</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GFP — Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
 <script src="https://cdn.tailwindcss.com"></script></head>
 <body class="bg-slate-50 min-h-screen">
 <div class="h-2 flex"><div class="w-1/3 bg-orange-500"></div><div class="w-1/3 bg-white border-y"></div><div class="w-1/3 bg-emerald-600"></div></div>

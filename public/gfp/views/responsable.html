@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace Gestionnaire RH - Ministère de la Fonction Publique</title>
+  <title>Espace Gestionnaire RH - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -27,6 +27,7 @@
       z-index: 1;
     }
   </style>
+  <link rel="stylesheet" href="../assets/theme.css">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
 
@@ -43,7 +44,7 @@
       <div class="flex items-center space-x-3">
         <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
         <div>
-          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight max-w-md"><span class="hidden md:inline">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</span><span class="md:hidden" title="MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION">MFPMA</span></h1>
           <p class="text-xs text-slate-500" id="headerSubTitle">Espace Gestionnaire RH · Visa Direction</p>
         </div>
       </div>
@@ -51,7 +52,7 @@
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-full border border-slate-200">
           <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Changer la photo">
-            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-orange-500 shadow-sm">
+            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-emerald-700 shadow-sm">
             <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
               Changer
             </div>
@@ -59,7 +60,7 @@
           </div>
           <div class="text-left pr-2">
             <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
-            <p class="text-[11px] font-bold text-orange-600" id="roleLabel">Gestionnaire RH</p>
+            <p class="text-[11px] font-bold text-slate-600" id="roleLabel">Gestionnaire RH</p>
           </div>
         </div>
         <button onclick="voirNotifications()" title="Notifications" class="relative px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
@@ -73,7 +74,7 @@
 
     <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
       <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-        <button id="tabButton" class="px-3 py-2 rounded-md text-xs font-bold bg-orange-500 text-white">Vérification Gestionnaire RH</button>
+        <button id="tabButton" class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white">Vérification Gestionnaire RH</button>
       </div>
     </nav>
   </header>
@@ -86,7 +87,7 @@
           <h2 id="pendingTitle" class="text-base font-bold text-slate-900">Dossiers en Attente de Traitement</h2>
           <p id="pendingSubTitle" class="text-xs text-slate-500">Examinez chaque demande et accordez ou refusez votre avis.</p>
         </div>
-        <span id="pendingCount" class="px-3 py-1 bg-orange-100 text-orange-800 border border-orange-300 rounded-full text-xs font-bold">
+        <span id="pendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
           0 demande en attente
         </span>
       </div>
@@ -102,7 +103,7 @@
           <h2 class="text-base font-bold text-slate-900">Déclarations d'État Civil en Attente de Vérification</h2>
           <p class="text-xs text-slate-500">Vérifiez uniquement la complétude des informations et la présence/validité des justificatifs. Transmettez à la DRH si conforme.</p>
         </div>
-        <span id="actesCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+        <span id="actesCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
           0 déclaration en attente
         </span>
       </div>
@@ -118,7 +119,7 @@
           <h2 class="text-base font-bold text-slate-900">Décisions du DRH à Notifier aux Agents</h2>
           <p class="text-xs text-slate-500">Le DRH a tranché : notifiez l'agent de la décision (acceptation ou rejet motivé).</p>
         </div>
-        <span id="notifyCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+        <span id="notifyCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
           0 à notifier
         </span>
       </div>
@@ -147,7 +148,7 @@
         document.getElementById('roleLabel').textContent = 'Directeur Central';
         document.getElementById('headerSubTitle').textContent = 'Espace Direction Centrale · Visa Hiérarchique (≤ 2 jours)';
         document.getElementById('tabButton').textContent = 'Visa Directeur';
-        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-indigo-700 text-white';
+        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white';
         document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Visa Directeur';
         document.getElementById('pendingSubTitle').textContent = 'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
         document.getElementById('notifySection').classList.add('hidden');
@@ -156,7 +157,7 @@
         document.getElementById('roleLabel').textContent = 'Sous-Directeur';
         document.getElementById('headerSubTitle').textContent = 'Espace Sous-Direction · Visa Hiérarchique (≤ 2 jours)';
         document.getElementById('tabButton').textContent = 'Visa Sous-Directeur';
-        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-indigo-700 text-white';
+        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white';
         document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Visa Sous-Directeur';
         document.getElementById('pendingSubTitle').textContent = 'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
         document.getElementById('notifySection').classList.add('hidden');
@@ -165,7 +166,7 @@
         document.getElementById('roleLabel').textContent = 'Gestionnaire RH';
         document.getElementById('headerSubTitle').textContent = 'Espace Gestionnaire RH · Contrôle des dossiers & Notifications';
         document.getElementById('tabButton').textContent = 'Vérification Gestionnaire RH';
-        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-orange-600 text-white';
+        document.getElementById('tabButton').className = 'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white';
         document.getElementById('pendingTitle').textContent = 'Permissions en Attente de Contrôle RH';
         document.getElementById('pendingSubTitle').textContent = 'Vérifiez la conformité. Pour ≤ 2 jours, transmettez à la Direction (visa). Pour > 2 jours, transmettez directement au DRH.';
         document.getElementById('notifySection').classList.remove('hidden');
@@ -252,7 +253,7 @@
 
       pending.forEach(r => {
         const div = document.createElement('div');
-        div.className = 'border border-orange-200 rounded-xl p-5 bg-orange-50 space-y-4';
+        div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
         const jours = r.jours || 0;
         const circuitCourt = jours <= 2;
 
@@ -260,9 +261,9 @@
         let circuitInfo = '';
         if (user.role === 'RESPONSABLE') {
           if (circuitCourt) {
-            circuitInfo = `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2 py-1 rounded font-bold">≤ 2 jours → Visa du Sous-Directeur ou du Directeur (à choisir) avant DRH</span>`;
+            circuitInfo = `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2 py-1 rounded font-bold">≤ 2 jours → Visa du Sous-Directeur ou du Directeur (à choisir) avant DRH</span>`;
           } else {
-            circuitInfo = `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2 py-1 rounded font-bold">> 2 jours → Transmission directe au DRH</span>`;
+            circuitInfo = `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2 py-1 rounded font-bold">> 2 jours → Transmission directe au DRH</span>`;
           }
         }
 
@@ -282,7 +283,7 @@
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-orange-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+              <span class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
               <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
               <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
@@ -292,7 +293,7 @@
               ${circuitInfo}
             </div>
           </div>
-          <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-orange-200">
+          <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-200">
             ${boutons}
           </div>
         `;
@@ -354,7 +355,7 @@
             </span>
           </div>
           <div class="flex justify-end pt-3 border-t border-slate-200">
-            <button onclick="notifierAgent('${escapeHtml(r.id)}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="notifierAgent('${escapeHtml(r.id)}')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Notifier l'agent
             </button>
           </div>
@@ -380,30 +381,30 @@
         const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
         const detail = isNaissance ? ('Enfant : ' + (r.nomChild || '')) : ('Défunt : ' + (r.nomDefunt || ''));
         const div = document.createElement('div');
-        div.className = 'border border-teal-200 rounded-xl p-5 bg-teal-50 space-y-4';
+        div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-teal-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
+              <span class="font-mono text-xs text-slate-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
               <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p class="text-xs text-slate-700">${escapeHtml(detail)}</p>
               <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong> ${r.lieu ? 'à ' + escapeHtml(r.lieu) : ''}</p>
               <p class="text-xs text-slate-600">Justificatif scanné : ${pieceHtml(r)}</p>
               <div class="mt-2">
-                <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
                   Circuit : Agent → Gestionnaire RH → DRH → Agent
                 </span>
               </div>
             </div>
-            <span class="bg-teal-200 text-teal-900 text-xs px-3 py-1 rounded-full font-bold">
+            <span class="bg-slate-200 text-slate-900 text-xs px-3 py-1 rounded-full font-bold">
               En Attente Vérification RH
             </span>
           </div>
-          <div class="flex justify-end space-x-3 pt-3 border-t border-teal-200">
+          <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
             <button onclick="retournerActe('${escapeHtml(r.id)}')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Dossier Incomplet (Retourner)
             </button>
-            <button onclick="transmettreActeDRH('${escapeHtml(r.id)}')" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="transmettreActeDRH('${escapeHtml(r.id)}')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Vérifié Conforme — Transmettre à la DRH
             </button>
           </div>

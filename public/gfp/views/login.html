@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connexion - Ministère de la Fonction Publique</title>
+  <title>Connexion - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -27,6 +27,7 @@
       z-index: 1;
     }
   </style>
+  <link rel="stylesheet" href="../assets/theme.css">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
 
@@ -44,35 +45,23 @@
         <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
         <div>
           <h1 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</h1>
-          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE</h2>
+          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</h2>
           <p class="text-xs text-slate-600">Secrétariat général</p>
         </div>
-        <div class="h-0.5 w-16 bg-orange-500 mx-auto rounded-full"></div>
+        <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
         <p class="text-xs text-slate-500 font-medium">Plateforme Web de Gestion des Services Administratifs</p>
       </div>
 
       <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Profil d'Accès *</label>
-          <select id="loginRole" onchange="autoFill()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-emerald-600">
-            <option value="AGENT">Agent Fonctionnaire</option>
-            <option value="RESPONSABLE">Gestionnaire RH</option>
-            <option value="SOUS_DIRECTEUR">Sous-Directeur</option>
-            <option value="DIRECTEUR">Directeur</option>
-            <option value="DRH">DRH</option>
-            <option value="ADMINISTRATEUR">Administrateur Système</option>
-          </select>
-        </div>
-
-        <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule Agent *</label>
-          <input type="text" id="loginMat" value="000001X" required
+          <input type="text" id="loginMat" required placeholder="Votre matricule"
             class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:bg-white focus:ring-2 focus:ring-emerald-600">
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
-          <input type="password" id="loginPass" value="test123" required
+          <input type="password" id="loginPass" required
             class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
         </div>
 
@@ -82,6 +71,15 @@
           Se Connecter à l'Espace Intranet
         </button>
       </form>
+      <a href="../mot-de-passe-oublie.html" class="block text-center text-xs font-bold text-emerald-700 hover:text-emerald-900 mt-3">Mot de passe oublié ?</a>
+
+      <div class="border-t border-slate-200 pt-5 mt-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900">Nouveau sur la plateforme ?</h3>
+          <p class="text-xs text-slate-500 mt-1">Inscrivez-vous en choisissant votre rôle.</p>
+        </div>
+        <a href="../inscription.html" class="shrink-0 px-3 py-2 border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold">Créer un compte</a>
+      </div>
 
 
     </div>
@@ -89,36 +87,26 @@
 
   <script src="../js/api.js"></script>
   <script>
-    const ROLES_DEFAULTS = {
-      "AGENT":          { mat: "000001X" },
-      "RESPONSABLE":    { mat: "000002A" },
-      "SOUS_DIRECTEUR": { mat: "SD001" },
-      "DIRECTEUR":      { mat: "DIR001" },
-      "DRH":            { mat: "000003B" },
-      "ADMINISTRATEUR": { mat: "000004Z" }
-    };
-
     const ROLE_REDIRECT = {
       "AGENT":          "agent.html",
       "RESPONSABLE":    "responsable.html",
       "SOUS_DIRECTEUR": "responsable.html",
       "DIRECTEUR":      "responsable.html",
       "DRH":            "drh.html",
-      "ADMINISTRATEUR": "admin.html"
+      "ADMINISTRATEUR": "admin.html",
+      // Profils sans page dédiée ici : espace complet de la page d'accueil.
+      "SECRETAIRE":     "../index.html",
+      "DIRCAB":         "../index.html",
+      "CHEF_SERVICE":   "../index.html",
+      "SERVICE":        "../index.html"
     };
-
-    function autoFill() {
-      const role = document.getElementById('loginRole').value;
-      document.getElementById('loginMat').value = ROLES_DEFAULTS[role].mat;
-    }
 
     async function handleLogin(e) {
       e.preventDefault();
       const mat  = document.getElementById('loginMat').value.trim();
-      const role = document.getElementById('loginRole').value;
       const pwd  = document.getElementById('loginPass').value.trim();
 
-      const res = await API.login(mat, role, pwd);
+      const res = await API.login(mat, '', pwd); // profil déduit des rôles du compte
       if (res.status === 'success') {
         sessionStorage.setItem('currentUser', JSON.stringify(res.user));
         window.location.href = ROLE_REDIRECT[res.user.role] || 'agent.html';

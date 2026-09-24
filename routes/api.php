@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DecesController;
 use App\Http\Controllers\LegacyApiController;
+use App\Http\Controllers\MotDePasseController;
 use App\Http\Controllers\NaissanceController;
 use App\Http\Controllers\NoteServiceController;
 use App\Http\Controllers\PermissionController;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 // Ancien contrat (frontend historique servi depuis /gfp).
 Route::post('/login', [LegacyApiController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/register', [LegacyApiController::class, 'register'])->middleware('throttle:10,1');
+Route::get('/structures', [LegacyApiController::class, 'structures']);
+Route::post('/mot-de-passe/demande', [MotDePasseController::class, 'demander'])->middleware('throttle:10,1');
+Route::post('/mot-de-passe/reinitialiser', [MotDePasseController::class, 'reinitialiser'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -25,7 +29,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/status', [LegacyApiController::class, 'updateStatus']);
     Route::get('/notes', [LegacyApiController::class, 'notes']);
     Route::post('/notes', [LegacyApiController::class, 'storeNote']);
-    Route::get('/structures', [LegacyApiController::class, 'structures']);
     Route::get('/roles', [LegacyApiController::class, 'roles']);
     Route::get('/users', [LegacyApiController::class, 'users'])->middleware('role:ROLE_ADMIN_DSI');
     Route::post('/users', [LegacyApiController::class, 'storeUser'])->middleware('role:ROLE_ADMIN_DSI');
@@ -91,5 +94,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ROLE_ADMIN_DSI,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
 
     Route::get('/admin/users', [AdminController::class, 'users'])->middleware('role:ROLE_ADMIN_DSI');
+    Route::get('/admin/reinitialisations', [MotDePasseController::class, 'index'])->middleware('role:ROLE_ADMIN_DSI');
+    Route::post('/admin/reinitialisations/{demande}/autoriser', [MotDePasseController::class, 'autoriser'])->middleware('role:ROLE_ADMIN_DSI');
+    Route::post('/admin/reinitialisations/{demande}/refuser', [MotDePasseController::class, 'refuser'])->middleware('role:ROLE_ADMIN_DSI');
     Route::get('/admin/search', [AdminController::class, 'search'])->middleware('role:ROLE_ADMIN_DSI,ROLE_DRH');
 });

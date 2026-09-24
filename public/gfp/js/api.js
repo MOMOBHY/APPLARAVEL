@@ -91,6 +91,29 @@ const API = {
     }
   },
 
+  // Mot de passe oublié (public) et autorisation par l'administrateur.
+  async demanderReinitialisation(matricule) {
+    try { return await postJson(`${API_BASE_URL}/mot-de-passe/demande`, { matricule }); }
+    catch (e) { return { status: 'error', message: 'Erreur réseau' }; }
+  },
+
+  async reinitialiserMotDePasse(payload) {
+    try { return await postJson(`${API_BASE_URL}/mot-de-passe/reinitialiser`, payload); }
+    catch (e) { return { status: 'error', message: 'Erreur réseau' }; }
+  },
+
+  async getReinitialisations() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/reinitialisations`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) { return { status: 'error', demandes: [] }; }
+  },
+
+  async traiterReinitialisation(id, action) {
+    try { return await postJson(`${API_BASE_URL}/admin/reinitialisations/${id}/${action}`, {}); }
+    catch (e) { return { status: 'error', message: 'Erreur réseau' }; }
+  },
+
   // Gestion des Demandes et Actes
   async getRequests() {
     try {
@@ -281,28 +304,6 @@ const API = {
   }
 };
 
-// Fond d'écran du ministère, flouté, sur toutes les pages (api.js est chargé partout).
-(function () {
-  // document.currentScript n'existe que pendant l'exécution initiale du script.
-  var scriptSrc = (document.currentScript && document.currentScript.src) || '';
-  function appliquerFond() {
-    try {
-      var src = scriptSrc;
-      var base = src ? src.slice(0, src.lastIndexOf('/js/api.js')) : '';
-      var url = (base ? base : '.') + '/assets/ministere_bg.png';
-      document.body.style.backgroundImage = "linear-gradient(rgba(241, 245, 249, 0.48), rgba(241, 245, 249, 0.48)), url('" + url + "')";
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-      document.body.style.backgroundAttachment = 'fixed';
-      document.body.style.backgroundRepeat = 'no-repeat';
-    } catch (e) { /* fond optionnel */ }
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', appliquerFond);
-  } else {
-    appliquerFond();
-  }
-})();
 
 // -----------------------------------------------------------
 // Composants partagés (justificatif, correction d'un dossier retourné)
@@ -336,11 +337,11 @@ async function actionGestionnaire(dossierId, decision, visa = null) {
 function boutonsGestionnaire(r) {
   const btn = (classes, action, label) => `<button onclick="actionGestionnaire(${Number(r.dossier_id)}, ${action}).then(ok => ok && rafraichirVue())" class="px-3 py-2 ${classes} text-xs font-bold rounded-lg">${label}</button>`;
   const transmission = (r.jours || 1) <= 2
-    ? btn('bg-indigo-700 hover:bg-indigo-800 text-white shadow', "'conforme', 'SOUS_DIRECTEUR'", 'Transmettre au Sous-Directeur')
+    ? btn('bg-emerald-700 hover:bg-emerald-800 text-white shadow', "'conforme', 'SOUS_DIRECTEUR'", 'Transmettre au Sous-Directeur')
       + btn('bg-emerald-700 hover:bg-emerald-800 text-white shadow', "'conforme', 'DIRECTEUR'", 'Transmettre au Directeur')
     : btn('bg-emerald-700 hover:bg-emerald-800 text-white shadow', "'conforme'", 'Conforme — Transmettre au DRH');
   return btn('bg-red-100 text-red-700 hover:bg-red-200 border border-red-300', "'rejeter'", 'Rejeter')
-    + btn('bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300', "'corriger'", 'Retourner pour correction')
+    + btn('bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300', "'corriger'", 'Retourner pour correction')
     + transmission;
 }
 

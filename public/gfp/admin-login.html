@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Accès Administration - Ministère de la Fonction Publique</title>
+  <title>Accès Administration - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="GFP Admin">
   <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#6b21a8">
+  <meta name="theme-color" content="#047857">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -50,6 +50,7 @@
     }
     button, input, a { touch-action: manipulation; }
   </style>
+  <link rel="stylesheet" href="assets/theme.css">
 </head>
 <body class="bg-slate-100 text-slate-900 antialiased min-h-full flex flex-col font-sans">
   <div class="h-2 w-full flex" style="position:relative;z-index:10;">
@@ -63,25 +64,25 @@
       <div class="text-center space-y-3 mb-8">
         <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
         <p class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</p>
-        <h1 class="text-lg font-extrabold text-purple-800 uppercase">Administration système</h1>
+        <h1 class="text-lg font-extrabold text-slate-800 uppercase">Administration système</h1>
         <p class="text-xs text-slate-500">Accès réservé aux administrateurs autorisés</p>
-        <div class="h-0.5 w-16 bg-purple-600 mx-auto rounded-full"></div>
+        <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
       </div>
 
       <form onsubmit="handleAdminLogin(event)" class="space-y-4">
         <div>
           <label for="adminIdentifier" class="block text-xs font-bold text-slate-700 uppercase mb-1">Identifiant de connexion *</label>
           <input id="adminIdentifier" type="text" required autocomplete="username" placeholder="Votre identifiant"
-            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-purple-600">
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-700">
         </div>
         <div>
           <label for="adminPassword" class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe *</label>
           <input id="adminPassword" type="password" required autocomplete="current-password"
-            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-purple-600">
+            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-700">
         </div>
 
         <p id="adminLoginError" class="hidden text-xs text-red-600 font-bold text-center"></p>
-        <button type="submit" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
+        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
           Ouvrir l'espace administrateur
         </button>
       </form>

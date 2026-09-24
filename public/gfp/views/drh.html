@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace DRH - Ministère de la Fonction Publique</title>
+  <title>Espace DRH - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -27,6 +27,7 @@
       z-index: 1;
     }
   </style>
+  <link rel="stylesheet" href="../assets/theme.css">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
 
@@ -43,7 +44,7 @@
       <div class="flex items-center space-x-3">
         <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
         <div>
-          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight max-w-md"><span class="hidden md:inline">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</span><span class="md:hidden" title="MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION">MFPMA</span></h1>
           <p class="text-xs text-slate-500">Console de Décision Finale - Direction des Ressources Humaines</p>
         </div>
       </div>
@@ -51,7 +52,7 @@
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-full border border-slate-200">
           <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Changer la photo">
-            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-blue-600 shadow-sm">
+            <img id="avatarImg" src="" alt="Photo de profil" class="h-10 w-10 rounded-full object-cover border-2 border-emerald-700 shadow-sm">
             <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">
               Changer
             </div>
@@ -59,7 +60,7 @@
           </div>
           <div class="text-left pr-2">
             <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
-            <p class="text-[11px] font-bold text-blue-700">DRH</p>
+            <p class="text-[11px] font-bold text-slate-700">DRH</p>
           </div>
         </div>
         <button onclick="voirNotifications()" title="Notifications" class="relative px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
@@ -73,7 +74,7 @@
 
     <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
       <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-        <button onclick="showTab('permissions')" id="nav-permissions" class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white">Permissions d'Absence</button>
+        <button onclick="showTab('permissions')" id="nav-permissions" class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white">Permissions d'Absence</button>
         <button onclick="showTab('etatcivil')" id="nav-etatcivil" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Actes d'État Civil</button>
         <button onclick="showTab('historique')" id="nav-historique" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Historique des Décisions</button>
       </div>
@@ -90,22 +91,22 @@
             <h2 class="text-base font-bold text-slate-900">Demandes de Permission à Valider</h2>
             <p class="text-xs text-slate-500">Dossiers ayant reçu l'avis favorable du Gestionnaire RH. Validation définitive DRH requise.</p>
           </div>
-          <span id="permPendingCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+          <span id="permPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
             0 dossier
           </span>
         </div>
 
         <!-- INFO CIRCUIT -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="text-xs font-bold text-blue-800 uppercase mb-2">Circuit de Validation</h3>
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <h3 class="text-xs font-bold text-slate-800 uppercase mb-2">Circuit de Validation</h3>
           <div class="flex items-center space-x-2 text-xs font-bold">
             <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">1. Agent</span>
             <span class="text-slate-400">→</span>
             <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">2. Gestionnaire RH</span>
             <span class="text-slate-400">→</span>
-            <span class="bg-blue-700 text-white px-2 py-1 rounded">3. DRH</span>
+            <span class="bg-emerald-700 text-white px-2 py-1 rounded">3. DRH</span>
           </div>
-          <p class="text-xs text-blue-700 mt-2">Votre décision est définitive et clôt le dossier.</p>
+          <p class="text-xs text-slate-700 mt-2">Votre décision est définitive et clôt le dossier.</p>
         </div>
 
         <div id="permContainer" class="space-y-4"></div>
@@ -120,7 +121,7 @@
             <h2 class="text-base font-bold text-slate-900">Actes d'État Civil en Attente de Contrôle</h2>
             <p class="text-xs text-slate-500">Déclarations de naissance et de décès soumises par les agents.</p>
           </div>
-          <span id="etatCivilCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+          <span id="etatCivilCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
             0 acte
           </span>
         </div>
@@ -239,27 +240,27 @@
 
       pending.forEach(r => {
         const div = document.createElement('div');
-        div.className = 'border border-blue-200 rounded-xl p-5 bg-blue-50 space-y-4';
+        div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
         const jours = r.jours || 1;
         const circuitLabel = jours <= 2
-          ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique Direction accordé</span>`
-          : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
+          ? `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique Direction accordé</span>`
+          : `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
 
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-blue-600 font-bold">${escapeHtml(r.id)}</span>
+              <span class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)}</span>
               <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
               <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
               <p class="text-xs text-slate-500 mt-1">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong></p>
               <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
               <div class="mt-2">${circuitLabel}</div>
-              <p class="text-xs text-blue-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
+              <p class="text-xs text-slate-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
             </div>
-            <span class="bg-blue-100 text-blue-800 border border-blue-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
+            <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
           </div>
-          <div class="flex justify-end space-x-3 pt-3 border-t border-blue-200">
+          <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
             <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Refuser la Permission
             </button>
@@ -300,13 +301,13 @@
               <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong></p>
               <p class="text-xs text-slate-600">Pièce scannée : ${pieceHtml(r)}</p>
               <div class="mt-2">
-                <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
                   Circuit : Agent → Gestionnaire RH → DRH → Agent
                 </span>
               </div>
-              <p class="text-xs text-teal-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
+              <p class="text-xs text-slate-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
             </div>
-            <span class="bg-teal-100 text-teal-800 border border-teal-300 text-xs px-3 py-1 rounded-full font-bold">
+            <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">
               Décision Finale DRH
             </span>
           </div>
@@ -349,11 +350,11 @@
       ['permissions','etatcivil','historique'].forEach(t => {
         document.getElementById('tab-' + t).classList.add('hidden');
         const btn = document.getElementById('nav-' + t);
-        if (btn) { btn.classList.remove('bg-blue-700','text-white'); btn.classList.add('text-slate-600'); }
+        if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
       });
       document.getElementById('tab-' + name).classList.remove('hidden');
       const active = document.getElementById('nav-' + name);
-      if (active) { active.classList.add('bg-blue-700','text-white'); active.classList.remove('text-slate-600'); }
+      if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
     }
 
     async function decide(id, statut) {

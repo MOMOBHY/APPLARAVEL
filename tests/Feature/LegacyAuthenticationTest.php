@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Notification;
+use App\Models\Structure;
 use App\Models\TypePermission;
 use App\Models\User;
 use App\Services\PermissionWorkflowService;
@@ -36,7 +37,7 @@ class LegacyAuthenticationTest extends TestCase
         ])->assertOk()->assertJsonPath('status', 'success');
     }
 
-    public function test_inscription_publique_ne_peut_pas_attribuer_un_role_sensible(): void
+    public function test_inscription_avec_choix_du_role_puis_connexion(): void
     {
         $this->postJson('/api/register', [
             'civilite' => 'Mme',
@@ -44,10 +45,20 @@ class LegacyAuthenticationTest extends TestCase
             'prenom' => 'Aminata',
             'matricule' => 'TEST-RH-001',
             'password' => 'motdepasse',
-            'role' => 'ROLE_DRH',
-        ])->assertUnprocessable()->assertJsonPath('status', 'error');
+            'role' => 'ROLE_CHEF_SERVICE',
+            'structure_id' => Structure::where('code', 'DRH')->value('id'),
+        ])->assertCreated();
 
-        $this->assertDatabaseMissing('users', ['matricule' => 'TEST-RH-001']);
+        // Connexion avec les seuls identifiants : le profil est déduit du rôle choisi.
+        $this->postJson('/api/login', ['matricule' => 'test-rh-001', 'password' => 'motdepasse'])
+            ->assertOk()->assertJsonPath('user.role', 'RESPONSABLE');
+
+        // L'administration n'est jamais auto-attribuée.
+        $this->postJson('/api/register', [
+            'civilite' => 'M.', 'nom' => 'Pirate', 'prenom' => 'Test', 'matricule' => 'ADMIN-X',
+            'password' => 'motdepasse', 'role' => 'ROLE_ADMIN_DSI',
+        ])->assertUnprocessable();
+        $this->assertDatabaseMissing('users', ['matricule' => 'ADMIN-X']);
     }
 
     public function test_administrateur_peut_attribuer_un_role_gestionnaire_sans_role_sous_directeur(): void
@@ -206,5 +217,32 @@ class LegacyAuthenticationTest extends TestCase
 
         $this->assertEquals('ROLE_CHEF_DE_SERVICE', $users['CHEF001']['role']);
         $this->assertEquals('ROLE_DIRCAB', $users['CAB001']['role']);
+    }
+
+    /** Mot de passe oublié : demande, attente de l'administrateur, autorisation puis nouveau mot de passe. */
+    public function test_mot_de_passe_oublie_autorise_par_l_administrateur(): void
+    {
+        $code = $this->postJson('/api/mot-de-passe/demande', ['matricule' => 'agt001'])->assertCreated()->json('code');
+        $reinitialisation = ['matricule' => 'AGT001', 'code' => $code, 'password' => 'nouveau-mdp', 'password_confirmation' => 'nouveau-mdp'];
+
+        // Tant que l'administrateur n'a pas autorisé : refus.
+        $this->postJson('/api/mot-de-passe/reinitialiser', $reinitialisation)
+            ->assertUnprocessable()->assertJsonPath('etat', 'EN_ATTENTE');
+
+        // Seul l'administrateur voit et autorise la demande.
+        $agent = User::where('matricule', 'AGT001')->firstOrFail();
+        $this->actingAs($agent, 'sanctum')->getJson('/api/admin/reinitialisations')->assertForbidden();
+        $admin = User::where('matricule', 'ADM001')->firstOrFail();
+        $demandeId = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/reinitialisations')
+            ->assertOk()->assertJsonPath('demandes.0.matricule', 'AGT001')->json('demandes.0.id');
+        $this->actingAs($admin, 'sanctum')->postJson("/api/admin/reinitialisations/{$demandeId}/autoriser")->assertOk();
+
+        // Mauvais code refusé, bon code accepté, puis code à usage unique.
+        $this->postJson('/api/mot-de-passe/reinitialiser', ['code' => 'FAUX1234'] + $reinitialisation)->assertUnprocessable();
+        $this->postJson('/api/mot-de-passe/reinitialiser', $reinitialisation)->assertOk();
+        $this->postJson('/api/mot-de-passe/reinitialiser', $reinitialisation)->assertUnprocessable();
+
+        $this->assertTrue(Hash::check('nouveau-mdp', $agent->fresh()->password));
+        $this->postJson('/api/login', ['matricule' => 'AGT001', 'password' => 'nouveau-mdp'])->assertOk();
     }
 }

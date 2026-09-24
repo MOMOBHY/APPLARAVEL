@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace Agent - Ministère de la Fonction Publique</title>
+  <title>Espace Agent - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -27,6 +27,7 @@
       z-index: 1;
     }
   </style>
+  <link rel="stylesheet" href="../assets/theme.css">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
 
@@ -43,7 +44,7 @@
       <div class="flex items-center space-x-3">
         <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
         <div>
-          <h1 class="text-sm font-extrabold text-slate-900 leading-tight">MINISTÈRE DE LA FONCTION PUBLIQUE</h1>
+          <h1 class="text-sm font-extrabold text-slate-900 leading-tight max-w-md"><span class="hidden md:inline">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</span><span class="md:hidden" title="MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION">MFPMA</span></h1>
           <p class="text-xs text-slate-500">Espace Agent Fonctionnaire</p>
         </div>
       </div>
@@ -92,12 +93,12 @@
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <span class="text-xs font-bold text-slate-400 uppercase">Demandes d'Absence</span>
           <p id="countPerm" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
-          <p class="text-xs text-orange-600 font-semibold mt-1">Soumises dans le système</p>
+          <p class="text-xs text-slate-600 font-semibold mt-1">Soumises dans le système</p>
         </div>
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <span class="text-xs font-bold text-slate-400 uppercase">Actes d'État Civil</span>
           <p id="countActes" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
-          <p class="text-xs text-blue-600 font-semibold mt-1">Naissance et Décès enregistrés</p>
+          <p class="text-xs text-slate-600 font-semibold mt-1">Naissance et Décès enregistrés</p>
         </div>
       </div>
 
@@ -309,8 +310,8 @@
         tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune demande enregistrée.</td></tr>`;
       }
       mine.forEach(r => {
-        let badge = 'bg-orange-100 text-orange-800 border-orange-300';
-        if (r.statut === 'EN_ATTENTE_RH') badge = 'bg-blue-100 text-blue-800 border-blue-300';
+        let badge = 'bg-slate-100 text-slate-800 border-slate-300';
+        if (r.statut === 'EN_ATTENTE_RH') badge = 'bg-slate-100 text-slate-800 border-slate-300';
         if (r.statut === 'VALIDEE')       badge = 'bg-emerald-100 text-emerald-800 border-emerald-300';
         if (r.statut === 'REJETEE')       badge = 'bg-red-100 text-red-800 border-red-300';
 
@@ -324,7 +325,7 @@
           <td class="px-6 py-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">${escapeHtml(r.statut)}</span>
             ${r.etape === 'RETOUR_CORRECTION' ? `
               <p class="mt-1 text-[10px] text-red-700 font-bold">Motif du retour : ${escapeHtml(r.motif_retour)}</p>
-              <button data-corriger class="mt-1 px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
+              <button data-corriger class="mt-1 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
             ${r.statut === 'REJETEE' && r.motif_rejet ? `<p class="mt-1 text-[10px] text-red-700">Motif du rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
           </td>
         `;

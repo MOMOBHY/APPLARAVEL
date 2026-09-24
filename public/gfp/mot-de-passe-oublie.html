@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mot de passe oublié - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GFP">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#047857">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+    }
+    html { -webkit-text-size-adjust: 100%; height: -webkit-fill-available; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100dvh;
+      padding-top: var(--sat);
+      padding-bottom: var(--sab);
+      padding-left: var(--sal);
+      padding-right: var(--sar);
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('assets/ministere_bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(5px);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+    }
+    main, section, div {
+      position: relative;
+      z-index: 1;
+    }
+    @media screen and (max-width: 768px) {
+      input, select, textarea { font-size: 16px !important; }
+    }
+    button, input, a { touch-action: manipulation; }
+  </style>
+  <link rel="stylesheet" href="assets/theme.css">
+</head>
+<body class="bg-slate-100 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
+    <div class="h-full w-1/3 bg-orange-500"></div>
+    <div class="h-full w-1/3 bg-white"></div>
+    <div class="h-full w-1/3 bg-emerald-600"></div>
+  </div>
+
+  <main class="flex-1 flex items-center justify-center p-3 sm:p-4">
+    <section class="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-5 sm:p-8 space-y-6">
+      <div class="text-center space-y-3">
+        <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
+        <p class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</p>
+        <h1 class="text-lg font-extrabold text-emerald-800 uppercase">Mot de passe oublié</h1>
+        <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
+      </div>
+
+      <form onsubmit="demander(event)" class="space-y-3">
+        <h2 class="text-sm font-extrabold text-slate-900">1. Faire une demande</h2>
+        <p class="text-xs text-slate-500">Votre demande est transmise à l'administrateur, qui doit l'autoriser.</p>
+        <div>
+          <label for="matriculeDemande" class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule *</label>
+          <input id="matriculeDemande" type="text" required autocomplete="username" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono">
+        </div>
+        <p id="demandeMessage" class="hidden text-xs font-bold text-center"></p>
+        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">Envoyer la demande</button>
+      </form>
+
+      <form onsubmit="reinitialiser(event)" class="space-y-3 border-t border-slate-200 pt-5">
+        <h2 class="text-sm font-extrabold text-slate-900">2. Choisir un nouveau mot de passe</h2>
+        <p class="text-xs text-slate-500">Après l'autorisation de l'administrateur, saisissez votre code de suivi.</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="matricule" class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule *</label>
+            <input id="matricule" type="text" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono">
+          </div>
+          <div>
+            <label for="code" class="block text-xs font-bold text-slate-700 uppercase mb-1">Code de suivi *</label>
+            <input id="code" type="text" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono uppercase">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="password" class="block text-xs font-bold text-slate-700 uppercase mb-1">Nouveau mot de passe *</label>
+            <input id="password" type="password" required minlength="6" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
+          </div>
+          <div>
+            <label for="confirmation" class="block text-xs font-bold text-slate-700 uppercase mb-1">Confirmation *</label>
+            <input id="confirmation" type="password" required minlength="6" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
+          </div>
+        </div>
+        <p id="reinitMessage" class="hidden text-xs font-bold text-center"></p>
+        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">Réinitialiser mon mot de passe</button>
+      </form>
+
+      <a href="index.html" class="block text-center text-xs font-bold text-slate-600 hover:text-slate-900">Retour à la connexion</a>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    function afficher(id, texte, succes) {
+      const node = document.getElementById(id);
+      node.textContent = texte;
+      node.className = 'text-xs font-bold text-center ' + (succes ? 'text-emerald-700' : 'text-red-600');
+    }
+
+    async function demander(event) {
+      event.preventDefault();
+      const matricule = document.getElementById('matriculeDemande').value.trim();
+      const res = await API.demanderReinitialisation(matricule);
+      if (res.status === 'success') {
+        afficher('demandeMessage', res.message + ' Votre code : ' + res.code, true);
+        document.getElementById('matricule').value = matricule.toUpperCase();
+        document.getElementById('code').value = res.code;
+        alert('Notez votre code de suivi : ' + res.code + '\n\nRevenez sur cette page une fois la demande autorisée par l\'administrateur.');
+      } else {
+        afficher('demandeMessage', res.message || 'Demande impossible.', false);
+      }
+    }
+
+    async function reinitialiser(event) {
+      event.preventDefault();
+      const password = document.getElementById('password').value;
+      if (password !== document.getElementById('confirmation').value) {
+        afficher('reinitMessage', 'Les deux mots de passe ne correspondent pas.', false);
+        return;
+      }
+      const res = await API.reinitialiserMotDePasse({
+        matricule: document.getElementById('matricule').value.trim(),
+        code: document.getElementById('code').value.trim(),
+        password, password_confirmation: password
+      });
+      if (res.status === 'success') {
+        alert(res.message);
+        window.location.href = 'index.html?inscrit=' + encodeURIComponent(document.getElementById('matricule').value.trim().toUpperCase());
+      } else {
+        afficher('reinitMessage', res.message || 'Réinitialisation impossible.', false);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -139,13 +139,15 @@ class LegacyApiController extends Controller
             'matricule' => ['required', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6'],
             'role' => ['required', 'string'],
+            'structure_id' => ['nullable', 'exists:structures,id'],
         ]);
 
+        // L'agent choisit son rôle à l'inscription ; l'administration reste attribuée par l'administrateur.
         $matricule = strtoupper(trim($data['matricule']));
-        if ($data['role'] !== 'ROLE_AGENT') {
-            return response()->json(['status' => 'error', 'message' => 'L’auto-inscription est réservée aux comptes Agent.'], 422);
+        $roleCodes = $this->resolveRoleCodes($data['role']);
+        if ($roleCodes === null || array_intersect($roleCodes, ['ROLE_ADMIN_DSI', 'ROLE_SERVICE_ADMINISTRATIF'])) {
+            return response()->json(['status' => 'error', 'message' => 'Rôle non disponible à l’inscription.'], 422);
         }
-        $roleCodes = ['ROLE_AGENT'];
         if (Agent::where('matricule', $matricule)->exists() || User::where('matricule', $matricule)->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Ce matricule est déjà utilisé.'], 422);
         }
@@ -158,6 +160,7 @@ class LegacyApiController extends Controller
             'civilite' => $data['civilite'],
             'nom' => strtoupper(trim($data['nom'])),
             'prenom' => trim($data['prenom']),
+            'structure_id' => $data['structure_id'] ?? null,
         ]);
         $user = User::create([
             'name' => $agent->fullName(),
@@ -165,6 +168,7 @@ class LegacyApiController extends Controller
             'matricule' => $matricule,
             'password' => $data['password'],
             'agent_id' => $agent->id,
+            'structure_id' => $agent->structure_id,
         ]);
         $user->roles()->attach(Role::whereIn('code', $roleCodes)->pluck('id')->all());
 
@@ -283,6 +287,7 @@ class LegacyApiController extends Controller
 
     public function submitPermission(Request $request)
     {
+        abort_if($request->user()->hasRole('ROLE_CHEF_DE_SERVICE') && ! $request->user()->hasRole('ROLE_AGENT'), 403, 'Le Chef de service ne fait pas de demandes.');
         $reglePiece = ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO];
 
         // Nouveau contrat (fichier éventuel).
@@ -339,6 +344,7 @@ class LegacyApiController extends Controller
      */
     public function submitDeclaration(Request $request)
     {
+        abort_if($request->user()->hasRole('ROLE_CHEF_DE_SERVICE') && ! $request->user()->hasRole('ROLE_AGENT'), 403, 'Le Chef de service ne fait pas de demandes.');
         $reglePiece = ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO];
         $data = $request->validate([
             'nature' => ['required', 'in:NAISSANCE,DECES'],

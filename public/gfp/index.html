@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Ministère de la Fonction Publique - Plateforme Web Administrative</title>
+  <title>Ministère de la Fonction Publique et de la Modernisation de l’Administration - Plateforme Web Administrative</title>
   <!-- Optimisations Apple iOS / iPhone Web App -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -75,6 +75,7 @@
       touch-action: manipulation;
     }
   </style>
+  <link rel="stylesheet" href="assets/theme.css">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
 
@@ -92,37 +93,23 @@
         <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
         <div>
           <h1 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</h1>
-          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE</h2>
+          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</h2>
           <p class="text-xs text-slate-600">Secrétariat général</p>
         </div>
-        <div class="h-0.5 w-16 bg-orange-500 mx-auto rounded-full"></div>
+        <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
         <p class="text-xs text-slate-500 font-medium">Plateforme Web de Gestion des Services Administratifs</p>
       </div>
 
       <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Profil d'Accès *</label>
-          <select id="loginRole" onchange="autoFillLogin()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-emerald-600">
-            <option value="AGENT">Agent Fonctionnaire</option>
-            <option value="RESPONSABLE">Gestionnaire RH</option>
-            <option value="SOUS_DIRECTEUR">Sous-Directeur</option>
-            <option value="DRH">DRH</option>
-            <option value="DIRECTEUR">Directeur Central</option>
-            <option value="DIRCAB">Directeur de Cabinet</option>
-            <option value="SECRETAIRE">Secrétaire de Direction</option>
-            <option value="CHEF_SERVICE">Chef de Service</option>
-          </select>
-        </div>
-
-        <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Identifiant de connexion *</label>
-          <input type="text" id="loginMat" value="000001X" required autocomplete="username" placeholder="Votre identifiant"
+          <input type="text" id="loginMat" required autocomplete="username" placeholder="Votre matricule"
             class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
-          <input type="password" id="loginPass" value="test123" required autocomplete="current-password"
+          <input type="password" id="loginPass" required autocomplete="current-password"
             class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
         </div>
 
@@ -133,7 +120,9 @@
         </button>
       </form>
 
-      <a href="admin-login.html" class="block text-center text-xs font-bold text-purple-700 hover:text-purple-900">
+<a href="mot-de-passe-oublie.html" class="block text-center text-xs font-bold text-emerald-700 hover:text-emerald-900 mt-3">Mot de passe oublié ?</a>
+
+      <a href="admin-login.html" class="block text-center text-xs font-bold text-slate-700 hover:text-slate-900">
         Accès réservé à l'administration
       </a>
 
@@ -141,65 +130,13 @@
         <div class="flex items-center justify-between gap-3">
           <div>
             <h3 class="text-sm font-extrabold text-slate-900">Nouveau sur la plateforme ?</h3>
-            <p class="text-xs text-slate-500 mt-1">Créez votre compte puis choisissez votre profil.</p>
+            <p class="text-xs text-slate-500 mt-1">Inscrivez-vous en choisissant votre rôle, puis connectez-vous avec votre matricule et votre mot de passe.</p>
           </div>
-          <button type="button" onclick="toggleCreateAccountForm()" class="shrink-0 px-3 py-2 border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold">
+          <a href="inscription.html" class="shrink-0 px-3 py-2 border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold">
             Créer un compte
-          </button>
+          </a>
         </div>
 
-        <form id="createAccountForm" onsubmit="handleCreateAccount(event)" class="hidden mt-5 space-y-3">
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountCivilite">Civilité *</label>
-              <select id="newAccountCivilite" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm">
-                <option value="M.">M.</option>
-                <option value="Mme">Mme</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountMatricule">Matricule *</label>
-              <input type="text" id="newAccountMatricule" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono" placeholder="Ex. 000007K">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountNom">Nom *</label>
-              <input type="text" id="newAccountNom" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm" autocomplete="family-name">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountPrenom">Prénom *</label>
-              <input type="text" id="newAccountPrenom" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm" autocomplete="given-name">
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountRole">Choisissez votre rôle *</label>
-            <select id="newAccountRole" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold">
-              <option value="ROLE_AGENT">Agent Fonctionnaire</option>
-              <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
-              <option value="ROLE_SOUS_DIRECTEUR">Sous-Directeur</option>
-              <option value="ROLE_DRH">DRH</option>
-              <option value="ROLE_DIRECTEUR">Directeur Central</option>
-              <option value="ROLE_DIRCAB">Directeur de Cabinet</option>
-              <option value="ROLE_SECRETAIRE">Secrétaire de Direction</option>
-              <option value="ROLE_SERVICE_ADMINISTRATIF">Service Gestion Administrative</option>
-              <option value="ROLE_CHEF_DE_SERVICE">Chef de Service</option>
-              <option value="ROLE_DIRECTEUR_CABINET">Directeur de Cabinet</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1" for="newAccountPassword">Mot de passe *</label>
-            <input type="password" id="newAccountPassword" required minlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm" autocomplete="new-password">
-          </div>
-
-          <p id="createAccountError" class="hidden text-xs text-red-600 font-bold text-center"></p>
-          <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">
-            Créer mon compte
-          </button>
-        </form>
         <p id="createAccountSuccess" class="hidden mt-4 text-xs text-emerald-700 font-bold text-center"></p>
       </div>
 
@@ -215,7 +152,7 @@
         <div class="flex items-center space-x-3 min-w-0">
           <img src="assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
           <div>
-            <h1 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">MINISTÈRE FONCTION PUBLIQUE</h1>
+            <h1 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight max-w-md"><span class="hidden md:inline">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</span><span class="md:hidden" title="MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION">MFPMA</span></h1>
             <p id="userHeaderService" class="text-[10px] sm:text-xs text-slate-500 truncate">Portail Intranet</p>
           </div>
         </div>
@@ -297,12 +234,12 @@
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span class="text-xs font-bold text-slate-400 uppercase">Mes Demandes d'Absence</span>
               <p id="agentCountPerm" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
-              <p class="text-xs text-orange-600 font-semibold mt-1">Enregistrées dans le système</p>
+              <p class="text-xs text-slate-600 font-semibold mt-1">Enregistrées dans le système</p>
             </div>
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span class="text-xs font-bold text-slate-400 uppercase">Mes Actes d'État Civil</span>
               <p id="agentCountActes" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
-              <p class="text-xs text-blue-600 font-semibold mt-1">Naissances et Décès déclarés</p>
+              <p class="text-xs text-slate-600 font-semibold mt-1">Naissances et Décès déclarés</p>
             </div>
           </div>
 
@@ -465,7 +402,7 @@
               <h2 class="text-base font-bold text-slate-900">Vérification des Demandes d'Absence</h2>
               <p class="text-xs text-slate-500">Contrôlez les demandes. Pour ≤ 2 jours, transmission à la Direction (visa). Pour > 2 jours, transmission directe au DRH.</p>
             </div>
-            <span id="n1PendingCount" class="px-3 py-1 bg-orange-100 text-orange-800 border border-orange-300 rounded-full text-xs font-bold">
+            <span id="n1PendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
               0 demande
             </span>
           </div>
@@ -482,7 +419,7 @@
               <h2 class="text-base font-bold text-slate-900">Vérification des Déclarations d'État Civil (Naissance & Décès)</h2>
               <p class="text-xs text-slate-500">Vérifiez la complétude des informations et la présence/validité des justificatifs. Transmettez à la DRH si conforme.</p>
             </div>
-            <span id="rhActesPendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+            <span id="rhActesPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
               0 déclaration
             </span>
           </div>
@@ -499,7 +436,7 @@
               <h2 class="text-base font-bold text-slate-900">Décisions du DRH à Notifier aux Agents</h2>
               <p class="text-xs text-slate-500">Le DRH a rendu sa décision finale. Notifiez l'agent demandeur (acceptation ou rejet motivé).</p>
             </div>
-            <span id="rhNotifyPendingCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+            <span id="rhNotifyPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
               0 à notifier
             </span>
           </div>
@@ -518,7 +455,7 @@
               <h2 id="visaViewTitle" class="text-base font-bold text-slate-900">Espace Visa Hiérarchique de Direction</h2>
               <p class="text-xs text-slate-500">Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH pour décision finale.</p>
             </div>
-            <span id="visaPendingCount" class="px-3 py-1 bg-indigo-100 text-indigo-800 border border-indigo-300 rounded-full text-xs font-bold">
+            <span id="visaPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
               0 demande
             </span>
           </div>
@@ -537,7 +474,7 @@
               <h2 class="text-base font-bold text-slate-900">Console de Décision Finale DRH</h2>
               <p class="text-xs text-slate-500">Décision finale sur les demandes de permission. Une fois validée ou rejetée, la décision repart vers le Gestionnaire RH pour notification.</p>
             </div>
-            <span id="rhPendingCount" class="px-3 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-full text-xs font-bold">
+            <span id="rhPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
               0 dossier
             </span>
           </div>
@@ -553,7 +490,7 @@
               <h2 class="text-base font-bold text-slate-900">Déclarations d'Actes d'État Civil (Naissance & Décès)</h2>
               <p class="text-xs text-slate-500">Dossiers vérifiés par le Gestionnaire RH. Contrôle, décision finale et mise à jour du dossier statutaire de l'agent.</p>
             </div>
-            <span id="drhEtatCivilPendingCount" class="px-3 py-1 bg-teal-100 text-teal-800 border border-teal-300 rounded-full text-xs font-bold">
+            <span id="drhEtatCivilPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
               0 acte
             </span>
           </div>
@@ -580,7 +517,7 @@
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structures destinataires *</label>
               <select id="workflowNoteStructures" multiple required class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm min-h-28"></select>
             </div>
-            <button id="noteDraftSubmit" type="submit" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow">Transmettre à la secrétaire</button>
+            <button id="noteDraftSubmit" type="submit" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">Transmettre à la secrétaire</button>
           </form>
           <div>
             <h3 class="text-sm font-bold text-slate-900 mb-3">Suivi des notes</h3>
@@ -603,7 +540,7 @@
               <h2 class="text-base font-bold text-slate-900">Administration RBAC des Comptes, Rôles et Mots de Passe</h2>
               <p class="text-xs text-slate-500">Gérez les comptes utilisateurs rattachés aux agents, réinitialisez les mots de passe et modifiez les rôles.</p>
             </div>
-            <button onclick="toggleNewUserForm()" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold shadow">
+            <button onclick="toggleNewUserForm()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow">
               + Créer un Nouvel Utilisateur
             </button>
           </div>
@@ -649,7 +586,7 @@
               </div>
               <div class="md:col-span-3 flex justify-end space-x-2 pt-2">
                 <button type="button" onclick="toggleNewUserForm()" class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
-                <button type="submit" class="px-4 py-1.5 bg-purple-700 text-white font-bold text-xs rounded-lg shadow">Créer le Compte</button>
+                <button type="submit" class="px-4 py-1.5 bg-emerald-700 text-white font-bold text-xs rounded-lg shadow">Créer le Compte</button>
               </div>
             </form>
           </div>
@@ -831,101 +768,21 @@
       return 'Destination à confirmer selon la validation en cours.';
     }
 
-    function toggleCreateAccountForm() {
-      const form = document.getElementById('createAccountForm');
-      if (form) {
-        form.classList.toggle('hidden');
-      }
-    }
 
-    function mapRoleCodeToLoginRole(roleCode) {
-      const mapping = {
-        ROLE_AGENT: 'AGENT',
-        ROLE_CHEF_SERVICE: 'RESPONSABLE',
-        ROLE_SOUS_DIRECTEUR: 'SOUS_DIRECTEUR',
-        ROLE_DRH: 'DRH',
-        ROLE_DIRECTEUR: 'DIRECTEUR',
-        ROLE_DIRCAB: 'DIRCAB',
-        ROLE_SECRETAIRE: 'SECRETAIRE',
-        ROLE_ADMIN_DSI: 'ADMINISTRATEUR'
-      };
-      return mapping[roleCode] || 'AGENT';
-    }
 
-    async function handleCreateAccount(e) {
-      if (e) e.preventDefault();
-      const payload = {
-        civilite: document.getElementById('newAccountCivilite')?.value || 'M.',
-        nom: document.getElementById('newAccountNom')?.value.trim(),
-        prenom: document.getElementById('newAccountPrenom')?.value.trim(),
-        matricule: document.getElementById('newAccountMatricule')?.value.trim(),
-        password: document.getElementById('newAccountPassword')?.value.trim(),
-        role: document.getElementById('newAccountRole')?.value || 'ROLE_AGENT'
-      };
 
-      const errorNode = document.getElementById('createAccountError');
-      if (!payload.nom || !payload.prenom || !payload.matricule || !payload.password) {
-        if (errorNode) {
-          errorNode.textContent = 'Complétez tous les champs obligatoires.';
-          errorNode.classList.remove('hidden');
-        }
-        return;
-      }
-
-      const res = await API.register(payload);
-      if (res.status === 'success') {
-        if (errorNode) errorNode.classList.add('hidden');
-        const successNode = document.getElementById('createAccountSuccess');
-        if (successNode) {
-          successNode.textContent = 'Compte créé. Vérifiez le rôle sélectionné puis cliquez sur "Se connecter".';
-          successNode.classList.remove('hidden');
-        }
-        const form = document.getElementById('createAccountForm');
-        if (form) form.classList.add('hidden');
-        const loginRole = document.getElementById('loginRole');
-        if (loginRole) loginRole.value = mapRoleCodeToLoginRole(payload.role);
-        const loginMat = document.getElementById('loginMat');
-        if (loginMat) {
-          loginMat.value = '';
-          loginMat.focus();
-        }
-        const loginPass = document.getElementById('loginPass');
-        if (loginPass) loginPass.value = '';
-      } else {
-        if (errorNode) {
-          errorNode.textContent = res.message || 'Impossible de créer le compte.';
-          errorNode.classList.remove('hidden');
-        }
-      }
-    }
-
-    const LOGIN_DEFAULTS = {
-      "AGENT": "000001X",
-      "RESPONSABLE": "000002A",
-      "SOUS_DIRECTEUR": "SD001",
-      "DRH": "000003B",
-      "DIRECTEUR": "DIR001",
-      "DIRCAB": "CAB001",
-      "SECRETAIRE": "SEC001",
-      "CHEF_SERVICE": "CHEF001"
-    };
-
-    function autoFillLogin() {
-      const role = document.getElementById('loginRole').value;
-      document.getElementById('loginMat').value = LOGIN_DEFAULTS[role] || '000001X';
-      document.getElementById('loginPass').value = 'test123';
-    }
 
     async function handleLogin(e) {
       e.preventDefault();
       const mat = document.getElementById('loginMat').value.trim();
       const pwd = document.getElementById('loginPass').value.trim();
-      const role = document.getElementById('loginRole').value;
+      const role = ''; // profil déduit des rôles du compte
       const errorNode = document.getElementById('loginError');
 
       const res = await API.login(mat, role, pwd);
       if (res.status === 'success') {
         currentUser = res.user;
+        sessionStorage.setItem('currentUser', JSON.stringify(res.user));
         if (errorNode) {
           errorNode.classList.add('hidden');
         }
@@ -945,6 +802,7 @@
 
     function handleLogout() {
       currentUser = null;
+      sessionStorage.removeItem('currentUser');
       API.logout();
       document.getElementById('view-app').classList.add('hidden');
       document.getElementById('view-login').classList.remove('hidden');
@@ -1058,9 +916,9 @@
         let typeBadge = "bg-slate-100 text-slate-700";
         if (n.type_notif === 'VALIDATION') typeBadge = "bg-emerald-100 text-emerald-800 border border-emerald-300";
         if (n.type_notif === 'REJET') typeBadge = "bg-red-100 text-red-800 border border-red-300";
-        if (n.type_notif === 'ATTENTE_AVIS') typeBadge = "bg-orange-100 text-orange-800 border border-orange-300";
-        if (n.type_notif === 'ATTENTE_RH') typeBadge = "bg-blue-100 text-blue-800 border border-blue-300";
-        if (n.type_notif === 'NOTE_SERVICE') typeBadge = "bg-purple-100 text-purple-800 border border-purple-300";
+        if (n.type_notif === 'ATTENTE_AVIS') typeBadge = "bg-slate-100 text-slate-800 border border-slate-300";
+        if (n.type_notif === 'ATTENTE_RH') typeBadge = "bg-slate-100 text-slate-800 border border-slate-300";
+        if (n.type_notif === 'NOTE_SERVICE') typeBadge = "bg-slate-100 text-slate-800 border border-slate-300";
 
         div.className = `p-3 text-xs space-y-1 transition hover:bg-slate-50 ${bgClass}`;
         div.innerHTML = `
@@ -1135,7 +993,7 @@
         document.getElementById('role-admin-views').classList.remove('hidden');
         document.getElementById('note-workflow-view').classList.remove('hidden');
         navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-purple-700 text-white whitespace-nowrap shrink-0">Gestion RBAC & Administration</button>
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Gestion RBAC & Administration</button>
         `;
         renderAdminUsersTable();
         renderAdminSentNotesTable();
@@ -1150,7 +1008,7 @@
       } else if (role === 'RESPONSABLE') {
         document.getElementById('role-responsable-views').classList.remove('hidden');
         navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-orange-600 text-white whitespace-nowrap shrink-0">Espace Gestionnaire RH</button>
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Espace Gestionnaire RH</button>
         `;
         renderResponsableViews();
       } else if (role === 'SOUS_DIRECTEUR' || role === 'DIRECTEUR') {
@@ -1158,14 +1016,21 @@
         document.getElementById('note-workflow-view').classList.remove('hidden');
         const titreNav = role === 'SOUS_DIRECTEUR' ? 'Visa Hiérarchique Sous-Directeur' : 'Visa Hiérarchique Directeur Central';
         navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-indigo-700 text-white whitespace-nowrap shrink-0">${titreNav}</button>
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">${titreNav}</button>
         `;
         renderVisaViews();
         setupNoteWorkflow(true, false);
+      } else if (role === 'CHEF_SERVICE') {
+        // Le Chef de service ne fait pas de demandes : il reçoit les notes transmises par la secrétaire.
+        document.getElementById('note-workflow-view').classList.remove('hidden');
+        navContainer.innerHTML = `
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Notes de Service reçues</button>
+        `;
+        setupNoteWorkflow(false, false);
       } else if (role === 'DIRCAB') {
         document.getElementById('note-workflow-view').classList.remove('hidden');
         navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white whitespace-nowrap shrink-0">Notes de Service — Directeur de Cabinet</button>
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Notes de Service — Directeur de Cabinet</button>
         `;
         setupNoteWorkflow(true, false);
       } else if (role === 'DRH') {
@@ -1173,7 +1038,7 @@
         document.getElementById('note-workflow-view').classList.remove('hidden');
         setupNoteWorkflow(true, false);
         navContainer.innerHTML = `
-          <button class="px-3 py-2 rounded-md text-xs font-bold bg-blue-700 text-white whitespace-nowrap shrink-0">Console de Décision Finale DRH</button>
+          <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Console de Décision Finale DRH</button>
         `;
         renderDrhViews();
       } else {
@@ -1211,7 +1076,7 @@
           <td class="px-4 py-3 font-bold">${escapeHtml(n.libelle)}</td>
           <td class="px-4 py-3">${escapeHtml(n.emetteur)}</td>
           <td class="px-4 py-3">${escapeHtml(n.service)}</td>
-          <td class="px-4 py-3 font-bold ${n.statut === 'DIFFUSEE' ? 'text-emerald-700' : 'text-orange-700'}">${escapeHtml(n.statut || 'DIFFUSEE')}</td>
+          <td class="px-4 py-3 font-bold ${n.statut === 'DIFFUSEE' ? 'text-emerald-700' : 'text-slate-700'}">${escapeHtml(n.statut || 'DIFFUSEE')}</td>
           <td class="px-4 py-3">${canDiffuse && ['EN_ATTENTE_SAISIE', 'EN_ATTENTE_VALIDATION', 'VALIDEE'].includes(n.statut) ? `<button onclick="handleDiffuseNote(${Number(n.id)})" class="px-2 py-1 bg-emerald-700 text-white rounded font-bold">Saisir et transmettre</button>` : '-'}</td>
         </tr>`).join('') || '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500 italic">Aucune note enregistrée.</td></tr>';
     }
@@ -1264,7 +1129,7 @@
             <input type="text" id="pass_input_${escapeHtml(u.matricule)}" value="${escapeHtml(u.password)}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-24 font-mono">
           </td>
           <td class="px-4 py-3 text-center space-x-1">
-            <button data-mat="${escapeHtml(u.matricule)}" onclick="updateUserPassword(this.dataset.mat)" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow">
+            <button data-mat="${escapeHtml(u.matricule)}" onclick="updateUserPassword(this.dataset.mat)" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded shadow">
               Enregistrer
             </button>
           </td>
@@ -1343,8 +1208,8 @@
         tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-slate-500 italic">Aucune demande enregistrée.</td></tr>`;
       } else {
         myReqs.forEach(r => {
-          let badge = "bg-orange-100 text-orange-800 border-orange-300";
-          if (r.statut === 'EN_ATTENTE_RH') badge = "bg-blue-100 text-blue-800 border-blue-300";
+          let badge = "bg-slate-100 text-slate-800 border-slate-300";
+          if (r.statut === 'EN_ATTENTE_RH') badge = "bg-slate-100 text-slate-800 border-slate-300";
           if (r.statut === 'VALIDEE') badge = "bg-emerald-100 text-emerald-800 border-emerald-300";
           if (r.statut === 'REJETEE') badge = "bg-red-100 text-red-800 border-red-300";
 
@@ -1358,7 +1223,7 @@
               <br>
               <span class="text-[10px] text-slate-400">Soumis le ${formatDateTime(r.dateSoumission)}</span>
             </td>
-            <td class="px-6 py-4 text-xs font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${escapeHtml(r.niveau_requis || 'DRH')}</td>
+            <td class="px-6 py-4 text-xs font-bold ${r.niveau_requis === 'DRH' ? 'text-slate-700' : 'text-slate-600'}">${escapeHtml(r.niveau_requis || 'DRH')}</td>
             <td class="px-6 py-4">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">
                 ${escapeHtml(r.statut)}
@@ -1366,7 +1231,7 @@
               <p class="mt-1 text-[10px] text-slate-500">${getActorRoutingMessage(r)}</p>
               ${r.etape === 'RETOUR_CORRECTION' ? `
                 <p class="mt-1 text-[10px] text-red-700 font-bold">Motif du retour : ${escapeHtml(r.motif_retour)}</p>
-                <button data-corriger class="mt-1 px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
+                <button data-corriger class="mt-1 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
               ${r.statut === 'REJETEE' && r.motif_rejet ? `<p class="mt-1 text-[10px] text-red-700">Motif du rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
             </td>
           `;
@@ -1403,18 +1268,18 @@
       } else {
         pendingRH.forEach(r => {
           const div = document.createElement('div');
-          div.className = "border border-orange-200 rounded-xl p-5 bg-orange-50 space-y-4";
+          div.className = "border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4";
           const jours = r.jours || 1;
           const circuitCourt = jours <= 2;
 
           const circuitBadge = circuitCourt
-            ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : visa du Sous-Directeur ou du Directeur (à choisir) avant le DRH</span>`
-            : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission DIRECTE au DRH</span>`;
+            ? `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : visa du Sous-Directeur ou du Directeur (à choisir) avant le DRH</span>`
+            : `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission DIRECTE au DRH</span>`;
 
           div.innerHTML = `
             <div class="flex justify-between items-start flex-wrap gap-2">
               <div class="space-y-1">
-                <span class="font-mono text-xs text-orange-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+                <span class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
                 <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
                 <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
                 <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
@@ -1424,7 +1289,7 @@
                 <div class="mt-2">${circuitBadge}</div>
               </div>
             </div>
-            <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-orange-200">
+            <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-200">
               ${boutonsGestionnaire(r)}
             </div>
           `;
@@ -1461,7 +1326,7 @@
                 </span>
               </div>
               <div class="flex justify-end pt-3 border-t border-slate-200">
-                <button onclick="handleNotifierAgent('${escapeHtml(r.id)}')" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow">
+                <button onclick="handleNotifierAgent('${escapeHtml(r.id)}')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
                   Notifier l'agent
                 </button>
               </div>
@@ -1487,30 +1352,30 @@
             const label = isNaissance ? "Déclaration de Naissance" : "Déclaration de Décès";
             const detail = isNaissance ? ("Enfant : " + (r.nomChild || "")) : ("Défunt : " + (r.nomDefunt || ""));
             const div = document.createElement('div');
-            div.className = "border border-teal-200 rounded-xl p-5 bg-teal-50 space-y-4";
+            div.className = "border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4";
             div.innerHTML = `
               <div class="flex justify-between items-start flex-wrap gap-2">
                 <div class="space-y-1">
-                  <span class="font-mono text-xs text-teal-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
+                  <span class="font-mono text-xs text-slate-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
                   <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
                   <p class="text-xs text-slate-700">${escapeHtml(detail)}</p>
                   <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong> ${r.lieu ? 'à ' + escapeHtml(r.lieu) : ''}</p>
                   <p class="text-xs text-slate-600">Justificatif scanné : ${pieceHtml(r)}</p>
                   <div class="mt-2">
-                    <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                    <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
                       Circuit : Agent → Gestionnaire RH → DRH → Agent
                     </span>
                   </div>
                 </div>
-                <span class="bg-teal-200 text-teal-900 text-xs px-3 py-1 rounded-full font-bold">
+                <span class="bg-slate-200 text-slate-900 text-xs px-3 py-1 rounded-full font-bold">
                   En Attente Vérification RH
                 </span>
               </div>
-              <div class="flex justify-end space-x-3 pt-3 border-t border-teal-200">
+              <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
                 <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
                   Dossier Incomplet (Retourner)
                 </button>
-                <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg shadow">
+                <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'EN_ATTENTE_RH')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
                   Vérifié Conforme — Transmettre à la DRH
                 </button>
               </div>
@@ -1543,23 +1408,23 @@
 
       pendingVisa.forEach(r => {
         const div = document.createElement('div');
-        div.className = "border border-indigo-200 rounded-xl p-5 bg-indigo-50 space-y-4";
+        div.className = "border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4";
         div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-indigo-700 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
+              <span class="font-mono text-xs text-slate-700 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
               <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
               <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${escapeHtml(r.jours || 1)} jour(s)</strong></p>
               <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
               <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
-              <p class="text-xs text-indigo-700 italic mt-1">Rappel : Votre visa hiérarchique transmettra le dossier au DRH qui prendra la décision finale.</p>
+              <p class="text-xs text-slate-700 italic mt-1">Rappel : Votre visa hiérarchique transmettra le dossier au DRH qui prendra la décision finale.</p>
             </div>
-            <span class="bg-indigo-100 text-indigo-800 border border-indigo-300 text-xs px-3 py-1 rounded-full font-bold">
+            <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">
               Visa ${isSousDir ? 'Sous-Directeur' : 'Directeur'} Requis
             </span>
           </div>
-          <div class="flex justify-end space-x-3 pt-3 border-t border-indigo-200">
+          <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
             <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Refuser le visa
             </button>
@@ -1596,29 +1461,29 @@
       } else {
         pendingPerms.forEach(r => {
           const div = document.createElement('div');
-          div.className = "border border-blue-200 rounded-xl p-5 bg-blue-50 space-y-4";
+          div.className = "border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4";
           const jours = r.jours || 1;
           const circuitLabel = jours <= 2
-            ? `<span class="text-xs bg-blue-100 text-blue-800 border border-blue-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique accordé par la Direction</span>`
-            : `<span class="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
+            ? `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique accordé par la Direction</span>`
+            : `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
 
           div.innerHTML = `
             <div class="flex justify-between items-start flex-wrap gap-2">
               <div class="space-y-1">
-                <span class="font-mono text-xs text-blue-600 font-bold">${escapeHtml(r.id)}</span>
+                <span class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)}</span>
                 <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
                 <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
                 <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
                 <p class="text-xs text-slate-500">Soumis le : <strong>${formatDateTime(r.dateSoumission)}</strong></p>
                 <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
                 <div class="mt-2">${circuitLabel}</div>
-                <p class="text-xs text-blue-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
+                <p class="text-xs text-slate-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
               </div>
-              <span class="bg-blue-100 text-blue-800 border border-blue-300 text-xs px-3 py-1 rounded-full font-bold">
+              <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">
                 Décision Finale DRH
               </span>
             </div>
-            <div class="flex justify-end space-x-3 pt-3 border-t border-blue-200">
+            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
               <button onclick="updateStatusAPI('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
                 Rejeter la Demande
               </button>
@@ -1658,13 +1523,13 @@
                   <p class="text-xs text-slate-600">Date de l'événement : <strong>${escapeHtml(r.dateEvt || '')}</strong></p>
                   <p class="text-xs text-slate-600">Pièce scannée : ${pieceHtml(r)}</p>
                   <div class="mt-2">
-                    <span class="inline-block px-2.5 py-1 bg-teal-100 text-teal-800 rounded text-xs font-semibold">
+                    <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
                       Circuit : Agent → Gestionnaire RH → DRH → Agent
                     </span>
                   </div>
-                  <p class="text-xs text-teal-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
+                  <p class="text-xs text-slate-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
                 </div>
-                <span class="bg-teal-100 text-teal-800 border border-teal-300 text-xs px-3 py-1 rounded-full font-bold">
+                <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">
                   Décision Finale DRH
                 </span>
               </div>
@@ -1727,7 +1592,7 @@
           <td class="px-4 py-2 font-medium">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
           <td class="px-4 py-2 text-slate-600">${escapeHtml(r.nature)}</td>
           <td class="px-4 py-2">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt)}</td>
-          <td class="px-4 py-2 font-bold ${r.niveau_requis === 'DRH' ? 'text-blue-700' : 'text-slate-600'}">${escapeHtml(r.niveau_requis || 'DRH')}</td>
+          <td class="px-4 py-2 font-bold ${r.niveau_requis === 'DRH' ? 'text-slate-700' : 'text-slate-600'}">${escapeHtml(r.niveau_requis || 'DRH')}</td>
           <td class="px-4 py-2 font-bold">${escapeHtml(r.statut)}</td>
         `;
         tbody.appendChild(tr);
@@ -1824,6 +1689,26 @@
         renderAdminSentNotesTable();
       }
     }
+
+    // Reprise de session (actualisation, ou arrivée depuis views/login.html).
+    window.addEventListener('DOMContentLoaded', async () => {
+      const inscrit = new URLSearchParams(window.location.search).get('inscrit');
+      if (inscrit) {
+        document.getElementById('loginMat').value = inscrit;
+        const succes = document.getElementById('createAccountSuccess');
+        succes.textContent = 'Connectez-vous avec votre matricule et votre mot de passe.';
+        succes.classList.remove('hidden');
+        document.getElementById('loginPass').focus();
+        history.replaceState(null, '', window.location.pathname);
+      }
+      const saved = sessionStorage.getItem('currentUser');
+      if (!saved || !sessionStorage.getItem('gfp_session_token')) return;
+      try { currentUser = JSON.parse(saved); } catch (e) { return; }
+      await loadBackendData();
+      await loadNotifications();
+      loadUserInterface();
+      startNotificationPolling();
+    });
 
     async function rafraichirVue() {
       await loadBackendData();
