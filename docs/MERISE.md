@@ -176,9 +176,9 @@ flowchart LR
 
 ## 2. Modèles conceptuels des traitements (MCT)
 
-### MCT — Demande de permission (1/2) — dépôt et vérification
+### MCT — Demande de permission (durée ≤ 2 jours ou > 2 jours)
 
-Un seul circuit pour toutes les demandes. Le gestionnaire RH vérifie le dossier ; selon la durée, il le transmet pour visa (2 jours ou moins) ou directement au DRH (plus de 2 jours). Il peut aussi le retourner pour correction ou le rejeter.
+Un seul circuit pour toutes les demandes. Le gestionnaire RH vérifie le dossier ; selon la durée, il le transmet pour visa (2 jours ou moins) ou directement au DRH (plus de 2 jours). L’étape de visa n’existe que pour les demandes de 2 jours ou moins. Le DRH tranche, puis le gestionnaire RH notifie l’agent. Chaque opération est aussi enregistrée dans l’historique du dossier et dans le journal d’audit.
 
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
@@ -209,24 +209,8 @@ flowchart TB
   R2b --> E3
   E3 --> O3
   O3 -->|"nouvelle vérification"| E2
-```
-
-### MCT — Demande de permission (2/2) — visa, décision et notification
-
-L’étape de visa n’existe que pour les demandes de 2 jours ou moins : un refus de visa clôt la demande et prévient le gestionnaire RH. Dans tous les cas, le DRH tranche, puis le gestionnaire RH notifie l’agent. Chaque opération est aussi enregistrée dans l’historique du dossier et dans le journal d’audit.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  S1{{"Transmise pour visa<br/>(durée ≤ 2 jours)"}}:::re
-  S2{{"Transmise directement au DRH<br/>(durée &gt; 2 jours)"}}:::re
   E4(["<b>É4</b> — Demande reçue pour visa"]):::ev
   O4["<b>OP4 — Viser la demande</b><hr/>uniquement si durée ≤ 2 jours<br/>réservé au responsable de la structure de l’agent<br/>motif obligatoire en cas de refus"]:::op
-  S1 --> E4
   E4 --> O4
   R4a{{"Visa refusé<br/>demande REJETÉE<br/>gestionnaire RH alerté"}}:::ko
   R4b{{"Visa favorable<br/>statut : EN_ATTENTE_DRH"}}:::re
@@ -235,7 +219,6 @@ flowchart TB
   E5(["<b>É5</b> — Demande reçue par le DRH"]):::ev
   O5["<b>OP5 — Trancher (décision finale)</b><hr/>validation ou rejet motivé<br/>si validée : solde de l’agent diminué"]:::op
   R4b --> E5
-  S2 --> E5
   E5 --> O5
   R5a{{"Demande VALIDÉE<br/>gestionnaire RH alerté"}}:::re
   R5b{{"Demande REJETÉE<br/>motif enregistré<br/>gestionnaire RH alerté"}}:::ko
@@ -248,11 +231,13 @@ flowchart TB
   R5b --> E6
   E6 --> O6
   O6 --> R6
+  R2c --> E4
+  R2d --> E5
 ```
 
-### MCT — Déclaration de naissance ou de décès (1/2) — dépôt et contrôle
+### MCT — Déclaration de naissance ou de décès
 
-Un seul circuit pour les deux types. L’agent déclare et joint la pièce officielle ; le gestionnaire RH contrôle. Il ne rejette pas : il retourne le dossier pour correction ou le transmet au DRH.
+Un seul circuit pour les deux types. L’agent déclare et joint la pièce officielle ; le gestionnaire RH contrôle : il ne rejette pas, il retourne le dossier pour correction ou le transmet au DRH. Le DRH valide ou rejette avec un motif, l’agent est notifié, puis le dossier est archivé.
 
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
@@ -279,23 +264,8 @@ flowchart TB
   R2a --> E3
   E3 --> O3
   O3 -->|"nouveau contrôle"| E2
-```
-
-### MCT — Déclaration de naissance ou de décès (2/2) — décision et archivage
-
-Le DRH valide ou rejette avec un motif, l’agent est notifié, puis le dossier est archivé.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  S0{{"Transmise au DRH<br/>statut : EN_ATTENTE_RH"}}:::re
   E4(["<b>É4</b> — Déclaration reçue par le DRH"]):::ev
   O4["<b>OP4 — Valider ou rejeter</b><hr/>motif obligatoire en cas de rejet"]:::op
-  S0 --> E4
   E4 --> O4
   R4a{{"Déclaration VALIDÉE<br/>agent notifié"}}:::re
   R4b{{"Déclaration REJETÉE<br/>motif communiqué<br/>agent notifié"}}:::ko
@@ -308,11 +278,12 @@ flowchart TB
   R4b --> E5
   E5 --> O5
   O5 --> R5
+  R2b --> E4
 ```
 
-### MCT — Note de service (1/2) — émission et saisie
+### MCT — Note de service
 
-L’autorité émet la note et la transmet à sa secrétaire, qui la saisit et la met en forme.
+L’autorité émet la note et la transmet à sa secrétaire, qui la saisit et la met en forme. La validation par l’autorité est possible avant la diffusion ; un refus clôt la note. La secrétaire diffuse par email et notification. Le Chef de service ne fait aucune demande : il reçoit seulement les notes diffusées.
 
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
@@ -332,23 +303,8 @@ flowchart TB
   R1 --> E2
   E2 --> O2
   O2 --> R2
-```
-
-### MCT — Note de service (2/2) — validation, diffusion et archivage
-
-La validation par l’autorité est possible avant la diffusion ; un refus clôt la note. La secrétaire diffuse par email et notification. Le Chef de service ne fait aucune demande : il reçoit seulement les notes diffusées.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  S0{{"Note saisie<br/>autorité alertée"}}:::re
   E3(["<b>É3</b> — Note saisie à valider"]):::ev
   O3["<b>OP3 — Valider ou refuser</b><hr/>seule l’autorité émettrice<br/>motif obligatoire en cas de refus"]:::op
-  S0 --> E3
   E3 --> O3
   R3a{{"Note VALIDÉE"}}:::re
   R3b{{"Note REJETÉE<br/>motif enregistré"}}:::ko
@@ -356,7 +312,6 @@ flowchart TB
   O3 -->|"refus"| R3b
   E4(["<b>É4</b> — Note saisie ou validée à diffuser"]):::ev
   O4["<b>OP4 — Diffuser aux destinataires</b><hr/>réservé à la secrétaire<br/>notification + email<br/>Directeurs, Sous-Directeurs, Chefs de service, agents"]:::op
-  S0 -->|"sans validation"| E4
   R3a --> E4
   E4 --> O4
   R4{{"Note DIFFUSÉE"}}:::re
@@ -367,6 +322,8 @@ flowchart TB
   R4 --> E5
   E5 --> O5
   O5 --> R5
+  R2 --> E3
+  R2 -->|"sans validation"| E4
 ```
 
 ## 3. Modèles organisationnels des traitements (MOT)
