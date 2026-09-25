@@ -79,6 +79,7 @@
         <button onclick="showTab('notes')" id="nav-notes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Notes de Service</button>
         <button onclick="showTab('statistiques')" id="nav-statistiques" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Statistiques</button>
         <button onclick="showTab('journal')" id="nav-journal" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Journal d'audit</button>
+        <button onclick="showTab('structures')" id="nav-structures" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Structures du ministère</button>
       </div>
     </nav>
   </header>
@@ -229,6 +230,7 @@
 
     <!-- TAB : NOTES DE SERVICE -->
     <div id="tab-statistiques" class="hidden space-y-6"></div>
+    <div id="tab-structures" class="hidden space-y-6"></div>
 
     <!-- TAB : JOURNAL D'AUDIT -->
     <div id="tab-journal" class="hidden space-y-6">
@@ -602,7 +604,7 @@
     }
 
     function showTab(name) {
-      ['users','search','notes','statistiques','journal'].forEach(t => {
+      ['users','search','notes','statistiques','journal','structures'].forEach(t => {
         document.getElementById('tab-' + t).classList.add('hidden');
         const btn = document.getElementById('nav-' + t);
         if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
@@ -610,6 +612,7 @@
       document.getElementById('tab-' + name).classList.remove('hidden');
       if (name === 'statistiques') afficherStatistiques(document.getElementById('tab-statistiques'));
       if (name === 'journal') chargerJournal(1);
+      if (name === 'structures') afficherStructures(document.getElementById('tab-structures'));
       const active = document.getElementById('nav-' + name);
       if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
     }

@@ -520,7 +520,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -546,7 +546,8 @@ INSERT INTO `migrations` VALUES
 (13,'2026_09_24_220922_create_demande_reinitialisations_table',1),
 (14,'2026_09_24_230628_elargir_statuts_historique_declarations',2),
 (15,'2026_09_25_150000_create_journal_audit_table',3),
-(16,'2026_09_25_170000_ajouter_actif_aux_users',4);
+(16,'2026_09_25_170000_ajouter_actif_aux_users',4),
+(17,'2026_09_25_190000_enrichir_structures',5);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -983,15 +984,20 @@ CREATE TABLE `structures` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(20) NOT NULL,
   `nom` varchar(255) NOT NULL,
+  `sigle` varchar(20) DEFAULT NULL,
   `type` varchar(255) NOT NULL DEFAULT 'Service',
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  `officielle` tinyint(1) NOT NULL DEFAULT 1,
   `responsable_agent_id` bigint(20) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `structures_code_unique` (`code`),
   KEY `structures_responsable_agent_id_foreign` (`responsable_agent_id`),
+  KEY `structures_parent_id_foreign` (`parent_id`),
+  CONSTRAINT `structures_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `structures` (`id`) ON DELETE SET NULL,
   CONSTRAINT `structures_responsable_agent_id_foreign` FOREIGN KEY (`responsable_agent_id`) REFERENCES `agents` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1002,11 +1008,34 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `structures` WRITE;
 /*!40000 ALTER TABLE `structures` DISABLE KEYS */;
 INSERT INTO `structures` VALUES
-(1,'CAB','Cabinet du Ministre','Cabinet',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
-(2,'DRH','Direction des Ressources Humaines','Direction',5,'2026-09-23 15:12:49','2026-09-23 15:12:52'),
-(3,'DSI','Direction des Systèmes d’Information','Direction',4,'2026-09-23 15:12:49','2026-09-23 15:12:52'),
-(4,'SD-PERS','Sous-Direction du Personnel','Sous-Direction',3,'2026-09-23 15:12:49','2026-09-23 15:12:52'),
-(5,'SERV-ETUDES','Service des Études','Service',3,'2026-09-23 15:12:49','2026-09-23 15:12:52');
+(1,'CAB','Cabinet du Ministre',NULL,'Cabinet',NULL,1,NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
+(2,'DRH','Direction des Ressources Humaines','DRH','Direction',NULL,1,5,'2026-09-23 15:12:49','2026-09-25 18:54:40'),
+(3,'DSI','Direction des Systèmes d’Information','DSI','Direction',NULL,1,4,'2026-09-23 15:12:49','2026-09-25 18:54:40'),
+(4,'SD-PERS','Sous-Direction du Personnel',NULL,'Sous-Direction',NULL,0,3,'2026-09-23 15:12:49','2026-09-25 18:54:40'),
+(5,'SERV-ETUDES','Service des Études',NULL,'Service',NULL,0,3,'2026-09-23 15:12:49','2026-09-25 18:54:40'),
+(6,'IG','Inspection Générale','IG','Service rattaché',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(7,'CD','Conseil de Discipline',NULL,'Organe',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(8,'SOMFP','Secrétariat de l’Ordre du Mérite de la Fonction Publique','SOMFP','Service rattaché',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(9,'DQAC','Direction de la Qualité et de l’Accompagnement du Changement','DQAC','Direction',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(10,'DAF','Direction des Affaires Financières','DAF','Direction',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(11,'DPSE','Direction de la Planification, des Statistiques et de l’Évaluation','DPSE','Direction',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(12,'DAJC','Direction des Affaires Juridiques et du Contentieux','DAJC','Direction',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(13,'DCRP','Direction de la Communication et des Relations Publiques','DCRP','Direction',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(14,'DGFP','Direction Générale de la Fonction Publique','DGFP','Direction générale',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(15,'DC','Direction des Concours','DC','Direction centrale',14,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(16,'DPCE','Direction de la Programmation et du Contrôle des Effectifs','DPCE','Direction centrale',14,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(17,'DFRC','Direction de la Formation et du Renforcement des Capacités','DFRC','Direction centrale',14,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(18,'DGAPCE','Direction de la Gestion Administrative des Personnels Civils de l’État','DGAPCE','Direction centrale',14,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(19,'DSD','Direction des Services Déconcentrés (Directions Régionales et Antennes)','DSD','Direction centrale',14,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(20,'DGTSP','Direction Générale de la Transformation du Service Public','DGTSP','Direction générale',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(21,'DMOA','Direction de la Modernisation de l’Organisation Administrative','DMOA','Direction centrale',20,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(22,'DAPSP','Direction de l’Appui à la Performance du Service Public','DAPSP','Direction centrale',20,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(23,'DEM','Direction des Études et Méthodes','DEM','Direction centrale',20,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(24,'SDERO','Sous-Direction des Études et de la Restructuration des Organisations','SDERO','Sous-Direction',21,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(25,'SDDPGED','Sous-Direction de la Dématérialisation des Procédures et de la Gestion Électronique des Documents','SDDPGED','Sous-Direction',21,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(26,'ENA','École Nationale d’Administration','ENA','Structure sous tutelle',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(27,'CPFAE','Centre de Perfectionnement des Fonctionnaires et Agents de l’État','CPFAE','Structure sous tutelle',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40'),
+(28,'CED-CI','CED-CI','CED-CI','Structure sous tutelle',NULL,1,NULL,'2026-09-25 18:54:40','2026-09-25 18:54:40');
 /*!40000 ALTER TABLE `structures` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1086,16 +1115,16 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` VALUES
-(1,'M. GRAMBOUTE Mohamed','agt001@fonctionpublique.gouv.ci','AGT001',1,5,1,NULL,'$2y$12$kzWfZCMQUuTnI/5cMJj90OqPRXByioHMYXqf97aNAHB.uVBI7pB6y',NULL,'2026-09-25 18:32:36','2026-09-23 15:12:49','2026-09-25 18:32:36'),
-(2,'M. KOUAME Awa','rh001@fonctionpublique.gouv.ci','RH001',2,2,1,NULL,'$2y$12$o7olLqw/UmrWAu83CokDOu/EI/eV0.0ablrIHZ2MmX2V3ZhfiUzle',NULL,'2026-09-25 16:25:27','2026-09-23 15:12:50','2026-09-25 16:25:27'),
+(1,'M. GRAMBOUTE Mohamed','agt001@fonctionpublique.gouv.ci','AGT001',1,5,1,NULL,'$2y$12$kzWfZCMQUuTnI/5cMJj90OqPRXByioHMYXqf97aNAHB.uVBI7pB6y',NULL,'2026-09-25 18:49:09','2026-09-23 15:12:49','2026-09-25 18:49:09'),
+(2,'M. KOUAME Awa','rh001@fonctionpublique.gouv.ci','RH001',2,2,1,NULL,'$2y$12$o7olLqw/UmrWAu83CokDOu/EI/eV0.0ablrIHZ2MmX2V3ZhfiUzle',NULL,'2026-09-25 18:49:13','2026-09-23 15:12:50','2026-09-25 18:49:13'),
 (3,'M. BROU Marc','sd001@fonctionpublique.gouv.ci','SD001',3,4,1,NULL,'$2y$12$B/lkcSISiXL5pbl1Aimao.xgjar9fumedpspcrK0VntQFqPitSyfy',NULL,'2026-09-24 21:39:45','2026-09-23 15:12:50','2026-09-24 21:39:45'),
 (4,'M. KONE Ibrahim','dir001@fonctionpublique.gouv.ci','DIR001',4,3,1,NULL,'$2y$12$RCP/LoZCdGI.jeqAZ2UQBOmwbHjgSyRio2zLOp5hkYBjURjEnBaxW',NULL,'2026-09-25 18:23:37','2026-09-23 15:12:50','2026-09-25 18:23:37'),
-(5,'M. ADJOUA Marie','drh001@fonctionpublique.gouv.ci','DRH001',5,2,1,NULL,'$2y$12$ib99nCGsyVqIhaB7WeSB8utzEHNWPuwMhGxTDDO4itwMcw7yZ/Gcm',NULL,'2026-09-25 12:25:19','2026-09-23 15:12:50','2026-09-25 12:25:19'),
+(5,'M. ADJOUA Marie','drh001@fonctionpublique.gouv.ci','DRH001',5,2,1,NULL,'$2y$12$ib99nCGsyVqIhaB7WeSB8utzEHNWPuwMhGxTDDO4itwMcw7yZ/Gcm',NULL,'2026-09-25 18:49:16','2026-09-23 15:12:50','2026-09-25 18:49:16'),
 (6,'M. YAPO Chantal','sec001@fonctionpublique.gouv.ci','SEC001',6,1,1,NULL,'$2y$12$H8eiUKEFaeeK9al9F8dM6.3ayKttoeZ0xcrmr3MxMb4HkbBZxye52',NULL,'2026-09-24 21:39:34','2026-09-23 15:12:51','2026-09-24 21:39:34'),
 (7,'M. DIALLO Aminata','svc001@fonctionpublique.gouv.ci','SVC001',7,2,1,NULL,'$2y$12$mjQ6BSqNEl5ko9tv/PyT3Ob9Pgzeo/HO8bQt.0TEfI/XqshI/LfjW',NULL,NULL,'2026-09-23 15:12:51','2026-09-23 15:12:51'),
 (8,'M. TRAORE Siaka','chef001@fonctionpublique.gouv.ci','CHEF001',8,5,1,NULL,'$2y$12$2xj.iFcvIH5OEyjRgeUWouRMonDHJIxAPObLAUwnE/o7XUle/Ugzi',NULL,'2026-09-24 21:37:52','2026-09-23 15:12:51','2026-09-24 21:37:52'),
 (9,'M. N_GUESSAN Koffi','cab001@fonctionpublique.gouv.ci','CAB001',9,1,1,NULL,'$2y$12$NyWY1oKpbAC2qyJnoB6maeSuXNcXgZfG4rrfKGqTzc146oASPoFyi',NULL,'2026-09-24 21:39:22','2026-09-23 15:12:51','2026-09-24 21:39:22'),
-(10,'M. SYSADMIN Root','adm001@fonctionpublique.gouv.ci','ADM001',10,3,1,NULL,'$2y$12$a23HbBt0akFG.OBeIdbQt.sYHAmWIgVj.nvioe2yMUxGII6MNz6Ga',NULL,'2026-09-25 18:39:53','2026-09-23 15:12:51','2026-09-25 18:39:53'),
+(10,'M. SYSADMIN Root','adm001@fonctionpublique.gouv.ci','ADM001',10,3,1,NULL,'$2y$12$a23HbBt0akFG.OBeIdbQt.sYHAmWIgVj.nvioe2yMUxGII6MNz6Ga',NULL,'2026-09-25 18:55:22','2026-09-23 15:12:51','2026-09-25 18:55:22'),
 (11,'M. GRAMBOUTE Mohamed Prince','000001x@fonctionpublique.gouv.ci','000001X',11,5,1,NULL,'$2y$12$aEAD93crr33vljE964bvFOGFvnCpBzG2iUXhQTiv7EGR7c1TTj/nC',NULL,'2026-09-25 11:23:21','2026-09-23 15:12:52','2026-09-25 11:23:21'),
 (12,'M. KOUASSI Jean-Marc','000002a@fonctionpublique.gouv.ci','000002A',12,4,1,NULL,'$2y$12$dAq2ZZ4jHbm74E3k4oQDYOnDEjPFL6EkmL11K2ZCGXV94Rw99mxkC',NULL,'2026-09-25 01:49:00','2026-09-23 15:12:52','2026-09-25 01:49:00'),
 (13,'M. ADJOUA Marie-Claire','000003b@fonctionpublique.gouv.ci','000003B',13,2,1,NULL,'$2y$12$ZbcliQbaLopr8xim4rhXF.3Zrnqd19LL0o5ENtSbh6S87m9/oFAsG',NULL,'2026-09-24 21:19:18','2026-09-23 15:12:52','2026-09-24 21:19:18'),
@@ -1114,7 +1143,7 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-09-25 10:40:05
+-- Dump completed on 2026-09-25 10:56:07
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.20-13.0.2-MariaDB, for osx10.23 (arm64)
 --
@@ -1155,7 +1184,7 @@ CREATE TABLE `personal_access_tokens` (
   UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
   KEY `personal_access_tokens_expires_at_index` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=138 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1263,7 +1292,7 @@ CREATE TABLE `journal_audit` (
   KEY `journal_audit_reference_index` (`reference`),
   KEY `journal_audit_created_at_index` (`created_at`),
   CONSTRAINT `journal_audit_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1275,5 +1304,5 @@ CREATE TABLE `journal_audit` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-09-25 10:40:05
+-- Dump completed on 2026-09-25 10:56:07
 SET FOREIGN_KEY_CHECKS=1;

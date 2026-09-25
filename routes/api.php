@@ -11,6 +11,7 @@ use App\Http\Controllers\NoteServiceController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PieceController;
 use App\Http\Controllers\StatistiquesController;
+use App\Http\Controllers\StructureController;
 use Illuminate\Support\Facades\Route;
 
 // Ancien contrat (frontend historique servi depuis /gfp).
@@ -23,6 +24,7 @@ Route::post('/mot-de-passe/reinitialiser', [MotDePasseController::class, 'reinit
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/annuaire-structures', [StructureController::class, 'index']);
 
     // Contrat historique.
     Route::get('/requests', [LegacyApiController::class, 'requests']);

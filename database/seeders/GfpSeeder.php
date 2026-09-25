@@ -26,6 +26,7 @@ class GfpSeeder extends Seeder
         foreach ($structures as $s) {
             Structure::firstOrCreate(['code' => $s['code']], $s);
         }
+        $this->call(StructuresMinistereSeeder::class);
 
         $fonctions = [
             ['code' => 'AGENT', 'libelle' => 'Agent', 'niveau_hierarchique' => 1],

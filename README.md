@@ -16,6 +16,7 @@ Chaque démarche suit le circuit réel de l’administration : l’agent dépose
 - **Consultation des justificatifs** par les personnes habilitées uniquement
 - **Inscription** avec choix du rôle, et **mot de passe oublié** validé par l’administrateur
 - **Espace administrateur** : gestion des comptes (rôle, structure, suspension/réactivation, mot de passe, filtres) et recherche dans tous les dossiers
+- **Annuaire des structures** du ministère (cabinet, directions générales, directions centrales, sous-directions, structures sous tutelle) classées de A à Z, avec rattachements et effectifs
 - **Journal d’audit** : l’administrateur voit toutes les entrées et sorties (connexions, déconnexions, tentatives refusées) ainsi que les actions sur les dossiers, les comptes, les mots de passe et la consultation des justificatifs, avec filtres et export CSV
 
 ## Les circuits de traitement

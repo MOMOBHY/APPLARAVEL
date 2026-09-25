@@ -853,3 +853,83 @@ async function afficherStatistiques(conteneur) {
   });
   $('[data-ligne2]').appendChild(carteDelais);
 }
+
+// ---------------------------------------------------------------
+// Annuaire des structures du ministère (classées de A à Z)
+// ---------------------------------------------------------------
+async function afficherStructures(conteneur) {
+  const COULEURS_TYPE = {
+    'Direction générale': 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    'Direction centrale': 'bg-slate-100 text-slate-700 border-slate-300',
+    'Direction': 'bg-slate-100 text-slate-700 border-slate-300',
+    'Sous-Direction': 'bg-amber-50 text-amber-800 border-amber-200',
+    'Structure sous tutelle': 'bg-amber-50 text-amber-800 border-amber-200',
+  };
+  conteneur.innerHTML = '<p class="text-xs text-slate-500">Chargement des structures…</p>';
+  let data;
+  try {
+    const response = await fetch(`${API_BASE_URL}/annuaire-structures`, { headers: authHeaders() });
+    data = await response.json();
+  } catch (e) { data = null; }
+  if (!data || data.status !== 'success') {
+    conteneur.innerHTML = '<p class="text-xs text-red-700">Impossible de charger les structures.</p>';
+    return;
+  }
+
+  const types = [...new Set(data.structures.map(s => s.type))].sort((a, b) => a.localeCompare(b, 'fr'));
+  conteneur.innerHTML = `
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Structures du ministère — de A à Z</h2>
+        <p class="text-xs text-slate-500">Ministère de la Fonction Publique et de la Modernisation de l’Administration · <span data-total></span> structures · source : organisation officielle du ministère (fonctionpublique.gouv.ci).</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input type="text" data-q placeholder="Rechercher un nom ou un sigle…" class="md:col-span-2 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+        <select data-type class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <option value="">Tous les types</option>
+          ${types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+        </select>
+      </div>
+      <div data-lettres class="flex flex-wrap gap-1"></div>
+      <div data-liste class="space-y-5"></div>
+      <p class="text-[11px] text-slate-500">La liste des sous-directions et services internes n’est pas publiée en totalité : seules les entités officiellement recensées sont affichées.</p>
+    </div>`;
+
+  const $ = s => conteneur.querySelector(s);
+  const initiale = s => s.nom.normalize('NFD').replace(/[̀-ͯ]/g, '')[0].toUpperCase();
+
+  function rendre() {
+    const q = $('[data-q]').value.trim().toLowerCase();
+    const t = $('[data-type]').value;
+    const liste = data.structures.filter(s =>
+      (!t || s.type === t) && (!q || (s.nom + ' ' + (s.sigle || '')).toLowerCase().includes(q)));
+    $('[data-total]').textContent = liste.length === data.total ? data.total : `${liste.length} / ${data.total}`;
+
+    const groupes = {};
+    liste.forEach(s => (groupes[initiale(s)] ||= []).push(s));
+    const lettres = Object.keys(groupes).sort();
+    $('[data-lettres]').innerHTML = lettres.map(l =>
+      `<a href="#struct-${l}" class="px-2 py-1 rounded border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100">${l}</a>`).join('');
+    $('[data-liste]').innerHTML = lettres.map(l => `
+      <section id="struct-${l}">
+        <h3 class="text-sm font-black text-emerald-800 border-b border-slate-200 pb-1 mb-2">${l}</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          ${groupes[l].map(s => `
+            <div class="border border-slate-200 rounded-lg p-3 bg-white/60">
+              <div class="flex justify-between items-start gap-2">
+                <p class="text-xs font-bold text-slate-900">${escapeHtml(s.nom)}</p>
+                ${s.sigle ? `<span class="px-2 py-0.5 rounded bg-slate-800 text-white text-[10px] font-bold">${escapeHtml(s.sigle)}</span>` : ''}
+              </div>
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                <span class="px-2 py-0.5 rounded-full border font-bold ${COULEURS_TYPE[s.type] || 'bg-slate-50 text-slate-700 border-slate-200'}">${escapeHtml(s.type)}</span>
+                ${s.rattachement ? `<span>Rattachée à : <b class="text-slate-700">${escapeHtml(s.rattachement_sigle || s.rattachement)}</b></span>` : ''}
+                <span>${s.effectif} agent${s.effectif > 1 ? 's' : ''} sur la plateforme</span>
+              </div>
+            </div>`).join('')}
+        </div>
+      </section>`).join('') || '<p class="text-xs text-slate-500 italic">Aucune structure ne correspond.</p>';
+  }
+  $('[data-q]').oninput = rendre;
+  $('[data-type]').onchange = rendre;
+  rendre();
+}
