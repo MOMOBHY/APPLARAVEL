@@ -328,8 +328,6 @@ flowchart TB
 
 ## 3. Modèles organisationnels des traitements (MOT)
 
-Les MOT au format tableau (flux, élément naturel, postes de travail) sont dans les PDF [08](schemas/08-MOT-demande-de-permission.pdf), [09](schemas/09-MOT-declaration-de-naissance-ou-de-deces.pdf) et [10](schemas/10-MOT-note-de-service.pdf). Les schémas en couloirs ci-dessous en sont une version simplifiée.
-
 ### MOT — Demande de permission
 
 Postes : Agent, Gestionnaire RH, Sous-Directeur ou Directeur (seulement pour les demandes de 2 jours ou moins), DRH.
@@ -360,6 +358,7 @@ flowchart LR
   a1 -->|"demande enregistrée"| r1
   r1 -->|"retour pour correction"| a2
   a2 -->|"resoumise"| r1
+  r1 -->|"rejet motivé, agent notifié"| a1
   r1 -->|"conforme, durée ≤ 2 jours"| v1
   r1 -->|"conforme, durée &gt; 2 jours"| d1
   v1 -->|"visa favorable"| d1
