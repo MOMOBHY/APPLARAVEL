@@ -108,7 +108,7 @@ Ces comptes servent uniquement aux démonstrations : pensez à changer les mots 
 
 ## Conception
 
-La modélisation Merise de la plateforme (MCD, MCT et MOT de chaque circuit) est dans [docs/MERISE.md](docs/MERISE.md), avec une version PDF : [docs/Conception_Merise_GFP.pdf](docs/Conception_Merise_GFP.pdf).
+La modélisation Merise de la plateforme (MCD, MCT et MOT de la permission, des déclarations et des notes de service) est dans [docs/MERISE.md](docs/MERISE.md), avec une version PDF : [docs/Conception_Merise_GFP.pdf](docs/Conception_Merise_GFP.pdf).
 
 ## Tests
 

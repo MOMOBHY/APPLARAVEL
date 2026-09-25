@@ -174,39 +174,11 @@ flowchart LR
   D6 ---|"1,1"| NO
 ```
 
-### MCD 5 — Sécurité, audit et notifications
-
-Toute entrée, sortie ou action sensible est inscrite au journal d’audit. Le lien avec l’utilisateur est facultatif : une tentative de connexion avec un matricule inconnu est aussi journalisée. Une demande de réinitialisation de mot de passe est adressée par un utilisateur et traitée (autorisée ou refusée) par un administrateur.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart LR
-  classDef ent fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef asso fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  AG["<b>AGENT</b><hr/><u>id_agent</u><br/>matricule<br/>nom<br/>prénom"]:::ent
-  US["<b>UTILISATEUR</b><hr/><u>id_utilisateur</u><br/>matricule<br/>mot_de_passe (haché)<br/>actif<br/>dernière_connexion"]:::ent
-  DR["<b>DEMANDE_RÉINITIALISATION</b><hr/><u>id_demande</u><br/>code_de_suivi (haché)<br/>statut<br/>date_utilisation"]:::ent
-  JA["<b>JOURNAL_AUDIT</b><hr/><u>id_événement</u><br/>matricule<br/>nom<br/>rôle<br/>catégorie<br/>action<br/>description<br/>référence<br/>réussi<br/>adresse_IP<br/>appareil<br/>date_heure"]:::ent
-  NO["<b>NOTIFICATION</b><hr/><u>id_notification</u><br/>titre<br/>message<br/>type<br/>est_lu"]:::ent
-  E1(["<b>RÉINITIALISER</b>"]):::asso
-  E2(["<b>TRAITER</b><hr/><i>date_traitement</i>"]):::asso
-  E3(["<b>JOURNALISER</b>"]):::asso
-  E4(["<b>ALERTER</b>"]):::asso
-  US ---|"0,n"| E1
-  E1 ---|"1,1"| DR
-  US ---|"0,n (administrateur)"| E2
-  E2 ---|"0,1"| DR
-  US ---|"0,n"| E3
-  E3 ---|"0,1"| JA
-  AG ---|"0,n"| E4
-  E4 ---|"1,1"| NO
-```
-
 ## 2. Modèles conceptuels des traitements (MCT)
 
-### MCT — Permission, cas 1 : 2 jours ou moins (1/2) — dépôt et vérification
+### MCT — Demande de permission (1/2) — dépôt et vérification
 
-L’agent dépose sa demande ; le gestionnaire RH la vérifie. Il la transmet (conforme), la retourne pour correction (incomplète) ou la rejette (non conforme). La suite du circuit est au schéma suivant.
+Un seul circuit pour toutes les demandes. Le gestionnaire RH vérifie le dossier ; selon la durée, il le transmet pour visa (2 jours ou moins) ou directement au DRH (plus de 2 jours). Il peut aussi le retourner pour correction ou le rejeter.
 
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
@@ -215,21 +187,23 @@ flowchart TB
   classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
   classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
   classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  E1(["<b>É1</b> — L’agent dépose une demande<br/>(durée ≤ 2 jours)"]):::ev
+  E1(["<b>É1</b> — L’agent dépose une demande de permission"]):::ev
   O1["<b>OP1 — Enregistrer la demande</b><hr/>durée entre 1 et 30 jours<br/>justificatif et lieu obligatoires<br/>statut : EN_ATTENTE_GESTIONNAIRE_RH"]:::op
   R1{{"Demande enregistrée<br/>gestionnaire RH alerté"}}:::re
   E2(["<b>É2</b> — Demande reçue par le gestionnaire RH"]):::ev
-  O2["<b>OP2 — Vérifier le dossier</b><hr/>conformité de la demande et du justificatif"]:::op
+  O2["<b>OP2 — Vérifier le dossier</b><hr/>conformité de la demande et du justificatif<br/>le gestionnaire RH choisit le niveau de visa<br/>(Sous-Directeur ou Directeur) si durée ≤ 2 jours"]:::op
   E1 --> O1
   O1 --> R1
   R1 --> E2
   E2 --> O2
   R2a{{"Rejetée<br/>motif obligatoire<br/>agent notifié"}}:::ko
   R2b{{"Retournée pour correction<br/>motif obligatoire<br/>agent alerté"}}:::re
-  R2c{{"Transmise au niveau de visa choisi<br/>Sous-Directeur ou Directeur"}}:::re
+  R2c{{"Transmise pour visa<br/>Sous-Directeur ou Directeur"}}:::re
+  R2d{{"Transmise directement au DRH<br/>statut : EN_ATTENTE_DRH"}}:::re
   O2 -->|"non conforme"| R2a
   O2 -->|"incomplet"| R2b
-  O2 -->|"conforme"| R2c
+  O2 -->|"conforme et durée ≤ 2 jours"| R2c
+  O2 -->|"conforme et durée &gt; 2 jours"| R2d
   E3(["<b>É3</b> — Demande retournée à l’agent"]):::ev
   O3["<b>OP3 — Corriger et resoumettre</b><hr/>seul le demandeur peut corriger<br/>retour à l’état EN_ATTENTE_GESTIONNAIRE_RH"]:::op
   R2b --> E3
@@ -237,9 +211,9 @@ flowchart TB
   O3 -->|"nouvelle vérification"| E2
 ```
 
-### MCT — Permission, cas 1 : 2 jours ou moins (2/2) — visa, décision et notification
+### MCT — Demande de permission (2/2) — visa, décision et notification
 
-Le gestionnaire RH a choisi le niveau de visa (Sous-Directeur ou Directeur). Le refus de visa clôt la demande et prévient le gestionnaire RH ; sinon le DRH tranche. Chaque opération est aussi enregistrée dans l’historique du dossier et dans le journal d’audit.
+L’étape de visa n’existe que pour les demandes de 2 jours ou moins : un refus de visa clôt la demande et prévient le gestionnaire RH. Dans tous les cas, le DRH tranche, puis le gestionnaire RH notifie l’agent. Chaque opération est aussi enregistrée dans l’historique du dossier et dans le journal d’audit.
 
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
@@ -248,10 +222,11 @@ flowchart TB
   classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
   classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
   classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  S0{{"Transmise au niveau de visa choisi<br/>Sous-Directeur ou Directeur"}}:::re
+  S1{{"Transmise pour visa<br/>(durée ≤ 2 jours)"}}:::re
+  S2{{"Transmise directement au DRH<br/>(durée &gt; 2 jours)"}}:::re
   E4(["<b>É4</b> — Demande reçue pour visa"]):::ev
-  O4["<b>OP4 — Viser la demande</b><hr/>réservé au responsable de la structure de l’agent<br/>motif obligatoire en cas de refus"]:::op
-  S0 --> E4
+  O4["<b>OP4 — Viser la demande</b><hr/>uniquement si durée ≤ 2 jours<br/>réservé au responsable de la structure de l’agent<br/>motif obligatoire en cas de refus"]:::op
+  S1 --> E4
   E4 --> O4
   R4a{{"Visa refusé<br/>demande REJETÉE<br/>gestionnaire RH alerté"}}:::ko
   R4b{{"Visa favorable<br/>statut : EN_ATTENTE_DRH"}}:::re
@@ -260,6 +235,7 @@ flowchart TB
   E5(["<b>É5</b> — Demande reçue par le DRH"]):::ev
   O5["<b>OP5 — Trancher (décision finale)</b><hr/>validation ou rejet motivé<br/>si validée : solde de l’agent diminué"]:::op
   R4b --> E5
+  S2 --> E5
   E5 --> O5
   R5a{{"Demande VALIDÉE<br/>gestionnaire RH alerté"}}:::re
   R5b{{"Demande REJETÉE<br/>motif enregistré<br/>gestionnaire RH alerté"}}:::ko
@@ -267,68 +243,6 @@ flowchart TB
   O5 -->|"rejet"| R5b
   E6(["<b>É6</b> — Décision finale à communiquer"]):::ev
   O6["<b>OP6 — Notifier l’agent</b><hr/>effectué par le gestionnaire RH<br/>notification + date de notification"]:::op
-  R6{{"Agent notifié<br/>dossier clôturé"}}:::re
-  R5a --> E6
-  R5b --> E6
-  E6 --> O6
-  O6 --> R6
-```
-
-### MCT — Permission, cas 2 : plus de 2 jours (1/2) — dépôt et vérification
-
-Même début de circuit que le cas 1 ; seule la destination d’une demande conforme change : le gestionnaire RH la transmet directement au DRH.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  E1(["<b>É1</b> — L’agent dépose une demande<br/>(durée &gt; 2 jours)"]):::ev
-  O1["<b>OP1 — Enregistrer la demande</b><hr/>durée entre 1 et 30 jours<br/>justificatif et lieu obligatoires<br/>statut : EN_ATTENTE_GESTIONNAIRE_RH"]:::op
-  R1{{"Demande enregistrée<br/>gestionnaire RH alerté"}}:::re
-  E2(["<b>É2</b> — Demande reçue par le gestionnaire RH"]):::ev
-  O2["<b>OP2 — Vérifier le dossier</b><hr/>conformité de la demande et du justificatif"]:::op
-  E1 --> O1
-  O1 --> R1
-  R1 --> E2
-  E2 --> O2
-  R2a{{"Rejetée<br/>motif obligatoire<br/>agent notifié"}}:::ko
-  R2b{{"Retournée pour correction<br/>motif obligatoire<br/>agent alerté"}}:::re
-  R2c{{"Transmise directement au DRH<br/>statut : EN_ATTENTE_DRH"}}:::re
-  O2 -->|"non conforme"| R2a
-  O2 -->|"incomplet"| R2b
-  O2 -->|"conforme"| R2c
-  E3(["<b>É3</b> — Demande retournée à l’agent"]):::ev
-  O3["<b>OP3 — Corriger et resoumettre</b><hr/>seul le demandeur peut corriger<br/>retour à l’état EN_ATTENTE_GESTIONNAIRE_RH"]:::op
-  R2b --> E3
-  E3 --> O3
-  O3 -->|"nouvelle vérification"| E2
-```
-
-### MCT — Permission, cas 2 : plus de 2 jours (2/2) — décision et notification
-
-Aucune étape de visa : le DRH tranche directement, puis le gestionnaire RH notifie l’agent.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  S0{{"Transmise directement au DRH<br/>statut : EN_ATTENTE_DRH"}}:::re
-  E5(["<b>É4</b> — Demande reçue par le DRH"]):::ev
-  O5["<b>OP4 — Trancher (décision finale)</b><hr/>validation ou rejet motivé<br/>si validée : solde de l’agent diminué"]:::op
-  S0 --> E5
-  E5 --> O5
-  R5a{{"Demande VALIDÉE<br/>gestionnaire RH alerté"}}:::re
-  R5b{{"Demande REJETÉE<br/>motif enregistré<br/>gestionnaire RH alerté"}}:::ko
-  O5 -->|"accord"| R5a
-  O5 -->|"rejet"| R5b
-  E6(["<b>É5</b> — Décision finale à communiquer"]):::ev
-  O6["<b>OP5 — Notifier l’agent</b><hr/>effectué par le gestionnaire RH<br/>notification + date de notification"]:::op
   R6{{"Agent notifié<br/>dossier clôturé"}}:::re
   R5a --> E6
   R5b --> E6
@@ -455,79 +369,11 @@ flowchart TB
   O5 --> R5
 ```
 
-### MCT — Mot de passe oublié
-
-L’utilisateur ne peut pas se réinitialiser seul : l’administrateur doit d’abord autoriser la demande. Le code de suivi n’est stocké que sous forme hachée et ne sert qu’une fois.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  E1(["<b>É1</b> — Un utilisateur a oublié son mot de passe"]):::ev
-  O1["<b>OP1 — Demander une réinitialisation</b><hr/>matricule existant<br/>les demandes précédentes sont annulées<br/>code de suivi généré (affiché une seule fois)"]:::op
-  R1{{"Demande EN_ATTENTE<br/>administrateurs alertés"}}:::re
-  E2(["<b>É2</b> — Demande reçue par l’administrateur"]):::ev
-  O2["<b>OP2 — Autoriser ou refuser</b><hr/>réservé à l’administrateur<br/>l’utilisateur est alerté"]:::op
-  E1 --> O1
-  O1 --> R1
-  R1 --> E2
-  E2 --> O2
-  R2a{{"Demande AUTORISÉE"}}:::re
-  R2b{{"Demande REFUSÉE<br/>fin du circuit"}}:::ko
-  O2 -->|"autorisation"| R2a
-  O2 -->|"refus"| R2b
-  E3(["<b>É3</b> — L’utilisateur choisit un nouveau mot de passe<br/>(matricule + code de suivi)"]):::ev
-  O3["<b>OP3 — Réinitialiser le mot de passe</b><hr/>code exact et demande AUTORISÉE<br/>mot de passe de 6 caractères minimum<br/>code à usage unique"]:::op
-  R2a --> E3
-  E3 --> O3
-  R3a{{"Mot de passe changé<br/>sessions fermées<br/>demande UTILISÉE"}}:::re
-  R3b{{"Refus<br/>code faux, demande en attente, refusée ou déjà utilisée"}}:::ko
-  O3 -->|"conditions remplies"| R3a
-  O3 -->|"sinon"| R3b
-```
-
-### MCT — Inscription, connexion et déconnexion
-
-Les entrées et sorties sont toutes journalisées, y compris les échecs. L’administrateur peut suspendre un compte : il est alors déconnecté et refusé à la connexion.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  E1(["<b>É1</b> — Une personne demande un compte"]):::ev
-  O1["<b>OP1 — Créer le compte</b><hr/>rôle choisi (hors administrateur)<br/>matricule unique<br/>nom et prénom uniques"]:::op
-  E1 --> O1
-  R1a{{"Compte créé<br/>agent + compte + rôle"}}:::re
-  R1b{{"Inscription refusée<br/>matricule ou personne déjà enregistrés"}}:::ko
-  O1 -->|"valide"| R1a
-  O1 -->|"doublon"| R1b
-  E2(["<b>É2</b> — Un utilisateur se présente<br/>(matricule + mot de passe)"]):::ev
-  O2["<b>OP2 — Authentifier</b><hr/>identifiants exacts<br/>compte actif<br/>limité à 10 essais par minute"]:::op
-  R1a --> E2
-  E2 --> O2
-  R2a{{"Session ouverte<br/>orientation vers l’espace du rôle<br/>événement CONNEXION journalisé"}}:::re
-  R2b{{"Accès refusé<br/>mauvais identifiants ou compte suspendu<br/>événement CONNEXION_REFUSÉE journalisé"}}:::ko
-  O2 -->|"accepté"| R2a
-  O2 -->|"refusé"| R2b
-  E3(["<b>É3</b> — L’utilisateur se déconnecte"]):::ev
-  O3["<b>OP3 — Clore la session</b><hr/>jeton d’accès supprimé"]:::op
-  R3{{"Session fermée<br/>événement DÉCONNEXION journalisé"}}:::re
-  R2a --> E3
-  E3 --> O3
-  O3 --> R3
-```
-
 ## 3. Modèles organisationnels des traitements (MOT)
 
-### MOT — Permission, cas 1 : 2 jours ou moins
+### MOT — Demande de permission
 
-Postes : Agent, Gestionnaire RH, Sous-Directeur ou Directeur, DRH.
+Postes : Agent, Gestionnaire RH, Sous-Directeur ou Directeur (seulement pour les demandes de 2 jours ou moins), DRH.
 
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
@@ -555,7 +401,8 @@ flowchart LR
   a1 -->|"demande enregistrée"| r1
   r1 -->|"retour pour correction"| a2
   a2 -->|"resoumise"| r1
-  r1 -->|"conforme"| v1
+  r1 -->|"conforme, durée ≤ 2 jours"| v1
+  r1 -->|"conforme, durée &gt; 2 jours"| d1
   v1 -->|"visa favorable"| d1
   v1 -->|"visa refusé"| r6
   d1 -->|"décision"| r6
@@ -564,51 +411,12 @@ flowchart LR
 
 | N° | Opération | Poste | Nature | Durée | Règles de gestion | Résultat |
 |---|---|---|---|---|---|---|
-| 1 | Déposer la demande | Agent | Interactif | Immédiate | Durée 1 à 30 jours ; justificatif et lieu obligatoires | Demande EN_ATTENTE_GESTIONNAIRE_RH |
-| 2 | Vérifier le dossier | Gestionnaire RH | Manuel puis interactif | Sous 1 jour ouvré | Conforme, incomplet ou non conforme ; motif obligatoire si non conforme ou incomplet; choix du niveau de visa | Transmise, retournée ou rejetée |
-| 3 | Corriger et resoumettre | Agent | Interactif | Sous 2 jours | Seul le demandeur ; seulement si retournée | Retour à l’étape 2 |
-| 4 | Viser la demande | Sous-Directeur ou Directeur | Manuel puis interactif | Sous 1 jour ouvré | Réservé au responsable de la structure ; motif obligatoire si refus | EN_ATTENTE_DRH ou REJETÉE |
+| 1 | Déposer la demande | Agent | Interactif | Immédiate | Durée de 1 à 30 jours ; justificatif et lieu obligatoires | Demande EN_ATTENTE_GESTIONNAIRE_RH |
+| 2 | Vérifier le dossier | Gestionnaire RH | Manuel puis interactif | Sous 1 jour ouvré | Conforme, incomplet ou non conforme ; motif obligatoire si incomplet ou non conforme ; si durée ≤ 2 jours, choix du niveau de visa | Transmise pour visa (≤ 2 jours) ou au DRH (> 2 jours), retournée ou rejetée |
+| 3 | Corriger et resoumettre | Agent | Interactif | Sous 2 jours | Seul le demandeur ; seulement si la demande est retournée | Retour à l’étape 2 |
+| 4 | Viser la demande | Sous-Directeur ou Directeur | Manuel puis interactif | Sous 1 jour ouvré | Uniquement si durée ≤ 2 jours ; réservé au responsable de la structure de l’agent ; motif obligatoire si refus | EN_ATTENTE_DRH ou REJETÉE |
 | 5 | Trancher | DRH | Manuel puis interactif | Sous 2 jours ouvrés | Motif obligatoire si rejet ; solde diminué si validée | VALIDÉE ou REJETÉE, gestionnaire RH alerté |
 | 6 | Notifier l’agent | Gestionnaire RH | Interactif | Immédiate | Décision finale et agent non encore notifié | Agent notifié, dossier clôturé |
-
-### MOT — Permission, cas 2 : plus de 2 jours
-
-Postes : Agent, Gestionnaire RH, DRH. L’étape de visa n’existe pas.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart LR
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  subgraph L1["Agent"]
-    direction TB
-    a1["<b>1</b> Déposer la demande"]:::op
-    a2["<b>3</b> Corriger et resoumettre"]:::op
-  end
-  subgraph L2["Gestionnaire RH"]
-    direction TB
-    r1["<b>2</b> Vérifier le dossier"]:::op
-    r6["<b>5</b> Notifier l’agent"]:::op
-  end
-  subgraph L4["DRH"]
-    direction TB
-    d1["<b>4</b> Trancher"]:::op
-  end
-  a1 -->|"demande enregistrée"| r1
-  r1 -->|"retour pour correction"| a2
-  a2 -->|"resoumise"| r1
-  r1 -->|"conforme"| d1
-  d1 -->|"décision"| r6
-  r6 -->|"notification à l’agent"| a1
-```
-
-| N° | Opération | Poste | Nature | Durée | Règles de gestion | Résultat |
-|---|---|---|---|---|---|---|
-| 1 | Déposer la demande | Agent | Interactif | Immédiate | Durée 1 à 30 jours ; justificatif et lieu obligatoires | Demande EN_ATTENTE_GESTIONNAIRE_RH |
-| 2 | Vérifier le dossier | Gestionnaire RH | Manuel puis interactif | Sous 1 jour ouvré | Conforme, incomplet ou non conforme ; motif obligatoire si non conforme ou incomplet | Transmise, retournée ou rejetée |
-| 3 | Corriger et resoumettre | Agent | Interactif | Sous 2 jours | Seul le demandeur ; seulement si retournée | Retour à l’étape 2 |
-| 4 | Trancher | DRH | Manuel puis interactif | Sous 2 jours ouvrés | Motif obligatoire si rejet ; solde diminué si validée | VALIDÉE ou REJETÉE, gestionnaire RH alerté |
-| 5 | Notifier l’agent | Gestionnaire RH | Interactif | Immédiate | Décision finale et agent non encore notifié | Agent notifié, dossier clôturé |
 
 ### MOT — Déclaration de naissance ou de décès
 
@@ -689,81 +497,3 @@ flowchart LR
 | 4 | Diffuser | Secrétaire | Interactif puis automatique (email) | Immédiate | Note saisie et non refusée | DIFFUSÉE, notifications et emails envoyés |
 | 5 | Archiver | Secrétaire ou autorité | Interactif | Immédiate | Note validée ou diffusée | ARCHIVÉE |
 | 6 | Consulter la note | Destinataires | Interactif | Libre | Structure concernée ; le Chef de service ne fait aucune demande | Note lue |
-
-### MOT — Mot de passe oublié
-
-Postes : utilisateur, administrateur ; le contrôle final est automatique.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart LR
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  subgraph L1["Utilisateur"]
-    direction TB
-    u1["<b>1</b> Demander la réinitialisation"]:::op
-    u2["<b>3</b> Choisir un nouveau mot de passe"]:::op
-  end
-  subgraph L2["Administrateur"]
-    direction TB
-    m1["<b>2</b> Autoriser ou refuser"]:::op
-  end
-  subgraph L3["Système"]
-    direction TB
-    sy1["<b>4</b> Contrôler le code et changer le mot de passe"]:::op
-  end
-  u1 -->|"demande + alerte"| m1
-  m1 -->|"autorisation"| u2
-  u2 -->|"matricule + code + nouveau mot de passe"| sy1
-  sy1 -->|"connexion possible"| u1
-```
-
-| N° | Opération | Poste | Nature | Durée | Règles de gestion | Résultat |
-|---|---|---|---|---|---|---|
-| 1 | Demander la réinitialisation | Utilisateur | Interactif | Immédiate | Matricule connu ; code de suivi affiché une seule fois | Demande EN_ATTENTE, administrateurs alertés |
-| 2 | Autoriser ou refuser | Administrateur | Manuel puis interactif | Sous 1 jour ouvré | Demande encore en attente | AUTORISÉE ou REFUSÉE, utilisateur alerté |
-| 3 | Choisir un nouveau mot de passe | Utilisateur | Interactif | Sous quelques jours | Code exact ; 6 caractères minimum | Envoi au contrôle |
-| 4 | Contrôler et changer le mot de passe | Système | Automatique | Immédiate | Demande AUTORISÉE ; code à usage unique | Mot de passe changé, sessions fermées |
-
-### MOT — Inscription, connexion et déconnexion
-
-Postes : utilisateur, administrateur ; les traitements A, B et C sont automatiques.
-
-```mermaid
-%%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
-flowchart LR
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
-  subgraph L1["Utilisateur"]
-    direction TB
-    u1["<b>1</b> Remplir le formulaire d’inscription"]:::op
-    u2["<b>2</b> Saisir matricule et mot de passe"]:::op
-    u3["<b>4</b> Se déconnecter"]:::op
-  end
-  subgraph L2["Système"]
-    direction TB
-    s1["<b>A</b> Créer le compte"]:::op
-    s2["<b>B</b> Authentifier et journaliser"]:::op
-    s3["<b>C</b> Clore la session et journaliser"]:::op
-  end
-  subgraph L3["Administrateur"]
-    direction TB
-    m1["<b>3</b> Suspendre ou réactiver un compte"]:::op
-  end
-  u1 -->|"données saisies"| s1
-  s1 -->|"compte créé"| u2
-  u2 -->|"identifiants"| s2
-  s2 -->|"session ouverte"| u3
-  u3 -->|"demande de sortie"| s3
-  m1 -->|"compte suspendu = refus"| s2
-```
-
-| N° | Opération | Poste | Nature | Durée | Règles de gestion | Résultat |
-|---|---|---|---|---|---|---|
-| 1 | Remplir le formulaire d’inscription | Utilisateur | Interactif | Immédiate | Rôle choisi hors administrateur | Demande d’inscription |
-| A | Créer le compte | Système | Automatique | Immédiate | Matricule et personne uniques | Compte créé ou refus |
-| 2 | Saisir matricule et mot de passe | Utilisateur | Interactif | Immédiate | 10 essais par minute au plus | Envoi à l’authentification |
-| B | Authentifier et journaliser | Système | Automatique | Immédiate | Identifiants exacts ; compte actif | Session ouverte ou refus, événement journalisé |
-| 3 | Suspendre ou réactiver un compte | Administrateur | Interactif | À la demande | Impossible sur son propre compte | Compte suspendu (déconnecté) ou réactivé |
-| 4 | Se déconnecter | Utilisateur | Interactif | Immédiate | — | Demande de sortie |
-| C | Clore la session et journaliser | Système | Automatique | Immédiate | — | Jeton supprimé, événement journalisé |
