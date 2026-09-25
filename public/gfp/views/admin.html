@@ -100,7 +100,7 @@
         <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-200 pb-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Gestion des utilisateurs</h2>
-            <p class="text-xs text-slate-500">Comptes réels de la plateforme : rôle, statut et mot de passe.</p>
+            <p class="text-xs text-slate-500">Comptes réels de la plateforme : rôle, structure, statut et mot de passe.</p>
           </div>
           <button onclick="toggleCreateForm()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow">+ Créer un compte</button>
         </div>
@@ -136,6 +136,10 @@
               <select id="newRole" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></select>
             </div>
             <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structure</label>
+              <select id="newStruct" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></select>
+            </div>
+            <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe initial * (6 car. min.)</label>
               <div class="flex gap-2">
                 <input type="text" id="newPass" required minlength="6" autocomplete="off" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono">
@@ -150,9 +154,10 @@
         </div>
 
         <!-- FILTRES -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input type="text" id="uQ" oninput="renderUsers()" placeholder="Matricule ou nom..." class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
           <select id="uRole" onchange="renderUsers()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"></select>
+          <select id="uStructure" onchange="renderUsers()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"></select>
           <select id="uStatut" onchange="renderUsers()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
             <option value="">Tous les statuts</option><option value="ACTIF">Actifs</option><option value="SUSPENDU">Suspendus</option>
           </select>
@@ -166,6 +171,7 @@
                 <th class="px-3 py-2">Matricule</th>
                 <th class="px-3 py-2">Nom & Prénom</th>
                 <th class="px-3 py-2">Rôle</th>
+                <th class="px-3 py-2">Structure</th>
                 <th class="px-3 py-2">Statut</th>
                 <th class="px-3 py-2">Dernière connexion</th>
                 <th class="px-3 py-2">Nouveau mot de passe</th>
@@ -372,11 +378,16 @@
     }
 
     let roles = [];
+    let structures = [];
     const ROLES_OBSOLETES = ['ROLE_SERVICE_ADMINISTRATIF'];
 
     function optionsRoles(selected, avecTous) {
       return (avecTous ? '<option value="">Tous les rôles</option>' : '') +
         roles.map(r => `<option value="${escapeHtml(r.code)}" ${r.code === selected ? 'selected' : ''}>${escapeHtml(r.libelle)}</option>`).join('');
+    }
+    function optionsStructures(selected, libelleVide) {
+      return `<option value="">${libelleVide}</option>` +
+        structures.map(st => `<option value="${st.id}" ${String(st.id) === String(selected) ? 'selected' : ''}>${escapeHtml(st.nom)}</option>`).join('');
     }
     function genererMotDePasse() {
       const c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -385,19 +396,23 @@
     }
 
     async function chargerReferentiels() {
-      const r = await API.getRoles();
+      const [r, st] = await Promise.all([API.getRoles(), API.getStructures()]);
       roles = (r.roles || []).filter(x => !ROLES_OBSOLETES.includes(x.code));
+      structures = (st.structures || []).map(x => ({ id: x.id_structure, nom: x.nom_structure }));
       document.getElementById('newRole').innerHTML = optionsRoles('ROLE_AGENT', false);
+      document.getElementById('newStruct').innerHTML = optionsStructures('', 'Non assignée');
       document.getElementById('uRole').innerHTML = optionsRoles('', true);
+      document.getElementById('uStructure').innerHTML = optionsStructures('', 'Toutes les structures');
     }
 
     function renderUsers() {
       const q = (document.getElementById('uQ').value || '').toLowerCase();
       const fr = document.getElementById('uRole').value;
+      const fs = document.getElementById('uStructure').value;
       const ft = document.getElementById('uStatut').value;
       const liste = users.filter(u =>
         (!q || (u.matricule + ' ' + u.nom + ' ' + u.prenom).toLowerCase().includes(q)) &&
-        (!fr || u.role_code === fr) && (!ft || u.statut === ft));
+        (!fr || u.role_code === fr) && (!fs || String(u.structure_id) === fs) && (!ft || u.statut === ft));
 
       const actifs = users.filter(u => u.statut === 'ACTIF').length;
       const tuile = (titre, valeur, couleur) => `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 uppercase">${titre}</p><p class="text-2xl font-black ${couleur}">${valeur}</p></div>`;
@@ -417,6 +432,7 @@
           <td class="px-3 py-3 font-mono font-bold">${m}</td>
           <td class="px-3 py-3 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}${u.telephone ? `<br><span class="text-slate-500">${escapeHtml(u.telephone)}</span>` : ''}</td>
           <td class="px-3 py-3"><select id="role_${m}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-44">${optionsRoles(u.role_code, false)}</select></td>
+          <td class="px-3 py-3"><select id="struct_${m}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-44">${optionsStructures(u.structure_id, 'Non assignée')}</select></td>
           <td class="px-3 py-3"><span class="px-2 py-0.5 rounded-full border font-bold ${suspendu ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}">${suspendu ? 'Suspendu' : 'Actif'}</span></td>
           <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${u.derniere_connexion ? escapeHtml(u.derniere_connexion) : 'Jamais'}</td>
           <td class="px-3 py-3"><input type="text" id="pass_${m}" placeholder="inchangé" autocomplete="off" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono"></td>
@@ -426,7 +442,7 @@
           </td>`;
         tbody.appendChild(tr);
       });
-      if (!liste.length) tbody.innerHTML = '<tr><td colspan="7" class="px-3 py-6 text-center text-slate-500">Aucun compte ne correspond.</td></tr>';
+      if (!liste.length) tbody.innerHTML = '<tr><td colspan="8" class="px-3 py-6 text-center text-slate-500">Aucun compte ne correspond.</td></tr>';
       document.getElementById('usersCount').textContent = liste.length + ' compte(s) affiché(s) sur ' + users.length;
     }
 
@@ -459,10 +475,12 @@
       const u = users.find(x => x.matricule === mat);
       if (!u) return;
       const role = document.getElementById('role_' + mat).value;
+      const structure = document.getElementById('struct_' + mat).value;
       const mdp = document.getElementById('pass_' + mat).value.trim();
 
       const payload = { matricule: mat };
       if (role !== u.role_code) payload.role = role;
+      if (structure && String(structure) !== String(u.structure_id)) payload.structure_id = structure;
       if (mdp) payload.password = mdp;
       if (Object.keys(payload).length === 1) { alert('Aucune modification à enregistrer.'); return; }
 
@@ -495,6 +513,7 @@
         prenom: document.getElementById('newPrenom').value.trim(),
         role: document.getElementById('newRole').value,
         password: document.getElementById('newPass').value.trim(),
+        structure_id: document.getElementById('newStruct').value || null,
         telephone: document.getElementById('newTel').value.trim() || null,
       });
       if (res.status === 'success') {
