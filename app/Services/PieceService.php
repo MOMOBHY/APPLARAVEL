@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Agent;
-use App\Models\Partage;
 use App\Models\PieceJointe;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -15,9 +14,6 @@ use Illuminate\Http\UploadedFile;
 class PieceService
 {
     public const MIMES = ['pdf', 'jpg', 'jpeg', 'png'];
-
-    /** Formats acceptés pour un document partagé avec des structures. */
-    public const MIMES_PARTAGE = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
 
     public const MAX_KO = 5120;
 
@@ -49,8 +45,6 @@ class PieceService
             'permission' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
             'naissance', 'deces' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
             'note' => $user->hasRole('ROLE_SECRETAIRE', 'ROLE_DRH', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR'),
-            'partage' => Partage::where('id', $piece->dossier_id)->exists()
-                && Partage::visiblesPour($user)->whereKey($piece->dossier_id)->exists(),
             default => false,
         };
     }

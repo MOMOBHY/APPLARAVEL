@@ -1,5 +1,5 @@
 // Coque commune de toutes les pages connectées : en-tête (logos, identité, structure),
-// centre de notifications, photo de profil, lien Partage et déconnexion.
+// centre de notifications, photo de profil et déconnexion.
 // Usage : <div id="gfp-entete" data-sous-titre="…" data-role="…" data-base="../"></div> puis <script src="../js/shell.js">.
 (function () {
   const AVATAR_PAR_DEFAUT = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23047857' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
@@ -16,7 +16,6 @@
   }
 
   const base = conteneur.dataset.base || '';
-  const surPagePartage = window.location.pathname.endsWith('/partage.html');
   const couleurRole = conteneur.dataset.couleurRole || 'text-emerald-700';
 
   conteneur.className = 'max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2';
@@ -61,7 +60,6 @@
           <p id="navStructure" class="text-[11px] text-slate-500 max-w-[14rem] truncate"></p>
         </div>
       </div>
-      ${surPagePartage ? '' : `<a href="${base}views/partage.html" class="px-2.5 sm:px-3 py-1.5 border border-emerald-300 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold">Partage</a>`}
       <button type="button" id="btnDeconnexion" class="px-2.5 sm:px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
         <span class="hidden sm:inline">Déconnexion</span><span class="sm:hidden">Sortir</span>
       </button>

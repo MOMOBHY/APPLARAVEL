@@ -18,7 +18,6 @@ class JournalAudit extends Model
     public const COMPTE = 'COMPTE';
     public const MOT_DE_PASSE = 'MOT_DE_PASSE';
     public const PIECE = 'PIECE';
-    public const PARTAGE = 'PARTAGE';
 
     protected $fillable = [
         'user_id', 'matricule', 'nom', 'role', 'categorie', 'action', 'description',

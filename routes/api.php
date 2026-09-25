@@ -8,7 +8,6 @@ use App\Http\Controllers\LegacyApiController;
 use App\Http\Controllers\MotDePasseController;
 use App\Http\Controllers\NaissanceController;
 use App\Http\Controllers\NoteServiceController;
-use App\Http\Controllers\PartageController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PieceController;
 use App\Http\Controllers\StatistiquesController;
@@ -88,10 +87,6 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
     Route::post('/notes/{note}/archiver', [NoteServiceController::class, 'archiver'])
         ->middleware('role:ROLE_SECRETAIRE,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
-
-    Route::get('/partages', [PartageController::class, 'index']);
-    Route::post('/partages', [PartageController::class, 'store']);
-    Route::delete('/partages/{partage}', [PartageController::class, 'destroy']);
 
     Route::get('/pieces/{piece}', [PieceController::class, 'telecharger']);
 
