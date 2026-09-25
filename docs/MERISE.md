@@ -4,7 +4,7 @@
 
 Ce document décrit la plateforme avec la méthode Merise : modèles conceptuels des données (MCD), des traitements (MCT) et organisationnel des traitements (MOT). Les schémas sont en Mermaid : GitHub les affiche directement.
 
-Version PDF : [Conception_Merise_GFP.pdf](Conception_Merise_GFP.pdf)
+Version PDF : [Conception_Merise_GFP.pdf](Conception_Merise_GFP.pdf) (tous les schémas), ou un PDF par schéma dans le dossier [schemas/](schemas/) : [MCD organisation](schemas/01-MCD-organisation-comptes-et-droits.pdf), [MCD permission](schemas/02-MCD-demandes-de-permission.pdf), [MCD déclarations](schemas/03-MCD-declarations-de-naissance-et-de-deces.pdf), [MCD notes](schemas/04-MCD-notes-de-service.pdf), [MCT permission](schemas/05-MCT-demande-de-permission.pdf), [MCT déclarations](schemas/06-MCT-declaration-de-naissance-ou-de-deces.pdf), [MCT notes](schemas/07-MCT-note-de-service.pdf), [MOT permission](schemas/08-MOT-demande-de-permission.pdf), [MOT déclarations](schemas/09-MOT-declaration-de-naissance-ou-de-deces.pdf), [MOT notes](schemas/10-MOT-note-de-service.pdf).
 
 ## Lire les schémas
 
