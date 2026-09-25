@@ -89,20 +89,6 @@
 
   <script src="../js/api.js"></script>
   <script>
-    const ROLE_REDIRECT = {
-      "AGENT":          "agent.html",
-      "RESPONSABLE":    "responsable.html",
-      "SOUS_DIRECTEUR": "responsable.html",
-      "DIRECTEUR":      "responsable.html",
-      "DRH":            "drh.html",
-      "ADMINISTRATEUR": "admin.html",
-      // Profils sans page dédiée ici : espace complet de la page d'accueil.
-      "SECRETAIRE":     "../index.html",
-      "DIRCAB":         "../index.html",
-      "CHEF_SERVICE":   "../index.html",
-      "SERVICE":        "../index.html"
-    };
-
     async function handleLogin(e) {
       e.preventDefault();
       const mat  = document.getElementById('loginMat').value.trim();
@@ -111,7 +97,7 @@
       const res = await API.login(mat, '', pwd); // profil déduit des rôles du compte
       if (res.status === 'success') {
         sessionStorage.setItem('currentUser', JSON.stringify(res.user));
-        window.location.href = ROLE_REDIRECT[res.user.role] || 'agent.html';
+        window.location.href = API.urlEspace(res.user.role);
       } else {
         document.getElementById('loginError').classList.remove('hidden');
         document.getElementById('loginError').textContent = res.message || 'Matricule ou mot de passe incorrect.';

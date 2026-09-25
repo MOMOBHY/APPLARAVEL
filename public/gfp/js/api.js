@@ -245,6 +245,15 @@ const API = {
     }
   },
 
+  // Page d'accueil de chaque profil après connexion (chemin relatif à views/).
+  urlEspace(role) {
+    const espaces = {
+      AGENT: 'agent.html', RESPONSABLE: 'responsable.html', SOUS_DIRECTEUR: 'responsable.html', DIRECTEUR: 'responsable.html',
+      DRH: 'drh.html', ADMINISTRATEUR: 'admin.html', SECRETAIRE: 'notes.html', DIRCAB: 'notes.html', CHEF_SERVICE: 'notes.html',
+    };
+    return espaces[role] || 'agent.html';
+  },
+
   // Partage d'informations et de documents entre structures
   async getPartages() {
     try {

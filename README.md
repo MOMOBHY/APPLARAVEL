@@ -129,6 +129,8 @@ database/
   migrations/         structure des tables
   seeders/            structures, rôles et comptes de démonstration
 public/gfp/           interface de l’application (HTML, CSS, JavaScript)
+  js/shell.js         en-tête commun : identité, structure, notifications, déconnexion
+  views/              un espace par profil (agent, RH, DRH, administrateur, notes de service)
 routes/api.php        routes de l’API
 tests/Feature/        tests automatiques
 ```

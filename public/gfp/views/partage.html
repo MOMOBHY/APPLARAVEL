@@ -24,24 +24,11 @@
   </div>
 
   <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0" style="z-index:50;">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
-        <img src="../assets/logo-gfp.svg" alt="GFP" class="h-9 w-9 shrink-0 rounded-lg">
-        <div>
-          <h1 class="text-sm font-extrabold text-slate-900 leading-tight max-w-md"><span class="hidden md:inline">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</span><span class="md:hidden">MFPMA</span></h1>
-          <p class="text-xs text-slate-500">Partage entre structures</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <span id="navName" class="hidden sm:inline text-xs font-bold text-slate-700"></span>
-        <a id="retour" href="#" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">← Mon espace</a>
-        <button onclick="logout()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">Déconnexion</button>
-      </div>
-    </div>
+    <div id="gfp-entete" data-sous-titre="Partage entre structures" data-role="" data-base="../"></div>
   </header>
 
   <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <a id="retour" href="#" class="inline-block px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700 bg-white">← Retour à mon espace</a>
 
     <!-- PUBLIER (rôles habilités) -->
     <div id="blocPublier" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
@@ -76,15 +63,10 @@
   </main>
 
   <script src="../js/api.js"></script>
+  <script src="../js/shell.js"></script>
   <script>
-    const saved = sessionStorage.getItem('currentUser');
-    if (!saved) window.location.href = 'login.html';
-    const user = JSON.parse(saved || '{}');
-    const ESPACES = { AGENT: 'agent.html', RESPONSABLE: 'responsable.html', SOUS_DIRECTEUR: 'responsable.html', DIRECTEUR: 'responsable.html', DRH: 'drh.html', ADMINISTRATEUR: 'admin.html' };
-    document.getElementById('retour').href = ESPACES[user.role] || '../index.html';
-    document.getElementById('navName').textContent = user.name || '';
-
-    async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }
+    const user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    document.getElementById('retour').href = API.urlEspace(user.role);
 
     async function chargerStructures() {
       const res = await API.getStructures();
