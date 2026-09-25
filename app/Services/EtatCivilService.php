@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Agent;
+use App\Models\JournalAudit;
 use App\Models\DeclarationDeces;
 use App\Models\DeclarationHistorique;
 use App\Models\DeclarationNaissance;
@@ -266,6 +267,7 @@ class EtatCivilService
             'nouveau_statut' => $nouveau,
             'commentaire' => $commentaire,
         ]);
+        JournalAudit::noter(JournalAudit::DOSSIER, $action, $acteur?->user, trim(($role ? "[{$role}] " : '').($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').($commentaire ? " — {$commentaire}" : '')), $declaration->code_dossier);
     }
 
     protected static function notifier(int $agentId, string $titre, string $message, string $type, ?string $ref): void

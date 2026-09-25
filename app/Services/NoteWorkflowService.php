@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Agent;
+use App\Models\JournalAudit;
 use App\Models\NoteHistorique;
 use App\Models\NoteService;
 use App\Models\Notification;
@@ -280,6 +281,7 @@ class NoteWorkflowService
             'nouveau_statut' => $nouveau,
             'commentaire' => $commentaire,
         ]);
+        JournalAudit::noter(JournalAudit::DOSSIER, $action, $acteur?->user, trim(($role ? "[{$role}] " : '').($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').($commentaire ? " — {$commentaire}" : '')), $note->numero_reference);
     }
 
     protected static function notifier(int $agentId, string $titre, string $message, string $type, ?string $ref): void

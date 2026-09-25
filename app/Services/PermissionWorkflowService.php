@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Agent;
+use App\Models\JournalAudit;
 use App\Models\DemandeHistorique;
 use App\Models\DemandePermission;
 use App\Models\Notification;
@@ -403,6 +404,7 @@ class PermissionWorkflowService
             'nouveau_statut' => $nouveau,
             'commentaire' => $commentaire,
         ]);
+        JournalAudit::noter(JournalAudit::DOSSIER, $action, $acteur?->user, trim(($role ? "[{$role}] " : '').($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').($commentaire ? " — {$commentaire}" : '')), $demande->code_dossier);
     }
 
     protected static function notifier(int $agentId, string $titre, string $message, string $type, ?string $ref): void

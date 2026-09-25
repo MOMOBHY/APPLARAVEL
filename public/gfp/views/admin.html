@@ -77,6 +77,7 @@
         <button onclick="showTab('search')" id="nav-search" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Consultation Globale</button>
         <button onclick="showTab('notes')" id="nav-notes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Notes de Service</button>
         <button onclick="showTab('statistiques')" id="nav-statistiques" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Statistiques</button>
+        <button onclick="showTab('journal')" id="nav-journal" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Journal d'audit</button>
       </div>
     </nav>
   </header>
@@ -206,6 +207,53 @@
 
     <!-- TAB : NOTES DE SERVICE -->
     <div id="tab-statistiques" class="hidden space-y-6"></div>
+
+    <!-- TAB : JOURNAL D'AUDIT -->
+    <div id="tab-journal" class="hidden space-y-6">
+      <div id="journalResume" class="grid grid-cols-2 lg:grid-cols-5 gap-3"></div>
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <h2 class="text-base font-bold text-slate-900">Journal d'audit — entrées, sorties et actions</h2>
+          <button onclick="exporterJournal()" class="border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs">Exporter en CSV</button>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <input type="text" id="jQ" onkeyup="chargerJournal(1)" placeholder="Matricule, nom, réf..." class="md:col-span-2 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <select id="jCategorie" onchange="chargerJournal(1)" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+            <option value="">Toutes les catégories</option>
+            <option value="CONNEXION">Connexions / déconnexions</option>
+            <option value="DOSSIER">Dossiers</option>
+            <option value="COMPTE">Comptes</option>
+            <option value="MOT_DE_PASSE">Mots de passe</option>
+            <option value="PIECE">Justificatifs</option>
+          </select>
+          <select id="jReussi" onchange="chargerJournal(1)" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+            <option value="">Tous les résultats</option>
+            <option value="0">Échecs uniquement</option>
+          </select>
+          <input type="date" id="jDu" onchange="chargerJournal(1)" title="Du" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <input type="date" id="jAu" onchange="chargerJournal(1)" title="Au" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+              <tr>
+                <th class="px-3 py-2">Date</th><th class="px-3 py-2">Utilisateur</th><th class="px-3 py-2">Événement</th>
+                <th class="px-3 py-2">Détail</th><th class="px-3 py-2">Réf.</th><th class="px-3 py-2">IP</th>
+              </tr>
+            </thead>
+            <tbody id="journalTable" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between items-center text-xs text-slate-600">
+          <span id="journalTotal"></span>
+          <div class="space-x-2">
+            <button onclick="chargerJournal(journalPage - 1)" id="jPrev" class="px-3 py-1 border border-slate-300 rounded-lg font-bold">Précédent</button>
+            <span id="journalPageInfo"></span>
+            <button onclick="chargerJournal(journalPage + 1)" id="jNext" class="px-3 py-1 border border-slate-300 rounded-lg font-bold">Suivant</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="tab-notes" class="hidden space-y-6">
       <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
@@ -499,16 +547,68 @@
     }
 
     function showTab(name) {
-      ['users','search','notes','statistiques'].forEach(t => {
+      ['users','search','notes','statistiques','journal'].forEach(t => {
         document.getElementById('tab-' + t).classList.add('hidden');
         const btn = document.getElementById('nav-' + t);
         if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
       });
       document.getElementById('tab-' + name).classList.remove('hidden');
       if (name === 'statistiques') afficherStatistiques(document.getElementById('tab-statistiques'));
+      if (name === 'journal') chargerJournal(1);
       const active = document.getElementById('nav-' + name);
       if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
     }
+
+    // ---- Journal d'audit ----
+    let journalPage = 1, journalPages = 1;
+    const LIBELLES_AUDIT = {
+      CONNEXION: ['Connexion', 'bg-emerald-50 text-emerald-800 border-emerald-200'],
+      DECONNEXION: ['Déconnexion', 'bg-slate-100 text-slate-700 border-slate-300'],
+      CONNEXION_REFUSEE: ['Connexion refusée', 'bg-red-50 text-red-700 border-red-200'],
+      INSCRIPTION: ['Inscription', 'bg-amber-50 text-amber-800 border-amber-200'],
+      COMPTE_CREE: ['Compte créé', 'bg-amber-50 text-amber-800 border-amber-200'],
+      COMPTE_MODIFIE: ['Compte modifié', 'bg-amber-50 text-amber-800 border-amber-200'],
+      PIECE_CONSULTEE: ['Justificatif consulté', 'bg-slate-100 text-slate-700 border-slate-300'],
+      REINITIALISATION_DEMANDEE: ['Mot de passe oublié', 'bg-amber-50 text-amber-800 border-amber-200'],
+      REINITIALISATION_AUTORISEE: ['Réinit. autorisée', 'bg-emerald-50 text-emerald-800 border-emerald-200'],
+      REINITIALISATION_REFUSEE: ['Réinit. refusée', 'bg-red-50 text-red-700 border-red-200'],
+      MOT_DE_PASSE_REINITIALISE: ['Mot de passe changé', 'bg-emerald-50 text-emerald-800 border-emerald-200'],
+    };
+    function filtresJournal() {
+      return {
+        q: document.getElementById('jQ').value.trim(), categorie: document.getElementById('jCategorie').value,
+        reussi: document.getElementById('jReussi').value, du: document.getElementById('jDu').value, au: document.getElementById('jAu').value,
+      };
+    }
+    async function chargerJournal(page) {
+      if (page < 1 || page > journalPages) return;
+      const res = await API.getJournal({ ...filtresJournal(), page });
+      if (res.status !== 'success') return;
+      journalPage = res.page; journalPages = res.pages;
+      const r = res.resume;
+      const tuile = (titre, valeur, couleur) => `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 uppercase">${titre}</p><p class="text-2xl font-black ${couleur}">${valeur}</p></div>`;
+      document.getElementById('journalResume').innerHTML =
+        tuile('Connexions aujourd\'hui', r.connexions_aujourdhui, 'text-emerald-700') +
+        tuile('Déconnexions', r.deconnexions_aujourdhui, 'text-slate-700') +
+        tuile('Connexions refusées', r.echecs_aujourdhui, r.echecs_aujourdhui ? 'text-red-600' : 'text-slate-700') +
+        tuile('Actions sur dossiers/comptes', r.actions_aujourdhui, 'text-slate-700') +
+        tuile('Utilisateurs actifs (24 h)', r.utilisateurs_actifs_24h, 'text-amber-600');
+      document.getElementById('journalTable').innerHTML = res.lignes.map(l => {
+        const [libelle, classes] = LIBELLES_AUDIT[l.action] || [l.action.replace(/_/g, ' '), 'bg-slate-50 text-slate-700 border-slate-200'];
+        return `<tr>
+          <td class="px-3 py-2 whitespace-nowrap text-slate-500">${escapeHtml(l.date)}</td>
+          <td class="px-3 py-2"><span class="font-bold text-slate-800">${escapeHtml(l.nom || '—')}</span><br><span class="font-mono text-slate-500">${escapeHtml(l.matricule || '')}</span></td>
+          <td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full border font-bold ${classes}">${escapeHtml(libelle)}</span></td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(l.description || '')}</td>
+          <td class="px-3 py-2 font-mono text-slate-500">${escapeHtml(l.reference || '')}</td>
+          <td class="px-3 py-2 font-mono text-slate-500">${escapeHtml(l.ip || '')}</td></tr>`;
+      }).join('') || '<tr><td colspan="6" class="px-3 py-6 text-center text-slate-500">Aucun événement.</td></tr>';
+      document.getElementById('journalTotal').textContent = res.total + ' événement(s)';
+      document.getElementById('journalPageInfo').textContent = 'Page ' + res.page + ' / ' + res.pages;
+      document.getElementById('jPrev').disabled = res.page <= 1;
+      document.getElementById('jNext').disabled = res.page >= res.pages;
+    }
+    async function exporterJournal() { if (!(await API.exporterJournal(filtresJournal()))) alert('Export impossible.'); }
 
     async function logout() { await API.logout(); sessionStorage.clear(); window.location.href = 'login.html'; }
 

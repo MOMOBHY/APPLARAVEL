@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agent;
 use App\Models\Role;
+use App\Models\JournalAudit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,7 @@ class AuthController extends Controller
             ->where('matricule', strtoupper(trim($data['matricule'])))->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, $user ? 'Mot de passe incorrect' : 'Matricule inconnu', null, false, $data['matricule']);
             if ($request->expectsJson()) {
                 return response()->json(['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'], 401);
             }
@@ -31,6 +33,7 @@ class AuthController extends Controller
         }
 
         $user->update(['derniere_connexion' => now()]);
+        JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION', $user, 'Connexion');
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -90,6 +93,8 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        JournalAudit::noter(JournalAudit::CONNEXION, 'DECONNEXION', $request->user(), 'Déconnexion');
+
         // Une session web porte un TransientToken, qui n'est pas supprimable.
         $token = $request->user()?->currentAccessToken();
         if ($token instanceof PersonalAccessToken) {

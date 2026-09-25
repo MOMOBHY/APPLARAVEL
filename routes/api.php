@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DecesController;
 use App\Http\Controllers\LegacyApiController;
@@ -99,5 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/reinitialisations', [MotDePasseController::class, 'index'])->middleware('role:ROLE_ADMIN_DSI');
     Route::post('/admin/reinitialisations/{demande}/autoriser', [MotDePasseController::class, 'autoriser'])->middleware('role:ROLE_ADMIN_DSI');
     Route::post('/admin/reinitialisations/{demande}/refuser', [MotDePasseController::class, 'refuser'])->middleware('role:ROLE_ADMIN_DSI');
+    Route::get('/admin/journal', [AuditController::class, 'index'])->middleware('role:ROLE_ADMIN_DSI');
+    Route::get('/admin/journal/export', [AuditController::class, 'exporter'])->middleware('role:ROLE_ADMIN_DSI');
     Route::get('/admin/search', [AdminController::class, 'search'])->middleware('role:ROLE_ADMIN_DSI,ROLE_DRH');
 });

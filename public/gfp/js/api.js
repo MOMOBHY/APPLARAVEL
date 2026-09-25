@@ -245,6 +245,30 @@ const API = {
     }
   },
 
+  // Journal d'audit (administrateur)
+  async getJournal(filtres = {}) {
+    try {
+      const params = new URLSearchParams(Object.entries(filtres).filter(([, v]) => v !== '' && v != null));
+      const response = await fetch(`${API_BASE_URL}/admin/journal?${params}`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) {
+      console.error('Erreur API getJournal', e);
+      return { status: 'error', lignes: [], resume: {} };
+    }
+  },
+
+  async exporterJournal(filtres = {}) {
+    const params = new URLSearchParams(Object.entries(filtres).filter(([, v]) => v !== '' && v != null));
+    const response = await fetch(`${API_BASE_URL}/admin/journal/export?${params}`, { headers: authHeaders() });
+    if (!response.ok) return false;
+    const lien = document.createElement('a');
+    lien.href = URL.createObjectURL(await response.blob());
+    lien.download = 'journal-audit.csv';
+    lien.click();
+    URL.revokeObjectURL(lien.href);
+    return true;
+  },
+
   // Gestion des Utilisateurs
   async getUsers() {
     try {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Models\JournalAudit;
 use App\Models\DeclarationDeces;
 use App\Models\DeclarationNaissance;
 use App\Models\DemandePermission;
@@ -105,6 +106,8 @@ class LegacyApiController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, $user ? 'Mot de passe incorrect' : 'Matricule inconnu', null, false, $data['matricule']);
+
             return response()->json(['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'], 401);
         }
 
@@ -113,6 +116,8 @@ class LegacyApiController extends Controller
 
         if ($requested !== '' && isset(self::PROFILE_ROLES[$requested])) {
             if (empty(array_intersect($codes, self::PROFILE_ROLES[$requested]))) {
+                JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, "Profil non autorisé : {$requested}", null, false);
+
                 return response()->json(['status' => 'error', 'message' => 'Profil non autorisé pour ce compte.'], 403);
             }
             $profile = $requested;
@@ -122,6 +127,7 @@ class LegacyApiController extends Controller
 
         $user->update(['derniere_connexion' => now()]);
         $token = $user->createToken('gfp')->plainTextToken;
+        JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION', $user, "Connexion (profil {$profile})");
 
         return response()->json([
             'status' => 'success',
@@ -171,6 +177,7 @@ class LegacyApiController extends Controller
             'structure_id' => $agent->structure_id,
         ]);
         $user->roles()->attach(Role::whereIn('code', $roleCodes)->pluck('id')->all());
+        JournalAudit::noter(JournalAudit::COMPTE, 'INSCRIPTION', $user, 'Auto-inscription : '.implode(', ', $roleCodes));
 
         return response()->json([
             'status' => 'success',
@@ -653,6 +660,7 @@ class LegacyApiController extends Controller
             'structure_id' => $agent->structure_id,
         ]);
         $user->roles()->attach(Role::whereIn('code', $roleCodes)->pluck('id')->all());
+        JournalAudit::noter(JournalAudit::COMPTE, 'COMPTE_CREE', $request->user(), "Compte créé pour {$user->matricule} : ".implode(', ', $roleCodes), $user->matricule);
 
         return response()->json(['status' => 'success', 'message' => 'Compte créé.'], 201);
     }
@@ -686,6 +694,8 @@ class LegacyApiController extends Controller
         if ($roleCodes !== null) {
             $user->roles()->sync(Role::whereIn('code', $roleCodes)->pluck('id')->all());
         }
+        $modifs = array_filter([! empty($data['password']) ? 'mot de passe' : null, $roleCodes !== null ? 'rôle → '.implode(', ', $roleCodes) : null]);
+        JournalAudit::noter(JournalAudit::COMPTE, 'COMPTE_MODIFIE', $request->user(), "Compte {$user->matricule} modifié : ".implode(' ; ', $modifs), $user->matricule);
 
         return response()->json(['status' => 'success', 'message' => 'Compte utilisateur mis à jour.']);
     }

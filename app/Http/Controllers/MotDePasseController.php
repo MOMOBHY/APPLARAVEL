@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agent;
 use App\Models\DemandeReinitialisation;
+use App\Models\JournalAudit;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -33,6 +34,8 @@ class MotDePasseController extends Controller
 
         $code = strtoupper(Str::random(8));
         DemandeReinitialisation::create(['user_id' => $user->id, 'code_hash' => Hash::make($code)]);
+
+        JournalAudit::noter(JournalAudit::MOT_DE_PASSE, 'REINITIALISATION_DEMANDEE', $user, 'Mot de passe oublié : demande transmise à l’administrateur');
 
         $admins = Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_ADMIN_DSI'))->pluck('id');
         foreach ($admins as $adminAgentId) {
@@ -83,6 +86,7 @@ class MotDePasseController extends Controller
         $user->save();
         $user->tokens()->delete();
         $demande->update(['statut' => DemandeReinitialisation::UTILISEE, 'utilise_le' => now()]);
+        JournalAudit::noter(JournalAudit::MOT_DE_PASSE, 'MOT_DE_PASSE_REINITIALISE', $user, 'Nouveau mot de passe choisi après autorisation');
 
         return response()->json(['status' => 'success', 'message' => 'Mot de passe réinitialisé. Vous pouvez vous connecter.']);
     }
@@ -117,6 +121,8 @@ class MotDePasseController extends Controller
     {
         abort_unless($demande->statut === DemandeReinitialisation::EN_ATTENTE, 422, 'Demande déjà traitée.');
         $demande->update(['statut' => $statut, 'traite_par_id' => $request->user()->id, 'traite_le' => now()]);
+
+        JournalAudit::noter(JournalAudit::MOT_DE_PASSE, $statut === DemandeReinitialisation::AUTORISEE ? 'REINITIALISATION_AUTORISEE' : 'REINITIALISATION_REFUSEE', $request->user(), "Demande de {$demande->user->matricule} traitée", $demande->user->matricule);
 
         if ($agentId = $demande->user->agent_id) {
             Notification::create([
