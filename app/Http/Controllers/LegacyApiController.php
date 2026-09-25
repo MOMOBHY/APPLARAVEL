@@ -111,6 +111,12 @@ class LegacyApiController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'], 401);
         }
 
+        if (! $user->actif) {
+            JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, 'Compte suspendu', null, false);
+
+            return response()->json(['status' => 'error', 'message' => 'Ce compte est suspendu. Contactez l’administrateur.'], 403);
+        }
+
         $codes = $user->roles->pluck('code')->all();
         $requested = strtoupper(trim($data['role'] ?? ''));
 
@@ -602,8 +608,11 @@ class LegacyApiController extends Controller
                 'telephone' => $u->agent?->telephone,
                 'email' => $u->agent?->email,
                 'login' => $u->matricule,
-                'password' => '',
-                'statut' => 'ACTIF',
+                'structure_id' => $u->agent?->structure_id,
+                'statut' => $u->actif ? 'ACTIF' : 'SUSPENDU',
+                'derniere_connexion' => $u->derniere_connexion?->format('Y-m-d H:i:s'),
+                'role_code' => $code,
+                'role_libelle' => $u->roles->first()?->libelle,
                 'roles' => $u->roles->map(fn ($r) => ['code_role' => $r->code, 'libelle_role' => $r->libelle])->all(),
                 'role' => $code ? (self::NEW_TO_LEGACY_CODE[$code] ?? 'ROLE_AGENT') : 'ROLE_AGENT',
             ];
@@ -619,10 +628,11 @@ class LegacyApiController extends Controller
             'nom' => ['required', 'string', 'max:100'],
             'prenom' => ['required', 'string', 'max:150'],
             'role' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:4'],
+            'password' => ['required', 'string', 'min:6'],
             'structure' => ['nullable', 'string'],
+            'structure_id' => ['nullable', 'exists:structures,id'],
             'civilite' => ['nullable', 'string', 'max:10'],
-            'telephone' => ['nullable', 'string'],
+            'telephone' => ['nullable', 'string', 'max:30'],
         ]);
 
         $roleCodes = $this->resolveRoleCodes($data['role']);
@@ -639,9 +649,9 @@ class LegacyApiController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Cette personne est déjà enregistrée.'], 422);
         }
 
-        $structure = ! empty($data['structure'])
-            ? Structure::where('nom', 'like', '%'.trim($data['structure']).'%')->first()
-            : null;
+        $structure = ! empty($data['structure_id'])
+            ? Structure::find($data['structure_id'])
+            : (! empty($data['structure']) ? Structure::where('nom', 'like', '%'.trim($data['structure']).'%')->first() : null);
 
         $agent = Agent::create([
             'matricule' => $matricule,
@@ -670,8 +680,10 @@ class LegacyApiController extends Controller
     {
         $data = $request->validate([
             'matricule' => ['required', 'string'],
-            'password' => ['nullable', 'string', 'min:4'],
+            'password' => ['nullable', 'string', 'min:6'],
             'role' => ['nullable', 'string'],
+            'structure_id' => ['nullable', 'exists:structures,id'],
+            'actif' => ['nullable', 'boolean'],
         ]);
 
         $user = User::where('matricule', strtoupper(trim($data['matricule'])))->first();
@@ -687,14 +699,33 @@ class LegacyApiController extends Controller
             }
         }
 
+        // Garde-fou : l'administrateur ne peut ni se suspendre ni se retirer son propre rôle.
+        if ($user->id === $request->user()->id
+            && (($data['actif'] ?? true) === false || ($roleCodes !== null && ! in_array('ROLE_ADMIN_DSI', $roleCodes, true)))) {
+            return response()->json(['status' => 'error', 'message' => 'Vous ne pouvez pas suspendre votre propre compte ni retirer votre rôle d’administrateur.'], 422);
+        }
+
         if (! empty($data['password'])) {
             $user->password = $data['password'];
             $user->save();
+            $user->tokens()->delete();
         }
         if ($roleCodes !== null) {
             $user->roles()->sync(Role::whereIn('code', $roleCodes)->pluck('id')->all());
         }
         $modifs = array_filter([! empty($data['password']) ? 'mot de passe' : null, $roleCodes !== null ? 'rôle → '.implode(', ', $roleCodes) : null]);
+        if (! empty($data['structure_id']) && $user->agent) {
+            $user->agent->update(['structure_id' => $data['structure_id']]);
+            $user->update(['structure_id' => $data['structure_id']]);
+            $modifs[] = 'structure → '.Structure::find($data['structure_id'])?->nom;
+        }
+        if (array_key_exists('actif', $data) && $data['actif'] !== null && (bool) $data['actif'] !== $user->actif) {
+            $user->update(['actif' => (bool) $data['actif']]);
+            if (! $user->actif) {
+                $user->tokens()->delete();
+            }
+            $modifs[] = $user->actif ? 'compte réactivé' : 'compte suspendu';
+        }
         JournalAudit::noter(JournalAudit::COMPTE, 'COMPTE_MODIFIE', $request->user(), "Compte {$user->matricule} modifié : ".implode(' ; ', $modifs), $user->matricule);
 
         return response()->json(['status' => 'success', 'message' => 'Compte utilisateur mis à jour.']);

@@ -94,24 +94,34 @@
         <div id="reinitContainer" class="space-y-2"></div>
       </div>
 
+      <div id="usersResume" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+
       <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-        <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-200 pb-4">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Gestion des Utilisateurs & Mots de Passe</h2>
-            <p class="text-xs text-slate-500">Visualisez, créez, et modifiez les comptes agents du système.</p>
+            <h2 class="text-base font-bold text-slate-900">Gestion des utilisateurs</h2>
+            <p class="text-xs text-slate-500">Comptes réels de la plateforme : rôle, structure, statut et mot de passe.</p>
           </div>
-          <button onclick="toggleCreateForm()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow">
-            + Créer un Nouvel Agent
-          </button>
+          <button onclick="toggleCreateForm()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow">+ Créer un compte</button>
         </div>
 
         <!-- FORMULAIRE CREATION -->
         <div id="createForm" class="hidden bg-slate-50 p-4 border border-slate-200 rounded-xl">
-          <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2 mb-3">Nouveau Compte Agent</h3>
+          <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2 mb-3">Nouveau compte</h3>
           <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule *</label>
-              <input type="text" id="newMat" required placeholder="ex: 789456-Z" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              <input type="text" id="newMat" required maxlength="30" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Civilité *</label>
+              <select id="newCivilite" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+                <option value="M.">M.</option><option value="Mme">Mme</option><option value="Mlle">Mlle</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Téléphone</label>
+              <input type="tel" id="newTel" maxlength="30" placeholder="+225 …" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom *</label>
@@ -122,21 +132,19 @@
               <input type="text" id="newPrenom" required class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rôle Système *</label>
-              <select id="newRole" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
-                <option value="ROLE_AGENT">Agent Fonctionnaire</option>
-                <option value="ROLE_CHEF_SERVICE">Gestionnaire RH</option>
-                <option value="ROLE_DRH">DRH</option>
-                <option value="ROLE_ADMIN_DSI">Administrateur Système</option>
-              </select>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rôle *</label>
+              <select id="newRole" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe Initial *</label>
-              <input type="text" id="newPass" required value="pass123" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structure</label>
+              <select id="newStruct" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs"></select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Structure / Service *</label>
-              <input type="text" id="newStruct" value="Secrétariat général" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe initial * (6 car. min.)</label>
+              <div class="flex gap-2">
+                <input type="text" id="newPass" required minlength="6" autocomplete="off" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono">
+                <button type="button" onclick="document.getElementById('newPass').value = genererMotDePasse()" class="px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 whitespace-nowrap">Générer</button>
+              </div>
             </div>
             <div class="md:col-span-3 flex justify-end space-x-2 pt-2">
               <button type="button" onclick="toggleCreateForm()" class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
@@ -145,22 +153,35 @@
           </form>
         </div>
 
+        <!-- FILTRES -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <input type="text" id="uQ" oninput="renderUsers()" placeholder="Matricule ou nom..." class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <select id="uRole" onchange="renderUsers()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"></select>
+          <select id="uStructure" onchange="renderUsers()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"></select>
+          <select id="uStatut" onchange="renderUsers()" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+            <option value="">Tous les statuts</option><option value="ACTIF">Actifs</option><option value="SUSPENDU">Suspendus</option>
+          </select>
+        </div>
+
         <!-- TABLEAU DES UTILISATEURS -->
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left">
             <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
               <tr>
-                <th class="px-4 py-2">Matricule</th>
-                <th class="px-4 py-2">Nom & Prénom</th>
-                <th class="px-4 py-2">Rôle</th>
-                <th class="px-4 py-2">Service</th>
-                <th class="px-4 py-2">Mot de Passe</th>
-                <th class="px-4 py-2 text-center">Action</th>
+                <th class="px-3 py-2">Matricule</th>
+                <th class="px-3 py-2">Nom & Prénom</th>
+                <th class="px-3 py-2">Rôle</th>
+                <th class="px-3 py-2">Structure</th>
+                <th class="px-3 py-2">Statut</th>
+                <th class="px-3 py-2">Dernière connexion</th>
+                <th class="px-3 py-2">Nouveau mot de passe</th>
+                <th class="px-3 py-2 text-center">Actions</th>
               </tr>
             </thead>
             <tbody id="usersTable" class="divide-y divide-slate-200"></tbody>
           </table>
         </div>
+        <p id="usersCount" class="text-xs text-slate-500"></p>
       </div>
     </div>
 
@@ -322,6 +343,7 @@
       if (user.role !== 'ADMINISTRATEUR') { window.location.href = 'login.html'; return; }
       document.getElementById('navName').textContent = user.name;
       loadAvatar();
+      await chargerReferentiels();
       await loadData();
       renderUsers();
       await renderReinitialisations();
@@ -355,54 +377,73 @@
       users = u.status === 'success' ? u.users : [];
     }
 
+    let roles = [];
+    let structures = [];
+    const ROLES_OBSOLETES = ['ROLE_SERVICE_ADMINISTRATIF'];
+
+    function optionsRoles(selected, avecTous) {
+      return (avecTous ? '<option value="">Tous les rôles</option>' : '') +
+        roles.map(r => `<option value="${escapeHtml(r.code)}" ${r.code === selected ? 'selected' : ''}>${escapeHtml(r.libelle)}</option>`).join('');
+    }
+    function optionsStructures(selected, libelleVide) {
+      return `<option value="">${libelleVide}</option>` +
+        structures.map(st => `<option value="${st.id}" ${String(st.id) === String(selected) ? 'selected' : ''}>${escapeHtml(st.nom)}</option>`).join('');
+    }
+    function genererMotDePasse() {
+      const c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+      const t = crypto.getRandomValues(new Uint32Array(10));
+      return Array.from(t, n => c[n % c.length]).join('');
+    }
+
+    async function chargerReferentiels() {
+      const [r, st] = await Promise.all([API.getRoles(), API.getStructures()]);
+      roles = (r.roles || []).filter(x => !ROLES_OBSOLETES.includes(x.code));
+      structures = (st.structures || []).map(x => ({ id: x.id_structure, nom: x.nom_structure }));
+      document.getElementById('newRole').innerHTML = optionsRoles('ROLE_AGENT', false);
+      document.getElementById('newStruct').innerHTML = optionsStructures('', 'Non assignée');
+      document.getElementById('uRole').innerHTML = optionsRoles('', true);
+      document.getElementById('uStructure').innerHTML = optionsStructures('', 'Toutes les structures');
+    }
+
     function renderUsers() {
+      const q = (document.getElementById('uQ').value || '').toLowerCase();
+      const fr = document.getElementById('uRole').value;
+      const fs = document.getElementById('uStructure').value;
+      const ft = document.getElementById('uStatut').value;
+      const liste = users.filter(u =>
+        (!q || (u.matricule + ' ' + u.nom + ' ' + u.prenom).toLowerCase().includes(q)) &&
+        (!fr || u.role_code === fr) && (!fs || String(u.structure_id) === fs) && (!ft || u.statut === ft));
+
+      const actifs = users.filter(u => u.statut === 'ACTIF').length;
+      const tuile = (titre, valeur, couleur) => `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 uppercase">${titre}</p><p class="text-2xl font-black ${couleur}">${valeur}</p></div>`;
+      const jamais = users.filter(u => !u.derniere_connexion).length;
+      document.getElementById('usersResume').innerHTML =
+        tuile('Comptes', users.length, 'text-slate-800') + tuile('Actifs', actifs, 'text-emerald-700') +
+        tuile('Suspendus', users.length - actifs, users.length - actifs ? 'text-red-600' : 'text-slate-700') +
+        tuile('Jamais connectés', jamais, 'text-amber-600');
+
       const tbody = document.getElementById('usersTable');
       tbody.innerHTML = '';
-      users.forEach(u => {
-        // Mapper le code RBAC vers une valeur simple pour le dropdown
-        const roleSimple = {
-          ROLE_AGENT: 'AGENT',
-          ROLE_CHEF_SERVICE: 'RESPONSABLE',
-          ROLE_SOUS_DIRECTEUR: 'RESPONSABLE',
-          ROLE_DIRECTEUR: 'RESPONSABLE',
-          ROLE_DIRCAB: 'RESPONSABLE',
-          ROLE_DRH: 'DRH',
-          ROLE_ADMIN_DSI: 'ADMINISTRATEUR',
-          ROLE_SECRETAIRE: 'RESPONSABLE'
-        }[u.role] || 'AGENT';
-
-        const roleBadge = {
-          AGENT: 'bg-slate-100 text-slate-800',
-          RESPONSABLE: 'bg-slate-100 text-slate-800',
-          DRH: 'bg-slate-100 text-slate-800',
-          ADMINISTRATEUR: 'bg-slate-100 text-slate-800'
-        }[roleSimple] || 'bg-slate-100 text-slate-800';
-
+      liste.forEach(u => {
+        const m = escapeHtml(u.matricule);
+        const suspendu = u.statut === 'SUSPENDU';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(u.matricule)}</td>
-          <td class="px-4 py-3 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}</td>
-          <td class="px-4 py-3">
-            <select id="role_${escapeHtml(u.matricule)}" data-initial="${roleSimple}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-40">
-              <option value="AGENT" ${roleSimple === 'AGENT' ? 'selected' : ''}>Agent</option>
-              <option value="RESPONSABLE" ${roleSimple === 'RESPONSABLE' ? 'selected' : ''}>Gestionnaire RH</option>
-              <option value="DRH" ${roleSimple === 'DRH' ? 'selected' : ''}>DRH</option>
-              <option value="ADMINISTRATEUR" ${roleSimple === 'ADMINISTRATEUR' ? 'selected' : ''}>Administrateur</option>
-            </select>
-            <div class="mt-1"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${roleBadge}">${roleSimple}</span></div>
-          </td>
-          <td class="px-4 py-3 text-slate-600">${escapeHtml(u.structure)}</td>
-          <td class="px-4 py-3">
-            <input type="text" id="pass_${escapeHtml(u.matricule)}" value="${escapeHtml(u.password)}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono">
-          </td>
-          <td class="px-4 py-3 text-center space-y-2">
-            <button data-mat="${escapeHtml(u.matricule)}" onclick="saveUserChanges(this.dataset.mat)" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded shadow">
-              Enregistrer
-            </button>
-          </td>
-        `;
+          <td class="px-3 py-3 font-mono font-bold">${m}</td>
+          <td class="px-3 py-3 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}${u.telephone ? `<br><span class="text-slate-500">${escapeHtml(u.telephone)}</span>` : ''}</td>
+          <td class="px-3 py-3"><select id="role_${m}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-44">${optionsRoles(u.role_code, false)}</select></td>
+          <td class="px-3 py-3"><select id="struct_${m}" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-44">${optionsStructures(u.structure_id, 'Non assignée')}</select></td>
+          <td class="px-3 py-3"><span class="px-2 py-0.5 rounded-full border font-bold ${suspendu ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}">${suspendu ? 'Suspendu' : 'Actif'}</span></td>
+          <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${u.derniere_connexion ? escapeHtml(u.derniere_connexion) : 'Jamais'}</td>
+          <td class="px-3 py-3"><input type="text" id="pass_${m}" placeholder="inchangé" autocomplete="off" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono"></td>
+          <td class="px-3 py-3 text-center whitespace-nowrap space-x-1">
+            <button data-mat="${m}" onclick="saveUserChanges(this.dataset.mat)" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded shadow">Enregistrer</button>
+            <button data-mat="${m}" data-actif="${suspendu ? '1' : '0'}" onclick="basculerStatut(this.dataset.mat, this.dataset.actif === '1')" class="px-3 py-1 border font-bold text-xs rounded ${suspendu ? 'border-emerald-300 text-emerald-800 hover:bg-emerald-50' : 'border-red-300 text-red-700 hover:bg-red-50'}">${suspendu ? 'Réactiver' : 'Suspendre'}</button>
+          </td>`;
         tbody.appendChild(tr);
       });
+      if (!liste.length) tbody.innerHTML = '<tr><td colspan="8" class="px-3 py-6 text-center text-slate-500">Aucun compte ne correspond.</td></tr>';
+      document.getElementById('usersCount').textContent = liste.length + ' compte(s) affiché(s) sur ' + users.length;
     }
 
     async function renderReinitialisations() {
@@ -433,21 +474,30 @@
     async function saveUserChanges(mat) {
       const u = users.find(x => x.matricule === mat);
       if (!u) return;
-
-      const newPass = document.getElementById('pass_' + mat).value.trim();
-      const select = document.getElementById('role_' + mat);
+      const role = document.getElementById('role_' + mat).value;
+      const structure = document.getElementById('struct_' + mat).value;
+      const mdp = document.getElementById('pass_' + mat).value.trim();
 
       const payload = { matricule: mat };
-      if (newPass) payload.password = newPass;
-      if (select.value !== select.dataset.initial) payload.role = select.value;
+      if (role !== u.role_code) payload.role = role;
+      if (structure && String(structure) !== String(u.structure_id)) payload.structure_id = structure;
+      if (mdp) payload.password = mdp;
+      if (Object.keys(payload).length === 1) { alert('Aucune modification à enregistrer.'); return; }
+
       const res = await API.updateUser(payload);
       if (res.status === 'success') {
-        alert('Rôle et mot de passe mis à jour pour ' + mat);
         await loadData();
         renderUsers();
       } else {
         alert('Erreur : ' + (res.message || 'Mise à jour impossible'));
       }
+    }
+
+    async function basculerStatut(mat, reactiver) {
+      if (!reactiver && !confirm('Suspendre le compte ' + mat + ' ? La personne sera déconnectée et ne pourra plus se connecter.')) return;
+      const res = await API.updateUser({ matricule: mat, actif: reactiver });
+      if (res.status === 'success') { await loadData(); renderUsers(); }
+      else alert('Erreur : ' + (res.message || 'Action impossible'));
     }
 
     function toggleCreateForm() {
@@ -458,20 +508,23 @@
       e.preventDefault();
       const res = await API.createUser({
         matricule: document.getElementById('newMat').value.trim(),
+        civilite: document.getElementById('newCivilite').value,
         nom: document.getElementById('newNom').value.trim(),
         prenom: document.getElementById('newPrenom').value.trim(),
         role: document.getElementById('newRole').value,
         password: document.getElementById('newPass').value.trim(),
-        structure: document.getElementById('newStruct').value.trim(),
-        emploi: 'Fonctionnaire', civilite: 'M.', telephone: '+225 00000000'
+        structure_id: document.getElementById('newStruct').value || null,
+        telephone: document.getElementById('newTel').value.trim() || null,
       });
       if (res.status === 'success') {
-        alert('Compte agent créé avec succès.');
+        alert('Compte créé. Communiquez le matricule et le mot de passe initial à la personne.');
+        e.target.reset();
         toggleCreateForm();
         await loadData();
         renderUsers();
       } else {
-        alert('Erreur : ' + res.message);
+        const erreurs = res.errors ? Object.values(res.errors).flat().join(' ') : '';
+        alert('Erreur : ' + (erreurs || res.message || 'Création impossible'));
       }
     }
 

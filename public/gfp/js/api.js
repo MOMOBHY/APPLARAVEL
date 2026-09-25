@@ -269,6 +269,16 @@ const API = {
     return true;
   },
 
+  async getRoles() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/roles`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) {
+      console.error('Erreur API getRoles', e);
+      return { status: 'error', roles: [] };
+    }
+  },
+
   // Gestion des Utilisateurs
   async getUsers() {
     try {

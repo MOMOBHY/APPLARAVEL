@@ -520,7 +520,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -545,7 +545,8 @@ INSERT INTO `migrations` VALUES
 (12,'2026_09_24_171322_elargir_statut_notes_et_migrer_statut_etat_civil',1),
 (13,'2026_09_24_220922_create_demande_reinitialisations_table',1),
 (14,'2026_09_24_230628_elargir_statuts_historique_declarations',2),
-(15,'2026_09_25_150000_create_journal_audit_table',3);
+(15,'2026_09_25_150000_create_journal_audit_table',3),
+(16,'2026_09_25_170000_ajouter_actif_aux_users',4);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1060,6 +1061,7 @@ CREATE TABLE `users` (
   `matricule` varchar(30) DEFAULT NULL,
   `agent_id` bigint(20) unsigned DEFAULT NULL,
   `structure_id` bigint(20) unsigned DEFAULT NULL,
+  `actif` tinyint(1) NOT NULL DEFAULT 1,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `remember_token` varchar(100) DEFAULT NULL,
@@ -1084,20 +1086,20 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` VALUES
-(1,'M. GRAMBOUTE Mohamed','agt001@fonctionpublique.gouv.ci','AGT001',1,5,NULL,'$2y$12$kzWfZCMQUuTnI/5cMJj90OqPRXByioHMYXqf97aNAHB.uVBI7pB6y',NULL,'2026-09-25 18:22:41','2026-09-23 15:12:49','2026-09-25 18:22:41'),
-(2,'M. KOUAME Awa','rh001@fonctionpublique.gouv.ci','RH001',2,2,NULL,'$2y$12$o7olLqw/UmrWAu83CokDOu/EI/eV0.0ablrIHZ2MmX2V3ZhfiUzle',NULL,'2026-09-25 16:25:27','2026-09-23 15:12:50','2026-09-25 16:25:27'),
-(3,'M. BROU Marc','sd001@fonctionpublique.gouv.ci','SD001',3,4,NULL,'$2y$12$B/lkcSISiXL5pbl1Aimao.xgjar9fumedpspcrK0VntQFqPitSyfy',NULL,'2026-09-24 21:39:45','2026-09-23 15:12:50','2026-09-24 21:39:45'),
-(4,'M. KONE Ibrahim','dir001@fonctionpublique.gouv.ci','DIR001',4,3,NULL,'$2y$12$RCP/LoZCdGI.jeqAZ2UQBOmwbHjgSyRio2zLOp5hkYBjURjEnBaxW',NULL,'2026-09-25 18:23:37','2026-09-23 15:12:50','2026-09-25 18:23:37'),
-(5,'M. ADJOUA Marie','drh001@fonctionpublique.gouv.ci','DRH001',5,2,NULL,'$2y$12$ib99nCGsyVqIhaB7WeSB8utzEHNWPuwMhGxTDDO4itwMcw7yZ/Gcm',NULL,'2026-09-25 12:25:19','2026-09-23 15:12:50','2026-09-25 12:25:19'),
-(6,'M. YAPO Chantal','sec001@fonctionpublique.gouv.ci','SEC001',6,1,NULL,'$2y$12$H8eiUKEFaeeK9al9F8dM6.3ayKttoeZ0xcrmr3MxMb4HkbBZxye52',NULL,'2026-09-24 21:39:34','2026-09-23 15:12:51','2026-09-24 21:39:34'),
-(7,'M. DIALLO Aminata','svc001@fonctionpublique.gouv.ci','SVC001',7,2,NULL,'$2y$12$mjQ6BSqNEl5ko9tv/PyT3Ob9Pgzeo/HO8bQt.0TEfI/XqshI/LfjW',NULL,NULL,'2026-09-23 15:12:51','2026-09-23 15:12:51'),
-(8,'M. TRAORE Siaka','chef001@fonctionpublique.gouv.ci','CHEF001',8,5,NULL,'$2y$12$2xj.iFcvIH5OEyjRgeUWouRMonDHJIxAPObLAUwnE/o7XUle/Ugzi',NULL,'2026-09-24 21:37:52','2026-09-23 15:12:51','2026-09-24 21:37:52'),
-(9,'M. N_GUESSAN Koffi','cab001@fonctionpublique.gouv.ci','CAB001',9,1,NULL,'$2y$12$NyWY1oKpbAC2qyJnoB6maeSuXNcXgZfG4rrfKGqTzc146oASPoFyi',NULL,'2026-09-24 21:39:22','2026-09-23 15:12:51','2026-09-24 21:39:22'),
-(10,'M. SYSADMIN Root','adm001@fonctionpublique.gouv.ci','ADM001',10,3,NULL,'$2y$12$a23HbBt0akFG.OBeIdbQt.sYHAmWIgVj.nvioe2yMUxGII6MNz6Ga',NULL,'2026-09-25 18:31:11','2026-09-23 15:12:51','2026-09-25 18:31:11'),
-(11,'M. GRAMBOUTE Mohamed Prince','000001x@fonctionpublique.gouv.ci','000001X',11,5,NULL,'$2y$12$aEAD93crr33vljE964bvFOGFvnCpBzG2iUXhQTiv7EGR7c1TTj/nC',NULL,'2026-09-25 11:23:21','2026-09-23 15:12:52','2026-09-25 11:23:21'),
-(12,'M. KOUASSI Jean-Marc','000002a@fonctionpublique.gouv.ci','000002A',12,4,NULL,'$2y$12$dAq2ZZ4jHbm74E3k4oQDYOnDEjPFL6EkmL11K2ZCGXV94Rw99mxkC',NULL,'2026-09-25 01:49:00','2026-09-23 15:12:52','2026-09-25 01:49:00'),
-(13,'M. ADJOUA Marie-Claire','000003b@fonctionpublique.gouv.ci','000003B',13,2,NULL,'$2y$12$ZbcliQbaLopr8xim4rhXF.3Zrnqd19LL0o5ENtSbh6S87m9/oFAsG',NULL,'2026-09-24 21:19:18','2026-09-23 15:12:52','2026-09-24 21:19:18'),
-(14,'M. KONE Ousmane','000004z@fonctionpublique.gouv.ci','000004Z',14,3,NULL,'$2y$12$iIZAu5.Lyh5RfAkczel8ZOdGu3I7dLIN3WvcWxncC7.csVmj2vEwO',NULL,NULL,'2026-09-23 15:12:52','2026-09-23 15:12:52');
+(1,'M. GRAMBOUTE Mohamed','agt001@fonctionpublique.gouv.ci','AGT001',1,5,1,NULL,'$2y$12$kzWfZCMQUuTnI/5cMJj90OqPRXByioHMYXqf97aNAHB.uVBI7pB6y',NULL,'2026-09-25 18:32:36','2026-09-23 15:12:49','2026-09-25 18:32:36'),
+(2,'M. KOUAME Awa','rh001@fonctionpublique.gouv.ci','RH001',2,2,1,NULL,'$2y$12$o7olLqw/UmrWAu83CokDOu/EI/eV0.0ablrIHZ2MmX2V3ZhfiUzle',NULL,'2026-09-25 16:25:27','2026-09-23 15:12:50','2026-09-25 16:25:27'),
+(3,'M. BROU Marc','sd001@fonctionpublique.gouv.ci','SD001',3,4,1,NULL,'$2y$12$B/lkcSISiXL5pbl1Aimao.xgjar9fumedpspcrK0VntQFqPitSyfy',NULL,'2026-09-24 21:39:45','2026-09-23 15:12:50','2026-09-24 21:39:45'),
+(4,'M. KONE Ibrahim','dir001@fonctionpublique.gouv.ci','DIR001',4,3,1,NULL,'$2y$12$RCP/LoZCdGI.jeqAZ2UQBOmwbHjgSyRio2zLOp5hkYBjURjEnBaxW',NULL,'2026-09-25 18:23:37','2026-09-23 15:12:50','2026-09-25 18:23:37'),
+(5,'M. ADJOUA Marie','drh001@fonctionpublique.gouv.ci','DRH001',5,2,1,NULL,'$2y$12$ib99nCGsyVqIhaB7WeSB8utzEHNWPuwMhGxTDDO4itwMcw7yZ/Gcm',NULL,'2026-09-25 12:25:19','2026-09-23 15:12:50','2026-09-25 12:25:19'),
+(6,'M. YAPO Chantal','sec001@fonctionpublique.gouv.ci','SEC001',6,1,1,NULL,'$2y$12$H8eiUKEFaeeK9al9F8dM6.3ayKttoeZ0xcrmr3MxMb4HkbBZxye52',NULL,'2026-09-24 21:39:34','2026-09-23 15:12:51','2026-09-24 21:39:34'),
+(7,'M. DIALLO Aminata','svc001@fonctionpublique.gouv.ci','SVC001',7,2,1,NULL,'$2y$12$mjQ6BSqNEl5ko9tv/PyT3Ob9Pgzeo/HO8bQt.0TEfI/XqshI/LfjW',NULL,NULL,'2026-09-23 15:12:51','2026-09-23 15:12:51'),
+(8,'M. TRAORE Siaka','chef001@fonctionpublique.gouv.ci','CHEF001',8,5,1,NULL,'$2y$12$2xj.iFcvIH5OEyjRgeUWouRMonDHJIxAPObLAUwnE/o7XUle/Ugzi',NULL,'2026-09-24 21:37:52','2026-09-23 15:12:51','2026-09-24 21:37:52'),
+(9,'M. N_GUESSAN Koffi','cab001@fonctionpublique.gouv.ci','CAB001',9,1,1,NULL,'$2y$12$NyWY1oKpbAC2qyJnoB6maeSuXNcXgZfG4rrfKGqTzc146oASPoFyi',NULL,'2026-09-24 21:39:22','2026-09-23 15:12:51','2026-09-24 21:39:22'),
+(10,'M. SYSADMIN Root','adm001@fonctionpublique.gouv.ci','ADM001',10,3,1,NULL,'$2y$12$a23HbBt0akFG.OBeIdbQt.sYHAmWIgVj.nvioe2yMUxGII6MNz6Ga',NULL,'2026-09-25 18:39:53','2026-09-23 15:12:51','2026-09-25 18:39:53'),
+(11,'M. GRAMBOUTE Mohamed Prince','000001x@fonctionpublique.gouv.ci','000001X',11,5,1,NULL,'$2y$12$aEAD93crr33vljE964bvFOGFvnCpBzG2iUXhQTiv7EGR7c1TTj/nC',NULL,'2026-09-25 11:23:21','2026-09-23 15:12:52','2026-09-25 11:23:21'),
+(12,'M. KOUASSI Jean-Marc','000002a@fonctionpublique.gouv.ci','000002A',12,4,1,NULL,'$2y$12$dAq2ZZ4jHbm74E3k4oQDYOnDEjPFL6EkmL11K2ZCGXV94Rw99mxkC',NULL,'2026-09-25 01:49:00','2026-09-23 15:12:52','2026-09-25 01:49:00'),
+(13,'M. ADJOUA Marie-Claire','000003b@fonctionpublique.gouv.ci','000003B',13,2,1,NULL,'$2y$12$ZbcliQbaLopr8xim4rhXF.3Zrnqd19LL0o5ENtSbh6S87m9/oFAsG',NULL,'2026-09-24 21:19:18','2026-09-23 15:12:52','2026-09-24 21:19:18'),
+(14,'M. KONE Ousmane','000004z@fonctionpublique.gouv.ci','000004Z',14,3,1,NULL,'$2y$12$iIZAu5.Lyh5RfAkczel8ZOdGu3I7dLIN3WvcWxncC7.csVmj2vEwO',NULL,NULL,'2026-09-23 15:12:52','2026-09-23 15:12:52');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1112,7 +1114,7 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-09-25 10:31:37
+-- Dump completed on 2026-09-25 10:40:05
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.20-13.0.2-MariaDB, for osx10.23 (arm64)
 --
@@ -1153,7 +1155,7 @@ CREATE TABLE `personal_access_tokens` (
   UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
   KEY `personal_access_tokens_expires_at_index` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=128 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1261,7 +1263,7 @@ CREATE TABLE `journal_audit` (
   KEY `journal_audit_reference_index` (`reference`),
   KEY `journal_audit_created_at_index` (`created_at`),
   CONSTRAINT `journal_audit_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1273,5 +1275,5 @@ CREATE TABLE `journal_audit` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-09-25 10:31:37
+-- Dump completed on 2026-09-25 10:40:05
 SET FOREIGN_KEY_CHECKS=1;

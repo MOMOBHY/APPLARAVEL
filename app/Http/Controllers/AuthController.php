@@ -32,6 +32,15 @@ class AuthController extends Controller
             return back()->withErrors(['matricule' => 'Matricule ou mot de passe incorrect.'])->onlyInput('matricule');
         }
 
+        if (! $user->actif) {
+            JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, 'Compte suspendu', null, false);
+            $message = 'Ce compte est suspendu. Contactez l’administrateur.';
+
+            return $request->expectsJson()
+                ? response()->json(['status' => 'error', 'message' => $message], 403)
+                : back()->withErrors(['matricule' => $message])->onlyInput('matricule');
+        }
+
         $user->update(['derniere_connexion' => now()]);
         JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION', $user, 'Connexion');
 
