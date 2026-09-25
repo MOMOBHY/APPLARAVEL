@@ -468,6 +468,7 @@
 
       <!-- SECTION VALIDATION FINALE DRH -->
       <div id="role-drh-views" class="hidden space-y-6">
+        <div id="statsDrh"></div>
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
           <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
             <div>
@@ -533,6 +534,7 @@
 
       <!-- SECTION ADMINISTRATEUR SYSTÈME -->
       <div id="role-admin-views" class="hidden space-y-6">
+        <div id="statsAdmin"></div>
         
         <div id="legacy-admin-notes" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
           <div class="flex justify-between items-center border-b border-slate-200 pb-4">
@@ -844,9 +846,12 @@
         dbNotes = noteRes.notes;
       }
 
-      const userRes = await API.getUsers();
-      if (userRes.status === 'success') {
-        dbUsers = userRes.users;
+      // Liste des comptes réservée à l'administrateur (sinon 403 inutile).
+      if (currentUser && currentUser.role === 'ADMINISTRATEUR') {
+        const userRes = await API.getUsers();
+        if (userRes.status === 'success') {
+          dbUsers = userRes.users;
+        }
       }
 
       const structureRes = await API.getStructures();
@@ -999,6 +1004,7 @@
         renderAdminSentNotesTable();
         filterAdminSearch();
         setupNoteWorkflow(false, false);
+        afficherStatistiques(document.getElementById('statsAdmin'));
       } else if (role === 'SECRETAIRE') {
         document.getElementById('note-workflow-view').classList.remove('hidden');
         navContainer.innerHTML = `
@@ -1041,6 +1047,7 @@
           <button class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap shrink-0">Console de Décision Finale DRH</button>
         `;
         renderDrhViews();
+        afficherStatistiques(document.getElementById('statsDrh'));
       } else {
         document.getElementById('role-agent-views').classList.remove('hidden');
         navContainer.innerHTML = `

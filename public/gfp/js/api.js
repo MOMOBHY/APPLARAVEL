@@ -77,6 +77,16 @@ const API = {
     }
   },
 
+  // Tableau de bord statistiques (DRH et administrateur).
+  async getStatistiques() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/statistiques`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) {
+      return { status: 'error', message: 'Erreur réseau' };
+    }
+  },
+
   // Détail d'un dossier avec son historique (accès limité au déclarant et aux acteurs du circuit).
   async getDossier(nature, dossierId) {
     const segment = { DEMANDE_PERMISSION: 'permissions', DECLARATION_NAISSANCE: 'naissances', DECLARATION_DECES: 'deces' }[nature];
@@ -567,4 +577,245 @@ async function ouvrirSuivi(r) {
   if (attente) {
     ajouterEtape({ titre: attente, sousTitre: 'Étape en cours', ton: 'attente', derniere: true });
   }
+}
+
+// -----------------------------------------------------------
+// Tableau de bord statistiques (DRH et administrateur)
+// -----------------------------------------------------------
+const STATS_ENCRE = { forte: '#0f172a', moyenne: '#475569', discrete: '#64748b', grille: '#e2e8f0', axe: '#cbd5e1' };
+const STATS_ACCENT = '#047857';
+// Ordre validé pour le daltonisme : le rouge et le vert ne sont jamais côte à côte.
+const STATS_STATUTS = [
+  { cle: 'validee', libelle: 'Validés', couleur: '#047857' },
+  { cle: 'a_corriger', libelle: 'À corriger', couleur: '#d97706' },
+  { cle: 'en_attente', libelle: 'En attente', couleur: '#64748b' },
+  { cle: 'rejetee', libelle: 'Rejetés', couleur: '#d03b3b' }
+];
+const STATS_POLICE = { family: 'system-ui, -apple-system, "Segoe UI", sans-serif', size: 11 };
+
+function chargerChartJs() {
+  if (window.Chart) return Promise.resolve();
+  window.__chargementChartJs = window.__chargementChartJs || new Promise((ok, ko) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+    script.onload = ok;
+    script.onerror = ko;
+    document.head.appendChild(script);
+  });
+  return window.__chargementChartJs;
+}
+
+const formatJours = v => {
+  if (v === null || v === undefined) return '—';
+  return v < 0.1 ? 'moins d’un jour' : `${String(v).replace('.', ',')} j`;
+};
+const moisCourt = ym => new Intl.DateTimeFormat('fr-FR', { month: 'short', year: '2-digit', timeZone: 'UTC' }).format(new Date(ym + '-01T00:00:00Z'));
+
+// Valeur écrite au bout de chaque barre, en encre (jamais dans la couleur de la série).
+const pluginValeursStats = {
+  id: 'valeursStats',
+  afterDatasetsDraw(chart, _args, opts) {
+    if (!opts || !opts.actif) return;
+    const { ctx } = chart;
+    const horizontal = chart.options.indexAxis === 'y';
+    ctx.save();
+    ctx.fillStyle = STATS_ENCRE.moyenne;
+    ctx.font = `600 ${STATS_POLICE.size}px ${STATS_POLICE.family}`;
+    chart.getDatasetMeta(0).data.forEach((barre, i) => {
+      const texte = String(chart.data.datasets[0].data[i]);
+      if (horizontal) {
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(texte, barre.x + 6, barre.y);
+      } else {
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(texte, barre.x, barre.y - 4);
+      }
+    });
+    ctx.restore();
+  }
+};
+
+function optionsStats(horizontal, avecValeurs) {
+  const axeValeurs = {
+    beginAtZero: true,
+    grace: horizontal ? '12%' : '8%',
+    ticks: { precision: 0, color: STATS_ENCRE.discrete, font: STATS_POLICE },
+    grid: { color: STATS_ENCRE.grille, lineWidth: 1 },
+    border: { display: false }
+  };
+  const axeCategories = {
+    ticks: { color: STATS_ENCRE.moyenne, font: STATS_POLICE },
+    grid: { display: false },
+    border: { color: STATS_ENCRE.axe }
+  };
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: horizontal ? 'y' : 'x',
+    scales: horizontal ? { x: axeValeurs, y: axeCategories } : { x: axeCategories, y: axeValeurs },
+    plugins: {
+      legend: { display: false },
+      valeursStats: { actif: avecValeurs },
+      tooltip: {
+        backgroundColor: '#ffffff', titleColor: STATS_ENCRE.moyenne, bodyColor: STATS_ENCRE.forte,
+        borderColor: STATS_ENCRE.grille, borderWidth: 1, padding: 10, boxWidth: 10, boxHeight: 2,
+        titleFont: STATS_POLICE, bodyFont: { ...STATS_POLICE, size: 12, weight: '600' }
+      }
+    }
+  };
+}
+
+function barresStats(valeurs, couleurs) {
+  return { data: valeurs, backgroundColor: couleurs, maxBarThickness: 24, borderRadius: 4, borderSkipped: 'start' };
+}
+
+// Tableau repliable : chaque graphique reste lisible sans la couleur ni le survol.
+function tableauDonnees(entetes, lignes) {
+  const details = document.createElement('details');
+  details.className = 'mt-3 text-xs';
+  const resume = document.createElement('summary');
+  resume.className = 'cursor-pointer text-slate-500 font-bold hover:text-slate-800';
+  resume.textContent = 'Voir les données';
+  const table = document.createElement('table');
+  table.className = 'mt-2 w-full text-left';
+  const ligneEntete = table.createTHead().insertRow();
+  entetes.forEach((e, i) => {
+    const th = document.createElement('th');
+    th.className = 'py-1 pr-3 text-slate-500 font-bold' + (i ? ' text-right' : '');
+    th.textContent = e;
+    ligneEntete.appendChild(th);
+  });
+  const corps = table.createTBody();
+  lignes.forEach(l => {
+    const tr = corps.insertRow();
+    l.forEach((v, i) => {
+      const td = tr.insertCell();
+      td.className = 'py-1 pr-3 border-t border-slate-100 text-slate-700' + (i ? ' text-right tabular-nums' : '');
+      td.textContent = v;
+    });
+  });
+  details.append(resume, table);
+  return details;
+}
+
+function carteStats(titre, sousTitre, hauteur = 240) {
+  const carte = document.createElement('section');
+  carte.className = 'border border-slate-200 rounded-xl p-4 bg-white';
+  carte.innerHTML = `<h3 class="text-sm font-bold text-slate-900"></h3><p class="text-xs text-slate-500 mb-3"></p>
+    <div class="relative" style="height:${hauteur}px"><canvas></canvas></div>`;
+  carte.querySelector('h3').textContent = titre;
+  carte.querySelector('p').textContent = sousTitre;
+  return carte;
+}
+
+async function afficherStatistiques(conteneur) {
+  if (!conteneur) return;
+  (conteneur._graphiques || []).forEach(g => g.destroy());
+  conteneur._graphiques = [];
+  conteneur.innerHTML = `
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+      <div class="border-b border-slate-200 pb-3">
+        <h2 class="text-base font-bold text-slate-900">Tableau de bord statistiques</h2>
+        <p class="text-xs text-slate-500">Permissions, déclarations de naissance et de décès : volumes, états et délais de traitement.</p>
+      </div>
+      <p data-etat class="text-sm text-slate-500 italic">Chargement des statistiques…</p>
+      <div data-kpi class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      <div data-ligne1 class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+      <div data-ligne2 class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+    </div>`;
+  const $ = sel => conteneur.querySelector(sel);
+
+  const [res] = await Promise.all([API.getStatistiques(), chargerChartJs().catch(() => null)]);
+  if (res.status !== 'success') {
+    $('[data-etat]').textContent = res.message || 'Statistiques indisponibles.';
+    return;
+  }
+  $('[data-etat]').remove();
+
+  // Indicateurs clés
+  const ind = res.indicateurs;
+  [
+    ['Dossiers déposés', String(ind.total), 'permissions et actes d’état civil'],
+    ['En cours de traitement', String(ind.en_cours), 'en attente ou à corriger'],
+    ['Taux de validation', ind.taux_validation === null ? '—' : `${ind.taux_validation} %`, 'des dossiers tranchés'],
+    ['Délai moyen de traitement', formatJours(ind.delai_moyen_jours), 'du dépôt à la décision finale']
+  ].forEach(([libelle, valeur, aide]) => {
+    const tuile = document.createElement('div');
+    tuile.className = 'border border-slate-200 rounded-xl p-4 bg-white';
+    tuile.innerHTML = '<p class="text-xs font-bold text-slate-500"></p><p class="text-2xl font-extrabold text-slate-900 mt-1"></p><p class="text-[11px] text-slate-500 mt-0.5"></p>';
+    const [l, v, a] = tuile.querySelectorAll('p');
+    l.textContent = libelle; v.textContent = valeur; a.textContent = aide;
+    $('[data-kpi]').appendChild(tuile);
+  });
+
+  const graphique = (carte, config) => {
+    if (!window.Chart) {
+      carte.querySelector('canvas').parentElement.innerHTML = '<p class="text-xs text-slate-500 italic">Graphique indisponible (hors ligne) : voir les données ci-dessous.</p>';
+      return;
+    }
+    conteneur._graphiques.push(new Chart(carte.querySelector('canvas'), config));
+  };
+
+  // 1. Dépôts par mois (une seule série : pas de légende, le titre la nomme)
+  const mois = res.par_mois;
+  const carteMois = carteStats('Dossiers déposés par mois', '12 derniers mois, toutes natures confondues');
+  $('[data-ligne1]').appendChild(carteMois);
+  const optionsMois = optionsStats(false, false);
+  optionsMois.plugins.tooltip.callbacks = {
+    label: c => `${c.parsed.y} dossier${c.parsed.y > 1 ? 's' : ''}`,
+    afterLabel: c => {
+      const m = mois[c.dataIndex];
+      return `Permissions : ${m.permission}  ·  Naissances : ${m.naissance}  ·  Décès : ${m.deces}`;
+    }
+  };
+  graphique(carteMois, {
+    type: 'bar',
+    data: { labels: mois.map(m => moisCourt(m.mois)), datasets: [barresStats(mois.map(m => m.total), STATS_ACCENT)] },
+    options: optionsMois
+  });
+  carteMois.appendChild(tableauDonnees(['Mois', 'Permissions', 'Naissances', 'Décès', 'Total'],
+    mois.map(m => [moisCourt(m.mois), m.permission, m.naissance, m.deces, m.total])));
+
+  // 2. Répartition par statut (couleurs d'état, libellé et valeur sur chaque barre)
+  const carteStatut = carteStats('Répartition par statut', 'État actuel de tous les dossiers');
+  $('[data-ligne1]').appendChild(carteStatut);
+  graphique(carteStatut, {
+    type: 'bar',
+    data: {
+      labels: STATS_STATUTS.map(s => s.libelle),
+      datasets: [barresStats(STATS_STATUTS.map(s => res.par_statut[s.cle] || 0), STATS_STATUTS.map(s => s.couleur))]
+    },
+    options: optionsStats(true, true),
+    plugins: [pluginValeursStats]
+  });
+  carteStatut.appendChild(tableauDonnees(['Statut', 'Dossiers'],
+    STATS_STATUTS.map(s => [s.libelle, res.par_statut[s.cle] || 0])));
+
+  // 3. Dossiers par structure (magnitude : une seule teinte, triés du plus grand au plus petit)
+  const structures = res.par_structure;
+  const carteStructure = carteStats('Dossiers par structure', 'Structure de l’agent demandeur', Math.max(160, structures.length * 40 + 40));
+  $('[data-ligne2]').appendChild(carteStructure);
+  graphique(carteStructure, {
+    type: 'bar',
+    data: { labels: structures.map(s => s.structure), datasets: [barresStats(structures.map(s => s.total), STATS_ACCENT)] },
+    options: optionsStats(true, true),
+    plugins: [pluginValeursStats]
+  });
+  carteStructure.appendChild(tableauDonnees(['Structure', 'Dossiers'], structures.map(s => [s.structure, s.total])));
+
+  // 4. Délai moyen par type de dossier : des chiffres, pas un graphique
+  const carteDelais = document.createElement('section');
+  carteDelais.className = 'border border-slate-200 rounded-xl p-4 bg-white';
+  carteDelais.innerHTML = '<h3 class="text-sm font-bold text-slate-900">Délai moyen de traitement</h3><p class="text-xs text-slate-500 mb-3">Du dépôt à la décision finale, sur les dossiers clos</p><div data-delais class="space-y-2"></div>';
+  res.delai_par_nature.forEach(d => {
+    const ligne = document.createElement('div');
+    ligne.className = 'flex items-baseline justify-between border border-slate-100 rounded-lg px-3 py-2.5';
+    ligne.innerHTML = '<div><p class="text-sm font-bold text-slate-800"></p><p class="text-[11px] text-slate-500"></p></div><p class="text-xl font-extrabold text-slate-900"></p>';
+    const [nature, clos, valeur] = ligne.querySelectorAll('p');
+    nature.textContent = d.nature;
+    clos.textContent = `${d.dossiers_clos} dossier${d.dossiers_clos > 1 ? 's' : ''} clos`;
+    valeur.textContent = formatJours(d.delai_moyen_jours);
+    carteDelais.querySelector('[data-delais]').appendChild(ligne);
+  });
+  $('[data-ligne2]').appendChild(carteDelais);
 }

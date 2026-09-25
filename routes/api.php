@@ -9,6 +9,7 @@ use App\Http\Controllers\NaissanceController;
 use App\Http\Controllers\NoteServiceController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PieceController;
+use App\Http\Controllers\StatistiquesController;
 use Illuminate\Support\Facades\Route;
 
 // Ancien contrat (frontend historique servi depuis /gfp).
@@ -94,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ROLE_ADMIN_DSI,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
 
     Route::get('/admin/users', [AdminController::class, 'users'])->middleware('role:ROLE_ADMIN_DSI');
+    Route::get('/statistiques', [StatistiquesController::class, 'index'])->middleware('role:ROLE_DRH,ROLE_ADMIN_DSI');
     Route::get('/admin/reinitialisations', [MotDePasseController::class, 'index'])->middleware('role:ROLE_ADMIN_DSI');
     Route::post('/admin/reinitialisations/{demande}/autoriser', [MotDePasseController::class, 'autoriser'])->middleware('role:ROLE_ADMIN_DSI');
     Route::post('/admin/reinitialisations/{demande}/refuser', [MotDePasseController::class, 'refuser'])->middleware('role:ROLE_ADMIN_DSI');

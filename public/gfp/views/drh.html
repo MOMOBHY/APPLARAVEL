@@ -77,6 +77,7 @@
         <button onclick="showTab('permissions')" id="nav-permissions" class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white">Permissions d'Absence</button>
         <button onclick="showTab('etatcivil')" id="nav-etatcivil" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Actes d'État Civil</button>
         <button onclick="showTab('historique')" id="nav-historique" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Historique des Décisions</button>
+        <button onclick="showTab('statistiques')" id="nav-statistiques" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Statistiques</button>
       </div>
     </nav>
   </header>
@@ -130,6 +131,8 @@
     </div>
 
     <!-- TAB : HISTORIQUE -->
+    <div id="tab-statistiques" class="hidden space-y-6"></div>
+
     <div id="tab-historique" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200">
@@ -347,12 +350,13 @@
     }
 
     function showTab(name) {
-      ['permissions','etatcivil','historique'].forEach(t => {
+      ['permissions','etatcivil','historique','statistiques'].forEach(t => {
         document.getElementById('tab-' + t).classList.add('hidden');
         const btn = document.getElementById('nav-' + t);
         if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
       });
       document.getElementById('tab-' + name).classList.remove('hidden');
+      if (name === 'statistiques') afficherStatistiques(document.getElementById('tab-statistiques'));
       const active = document.getElementById('nav-' + name);
       if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
     }
