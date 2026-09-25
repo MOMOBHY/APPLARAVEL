@@ -63,6 +63,7 @@
           <div class="text-left pr-2">
             <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
             <p class="text-[11px] font-bold text-slate-700">DRH</p>
+            <p id="navStructure" class="text-[11px] text-slate-500 max-w-[14rem] truncate"></p>
           </div>
         </div>
         <button onclick="voirNotifications()" title="Notifications" class="relative px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
@@ -173,6 +174,7 @@
       user = JSON.parse(saved);
       if (user.role !== 'DRH') { window.location.href = 'login.html'; return; }
       document.getElementById('navName').textContent = user.name;
+      document.getElementById('navStructure').textContent = user.structure || 'Structure non assignée';
       loadAvatar();
       await loadData();
       renderAll();

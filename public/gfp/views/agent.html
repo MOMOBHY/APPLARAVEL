@@ -63,6 +63,7 @@
           <div class="text-left pr-2">
             <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
             <p class="text-[11px] font-bold text-emerald-700">Agent Fonctionnaire</p>
+            <p id="navStructure" class="text-[11px] text-slate-500 max-w-[14rem] truncate"></p>
           </div>
         </div>
         <button onclick="logout()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
@@ -272,6 +273,7 @@
       if (user.role !== 'AGENT') { const rl = user.role.toLowerCase(); window.location.href = rl === 'responsable' ? 'responsable.html' : (rl === 'drh' ? 'drh.html' : 'admin.html'); return; }
 
       document.getElementById('navName').textContent = user.name;
+      document.getElementById('navStructure').textContent = user.structure || 'Structure non assignée';
       loadAvatar();
       await loadData();
       renderDashboard();
