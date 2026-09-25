@@ -22,7 +22,7 @@
   conteneur.innerHTML = `
     <div class="flex items-center space-x-3 min-w-0">
       <img src="${base}assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-10 w-auto object-contain shrink-0">
-      <img src="${base}assets/logo-gfp.svg" alt="GFP" class="h-9 w-9 shrink-0 rounded-lg">
+      <img src="${base}assets/logo-gfp.svg" alt="GFP" class="h-11 w-auto shrink-0">
       <div class="min-w-0">
         <h1 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight max-w-md">
           <span class="hidden md:inline">${NOM_MINISTERE}</span>

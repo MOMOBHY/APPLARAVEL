@@ -1,7 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GFP">
-  <rect width="64" height="64" rx="14" fill="#047857"/>
-  <path d="M18 12h20l10 10v30a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V14a2 2 0 0 1 2-2z" fill="#fff"/>
-  <path d="M38 12v8a2 2 0 0 0 2 2h8z" fill="#a7f3d0"/>
-  <path d="M23 37l6 6 12-13" fill="none" stroke="#047857" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="22" y="47" width="20" height="2.5" rx="1.25" fill="#a7f3d0"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-label="GFP — Ministère de la Fonction Publique de Côte d'Ivoire">
+  <defs>
+    <clipPath id="ecu"><path d="M64 4 L118 20 V70 C118 104 94 128 64 144 C34 128 10 104 10 70 V20 Z"/></clipPath>
+  </defs>
+  <!-- Écu aux couleurs de la Côte d'Ivoire -->
+  <g clip-path="url(#ecu)">
+    <rect x="0" y="0" width="43" height="150" fill="#F77F00"/>
+    <rect x="43" y="0" width="42" height="150" fill="#FFFFFF"/>
+    <rect x="85" y="0" width="43" height="150" fill="#009E60"/>
+  </g>
+  <path d="M64 4 L118 20 V70 C118 104 94 128 64 144 C34 128 10 104 10 70 V20 Z" fill="none" stroke="#0B4F3A" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Médaillon -->
+  <circle cx="64" cy="62" r="38" fill="#FFFFFF" stroke="#0B4F3A" stroke-width="3"/>
+  <!-- Éléphant (emblème national) -->
+  <g fill="#0B4F3A">
+    <ellipse cx="38" cy="58" rx="13" ry="18" transform="rotate(12 38 58)"/>
+    <ellipse cx="90" cy="58" rx="13" ry="18" transform="rotate(-12 90 58)"/>
+    <ellipse cx="64" cy="55" rx="21" ry="23"/>
+    <path d="M56 66 C56 84 58 92 63 94 C66 96 71 93 70 89 C69 86 66 88 65 84 C64 80 72 74 72 66 Z"/>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round">
+    <path d="M52 70 C46 76 46 84 51 88"/>
+    <path d="M76 70 C82 76 82 84 77 88"/>
+  </g>
+  <circle cx="56" cy="50" r="2.4" fill="#FFFFFF"/><circle cx="72" cy="50" r="2.4" fill="#FFFFFF"/>
+  <!-- Étoile de la fonction publique -->
+  <path d="M64 21 l2.6 5.4 5.9.8-4.3 4.1 1 5.9L64 34.4l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="#F77F00"/>
+  <!-- Bandeau -->
+  <rect x="24" y="106" width="80" height="22" rx="4" fill="#0B4F3A"/>
+  <text x="64" y="122.5" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="16" letter-spacing="3" fill="#FFFFFF">GFP</text>
 </svg>

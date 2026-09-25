@@ -1,4 +1,4 @@
-<p align="center"><img src="public/gfp/assets/logo-gfp.svg" alt="GFP" width="96"></p>
+<p align="center"><img src="public/gfp/assets/logo-gfp.svg" alt="GFP" width="110"></p>
 
 # GFP — Plateforme de gestion des services administratifs
 
