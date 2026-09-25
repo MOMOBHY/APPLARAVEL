@@ -15,7 +15,7 @@ Chaque démarche suit le circuit réel de l’administration : l’agent dépose
 - **Retour pour correction** : un dossier incomplet revient à l’agent, qui le corrige et le renvoie
 - **Consultation des justificatifs** par les personnes habilitées uniquement
 - **Inscription** avec choix du rôle, et **mot de passe oublié** validé par l’administrateur
-- **Espace administrateur** : gestion des comptes (rôle, structure, suspension/réactivation, mot de passe, filtres) et recherche dans tous les dossiers
+- **Espace administrateur** : gestion des comptes (rôle, suspension/réactivation, mot de passe, filtres) et recherche dans tous les dossiers
 - **Journal d’audit** : l’administrateur voit toutes les entrées et sorties (connexions, déconnexions, tentatives refusées) ainsi que les actions sur les dossiers, les comptes, les mots de passe et la consultation des justificatifs, avec filtres et export CSV
 
 ## Les circuits de traitement
