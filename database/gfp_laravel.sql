@@ -520,7 +520,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -547,7 +547,8 @@ INSERT INTO `migrations` VALUES
 (14,'2026_09_24_230628_elargir_statuts_historique_declarations',2),
 (15,'2026_09_25_150000_create_journal_audit_table',3),
 (16,'2026_09_25_170000_ajouter_actif_aux_users',4),
-(17,'2026_09_25_190000_enrichir_structures',5);
+(17,'2026_09_25_190000_enrichir_structures',5),
+(18,'2026_09_25_200000_create_partages_tables',6);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -686,7 +687,7 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`),
   KEY `notifications_agent_id_est_lu_index` (`agent_id`,`est_lu`),
   CONSTRAINT `notifications_agent_id_foreign` FOREIGN KEY (`agent_id`) REFERENCES `agents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -702,22 +703,22 @@ INSERT INTO `notifications` VALUES
 (3,2,'Nouvelle demande à vérifier','Demande PERM-2026-FR9NRY (2 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-FR9NRY',0,'2026-09-23 15:33:02','2026-09-23 15:33:02'),
 (4,4,'Visa hiérarchique requis','Demande PERM-2026-FR9NRY (≤ 3 j) conforme, votre visa est requis.','ATTENTE_VISA','PERM-2026-FR9NRY',0,'2026-09-23 15:33:02','2026-09-23 15:33:02'),
 (5,2,'Nouvelle demande à vérifier','Demande PERM-2026-IIQZTE (3 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-IIQZTE',0,'2026-09-23 19:11:36','2026-09-23 19:11:36'),
-(6,5,'Demande > 2 jours à trancher','Demande PERM-2026-IIQZTE vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-IIQZTE',0,'2026-09-23 19:11:46','2026-09-23 19:11:46'),
+(6,5,'Demande > 2 jours à trancher','Demande PERM-2026-IIQZTE vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-IIQZTE',1,'2026-09-23 19:11:46','2026-09-25 18:58:54'),
 (7,2,'Nouvelle demande à vérifier','Demande PERM-2026-CAPZQL (2 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-CAPZQL',0,'2026-09-23 19:12:11','2026-09-23 19:12:11'),
 (8,4,'Visa hiérarchique requis','Demande PERM-2026-CAPZQL (≤ 2 j) conforme, votre visa est requis.','ATTENTE_VISA','PERM-2026-CAPZQL',0,'2026-09-23 19:12:21','2026-09-23 19:12:21'),
 (9,2,'Nouvelle demande à vérifier','Demande PERM-2026-LOMKLF (3 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-LOMKLF',0,'2026-09-23 19:55:45','2026-09-23 19:55:45'),
-(10,5,'Demande > 2 jours à trancher','Demande PERM-2026-LOMKLF vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-LOMKLF',0,'2026-09-23 19:55:53','2026-09-23 19:55:53'),
+(10,5,'Demande > 2 jours à trancher','Demande PERM-2026-LOMKLF vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-LOMKLF',1,'2026-09-23 19:55:53','2026-09-25 18:58:54'),
 (11,2,'Nouvelle demande à vérifier','Demande PERM-2026-DYZULM (7 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-DYZULM',0,'2026-09-23 20:25:24','2026-09-23 20:25:24'),
-(12,5,'Demande > 2 jours à trancher','Demande PERM-2026-DYZULM vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-DYZULM',0,'2026-09-23 20:25:39','2026-09-23 20:25:39'),
+(12,5,'Demande > 2 jours à trancher','Demande PERM-2026-DYZULM vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-DYZULM',1,'2026-09-23 20:25:39','2026-09-25 18:58:54'),
 (13,12,'Décision DRH à notifier','Le DRH a tranché le dossier PERM-2026-DYZULM (VALIDEE). À notifier à l\'agent.','A_NOTIFIER','PERM-2026-DYZULM',0,'2026-09-23 20:25:56','2026-09-23 20:25:56'),
 (14,11,'Demande acceptée','Votre demande PERM-2026-DYZULM (Événement Familial, 02/09/2025 au 08/09/2025) a été VALIDÉE par le DRH le 23/09/2026 à 16:25.','VALIDATION','PERM-2026-DYZULM',0,'2026-09-23 20:26:08','2026-09-23 20:26:08'),
 (15,2,'Déclaration de naissance à contrôler','Nouvelle déclaration NAISS-2026-VPPXIQ soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_CONTROLE','NAISS-2026-VPPXIQ',0,'2026-09-23 20:26:35','2026-09-23 20:26:35'),
 (16,11,'Déclaration transmise','Votre déclaration NAISS-2026-VPPXIQ est transmise au service administratif.','INFO','NAISS-2026-VPPXIQ',0,'2026-09-23 20:26:35','2026-09-23 20:26:35'),
-(17,5,'Acte à valider','Déclaration NAISS-2026-VPPXIQ contrôlée conforme, décision DRH requise.','ATTENTE_DRH','NAISS-2026-VPPXIQ',0,'2026-09-23 20:26:58','2026-09-23 20:26:58'),
+(17,5,'Acte à valider','Déclaration NAISS-2026-VPPXIQ contrôlée conforme, décision DRH requise.','ATTENTE_DRH','NAISS-2026-VPPXIQ',1,'2026-09-23 20:26:58','2026-09-25 18:58:54'),
 (18,11,'Déclaration validée','Votre déclaration NAISS-2026-VPPXIQ a été validée par la DRH.','VALIDATION','NAISS-2026-VPPXIQ',0,'2026-09-23 20:27:15','2026-09-23 20:27:15'),
-(19,5,'Dossier visé à valider','Dossier PERM-2026-CAPZQL visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-CAPZQL',0,'2026-09-24 00:46:23','2026-09-24 00:46:23'),
-(20,5,'Dossier visé à valider','Dossier PERM-2026-FR9NRY visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-FR9NRY',0,'2026-09-24 00:46:27','2026-09-24 00:46:27'),
-(21,5,'Dossier visé à valider','Dossier PERM-2026-HGWU0S visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-HGWU0S',0,'2026-09-24 00:46:29','2026-09-24 00:46:29'),
+(19,5,'Dossier visé à valider','Dossier PERM-2026-CAPZQL visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-CAPZQL',1,'2026-09-24 00:46:23','2026-09-25 18:58:54'),
+(20,5,'Dossier visé à valider','Dossier PERM-2026-FR9NRY visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-FR9NRY',1,'2026-09-24 00:46:27','2026-09-25 18:58:54'),
+(21,5,'Dossier visé à valider','Dossier PERM-2026-HGWU0S visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-HGWU0S',1,'2026-09-24 00:46:29','2026-09-25 18:58:54'),
 (22,12,'Décision DRH à notifier','Le DRH a tranché le dossier PERM-2026-LOMKLF (VALIDEE). À notifier à l\'agent.','A_NOTIFIER','PERM-2026-LOMKLF',0,'2026-09-24 00:46:49','2026-09-24 00:46:49'),
 (23,12,'Décision DRH à notifier','Le DRH a tranché le dossier PERM-2026-IIQZTE (VALIDEE). À notifier à l\'agent.','A_NOTIFIER','PERM-2026-IIQZTE',0,'2026-09-24 00:46:52','2026-09-24 00:46:52'),
 (24,12,'Décision DRH à notifier','Le DRH a tranché le dossier PERM-2026-CAPZQL (VALIDEE). À notifier à l\'agent.','A_NOTIFIER','PERM-2026-CAPZQL',0,'2026-09-24 00:46:54','2026-09-24 00:46:54'),
@@ -732,21 +733,86 @@ INSERT INTO `notifications` VALUES
 (33,11,'Déclaration transmise','Votre déclaration NAISS-2026-HKDTDK est transmise au service administratif.','INFO','NAISS-2026-HKDTDK',0,'2026-09-24 00:47:56','2026-09-24 00:47:56'),
 (34,11,'Dossier incomplet à corriger','Votre déclaration NAISS-2026-HKDTDK est retournée : Dossier incomplet : pièce ou information manquante.','RETOUR','NAISS-2026-HKDTDK',0,'2026-09-24 00:48:07','2026-09-24 00:48:07'),
 (35,2,'Nouvelle demande à vérifier','Demande PERM-2026-XT8HOZ (3 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-XT8HOZ',0,'2026-09-24 21:18:48','2026-09-24 21:18:48'),
-(36,5,'Demande > 2 jours à trancher','Demande PERM-2026-XT8HOZ vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-XT8HOZ',0,'2026-09-24 21:19:10','2026-09-24 21:19:10'),
+(36,5,'Demande > 2 jours à trancher','Demande PERM-2026-XT8HOZ vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-XT8HOZ',1,'2026-09-24 21:19:10','2026-09-25 18:58:54'),
 (37,12,'Décision DRH à notifier','Le DRH a tranché le dossier PERM-2026-XT8HOZ (VALIDEE). À notifier à l\'agent.','A_NOTIFIER','PERM-2026-XT8HOZ',0,'2026-09-24 21:19:22','2026-09-24 21:19:22'),
 (38,11,'Demande acceptée','Votre demande PERM-2026-XT8HOZ (Événement Familial, 02/09/2025 au 04/09/2025) a été VALIDÉE par le DRH le 24/09/2026 à 17:19.','VALIDATION','PERM-2026-XT8HOZ',0,'2026-09-24 21:19:31','2026-09-24 21:19:31'),
 (39,2,'Nouvelle demande à vérifier','Demande PERM-2026-SLERQU (1 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-SLERQU',0,'2026-09-24 21:19:57','2026-09-24 21:19:57'),
 (40,4,'Visa hiérarchique requis','Demande PERM-2026-SLERQU (≤ 2 j) conforme, votre visa est requis.','ATTENTE_VISA','PERM-2026-SLERQU',0,'2026-09-24 21:20:06','2026-09-24 21:20:06'),
 (41,2,'Nouvelle demande à vérifier','Demande PERM-2026-FQQKGL (1 j) soumise par M. GRAMBOUTE Mohamed Prince.','ATTENTE_VERIF','PERM-2026-FQQKGL',0,'2026-09-24 21:38:36','2026-09-24 21:38:36'),
 (42,4,'Visa hiérarchique requis','Demande PERM-2026-FQQKGL (≤ 2 j) conforme, votre visa est requis.','ATTENTE_VISA','PERM-2026-FQQKGL',0,'2026-09-24 21:38:58','2026-09-24 21:38:58'),
-(43,5,'Dossier visé à valider','Dossier PERM-2026-FQQKGL visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-FQQKGL',0,'2026-09-24 21:39:11','2026-09-24 21:39:11'),
-(44,5,'Dossier visé à valider','Dossier PERM-2026-SLERQU visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-SLERQU',0,'2026-09-24 21:39:15','2026-09-24 21:39:15'),
+(43,5,'Dossier visé à valider','Dossier PERM-2026-FQQKGL visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-FQQKGL',1,'2026-09-24 21:39:11','2026-09-25 18:58:54'),
+(44,5,'Dossier visé à valider','Dossier PERM-2026-SLERQU visé favorablement, validation DRH requise.','ATTENTE_DRH','PERM-2026-SLERQU',1,'2026-09-24 21:39:15','2026-09-25 18:58:54'),
 (45,14,'Réinitialisation de mot de passe à autoriser','M. SYSADMIN Root (ADM001) a oublié son mot de passe.','REINITIALISATION','ADM001',0,'2026-09-25 02:13:43','2026-09-25 02:13:43'),
 (46,10,'Réinitialisation de mot de passe à autoriser','M. SYSADMIN Root (ADM001) a oublié son mot de passe.','REINITIALISATION','ADM001',1,'2026-09-25 02:13:43','2026-09-25 12:26:51'),
 (47,2,'Nouvelle demande à vérifier','Demande PERM-2026-C233R0 (3 j) soumise par M. GRAMBOUTE Mohamed.','ATTENTE_VERIF','PERM-2026-C233R0',0,'2026-09-25 11:25:57','2026-09-25 11:25:57'),
-(48,5,'Demande > 2 jours à trancher','Demande PERM-2026-C233R0 vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-C233R0',0,'2026-09-25 16:25:30','2026-09-25 16:25:30'),
+(48,5,'Demande > 2 jours à trancher','Demande PERM-2026-C233R0 vérifiée conforme, décision DRH requise.','ATTENTE_DRH','PERM-2026-C233R0',1,'2026-09-25 16:25:30','2026-09-25 18:58:54'),
 (49,2,'Nouvelle demande à vérifier','Demande PERM-2026-OTSW1H (1 j) soumise par M. GRAMBOUTE Mohamed.','ATTENTE_VERIF','PERM-2026-OTSW1H',0,'2026-09-25 18:23:05','2026-09-25 18:23:05');
 /*!40000 ALTER TABLE `notifications` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `partage_structure`
+--
+
+DROP TABLE IF EXISTS `partage_structure`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `partage_structure` (
+  `partage_id` bigint(20) unsigned NOT NULL,
+  `structure_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`partage_id`,`structure_id`),
+  KEY `partage_structure_structure_id_foreign` (`structure_id`),
+  CONSTRAINT `partage_structure_partage_id_foreign` FOREIGN KEY (`partage_id`) REFERENCES `partages` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `partage_structure_structure_id_foreign` FOREIGN KEY (`structure_id`) REFERENCES `structures` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `partage_structure`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `partage_structure` WRITE;
+/*!40000 ALTER TABLE `partage_structure` DISABLE KEYS */;
+/*!40000 ALTER TABLE `partage_structure` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `partages`
+--
+
+DROP TABLE IF EXISTS `partages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `partages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `auteur_agent_id` bigint(20) unsigned DEFAULT NULL,
+  `titre` varchar(200) NOT NULL,
+  `message` text DEFAULT NULL,
+  `toutes_structures` tinyint(1) NOT NULL DEFAULT 0,
+  `piece_id` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `partages_auteur_agent_id_foreign` (`auteur_agent_id`),
+  KEY `partages_piece_id_foreign` (`piece_id`),
+  CONSTRAINT `partages_auteur_agent_id_foreign` FOREIGN KEY (`auteur_agent_id`) REFERENCES `agents` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `partages_piece_id_foreign` FOREIGN KEY (`piece_id`) REFERENCES `pieces_jointes` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `partages`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `partages` WRITE;
+/*!40000 ALTER TABLE `partages` DISABLE KEYS */;
+/*!40000 ALTER TABLE `partages` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -1115,12 +1181,12 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` VALUES
-(1,'M. GRAMBOUTE Mohamed','agt001@fonctionpublique.gouv.ci','AGT001',1,5,1,NULL,'$2y$12$kzWfZCMQUuTnI/5cMJj90OqPRXByioHMYXqf97aNAHB.uVBI7pB6y',NULL,'2026-09-25 18:49:09','2026-09-23 15:12:49','2026-09-25 18:49:09'),
+(1,'M. GRAMBOUTE Mohamed','agt001@fonctionpublique.gouv.ci','AGT001',1,5,1,NULL,'$2y$12$kzWfZCMQUuTnI/5cMJj90OqPRXByioHMYXqf97aNAHB.uVBI7pB6y',NULL,'2026-09-25 19:02:16','2026-09-23 15:12:49','2026-09-25 19:02:16'),
 (2,'M. KOUAME Awa','rh001@fonctionpublique.gouv.ci','RH001',2,2,1,NULL,'$2y$12$o7olLqw/UmrWAu83CokDOu/EI/eV0.0ablrIHZ2MmX2V3ZhfiUzle',NULL,'2026-09-25 18:49:13','2026-09-23 15:12:50','2026-09-25 18:49:13'),
 (3,'M. BROU Marc','sd001@fonctionpublique.gouv.ci','SD001',3,4,1,NULL,'$2y$12$B/lkcSISiXL5pbl1Aimao.xgjar9fumedpspcrK0VntQFqPitSyfy',NULL,'2026-09-24 21:39:45','2026-09-23 15:12:50','2026-09-24 21:39:45'),
-(4,'M. KONE Ibrahim','dir001@fonctionpublique.gouv.ci','DIR001',4,3,1,NULL,'$2y$12$RCP/LoZCdGI.jeqAZ2UQBOmwbHjgSyRio2zLOp5hkYBjURjEnBaxW',NULL,'2026-09-25 18:23:37','2026-09-23 15:12:50','2026-09-25 18:23:37'),
-(5,'M. ADJOUA Marie','drh001@fonctionpublique.gouv.ci','DRH001',5,2,1,NULL,'$2y$12$ib99nCGsyVqIhaB7WeSB8utzEHNWPuwMhGxTDDO4itwMcw7yZ/Gcm',NULL,'2026-09-25 18:49:16','2026-09-23 15:12:50','2026-09-25 18:49:16'),
-(6,'M. YAPO Chantal','sec001@fonctionpublique.gouv.ci','SEC001',6,1,1,NULL,'$2y$12$H8eiUKEFaeeK9al9F8dM6.3ayKttoeZ0xcrmr3MxMb4HkbBZxye52',NULL,'2026-09-24 21:39:34','2026-09-23 15:12:51','2026-09-24 21:39:34'),
+(4,'M. KONE Ibrahim','dir001@fonctionpublique.gouv.ci','DIR001',4,3,1,NULL,'$2y$12$RCP/LoZCdGI.jeqAZ2UQBOmwbHjgSyRio2zLOp5hkYBjURjEnBaxW',NULL,'2026-09-25 18:57:48','2026-09-23 15:12:50','2026-09-25 18:57:48'),
+(5,'M. ADJOUA Marie','drh001@fonctionpublique.gouv.ci','DRH001',5,2,1,NULL,'$2y$12$ib99nCGsyVqIhaB7WeSB8utzEHNWPuwMhGxTDDO4itwMcw7yZ/Gcm',NULL,'2026-09-25 19:02:10','2026-09-23 15:12:50','2026-09-25 19:02:10'),
+(6,'M. YAPO Chantal','sec001@fonctionpublique.gouv.ci','SEC001',6,1,1,NULL,'$2y$12$H8eiUKEFaeeK9al9F8dM6.3ayKttoeZ0xcrmr3MxMb4HkbBZxye52',NULL,'2026-09-25 18:57:35','2026-09-23 15:12:51','2026-09-25 18:57:35'),
 (7,'M. DIALLO Aminata','svc001@fonctionpublique.gouv.ci','SVC001',7,2,1,NULL,'$2y$12$mjQ6BSqNEl5ko9tv/PyT3Ob9Pgzeo/HO8bQt.0TEfI/XqshI/LfjW',NULL,NULL,'2026-09-23 15:12:51','2026-09-23 15:12:51'),
 (8,'M. TRAORE Siaka','chef001@fonctionpublique.gouv.ci','CHEF001',8,5,1,NULL,'$2y$12$2xj.iFcvIH5OEyjRgeUWouRMonDHJIxAPObLAUwnE/o7XUle/Ugzi',NULL,'2026-09-24 21:37:52','2026-09-23 15:12:51','2026-09-24 21:37:52'),
 (9,'M. N_GUESSAN Koffi','cab001@fonctionpublique.gouv.ci','CAB001',9,1,1,NULL,'$2y$12$NyWY1oKpbAC2qyJnoB6maeSuXNcXgZfG4rrfKGqTzc146oASPoFyi',NULL,'2026-09-24 21:39:22','2026-09-23 15:12:51','2026-09-24 21:39:22'),
@@ -1143,7 +1209,7 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-09-25 10:56:07
+-- Dump completed on 2026-09-25 11:02:29
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.20-13.0.2-MariaDB, for osx10.23 (arm64)
 --
@@ -1184,7 +1250,7 @@ CREATE TABLE `personal_access_tokens` (
   UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
   KEY `personal_access_tokens_expires_at_index` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=138 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=143 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1292,7 +1358,7 @@ CREATE TABLE `journal_audit` (
   KEY `journal_audit_reference_index` (`reference`),
   KEY `journal_audit_created_at_index` (`created_at`),
   CONSTRAINT `journal_audit_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1304,5 +1370,5 @@ CREATE TABLE `journal_audit` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-09-25 10:56:07
+-- Dump completed on 2026-09-25 11:02:29
 SET FOREIGN_KEY_CHECKS=1;

@@ -245,6 +245,26 @@ const API = {
     }
   },
 
+  // Partage d'informations et de documents entre structures
+  async getPartages() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/partages`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) { return { status: 'error', partages: [] }; }
+  },
+  async publierPartage(formData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/partages`, { method: 'POST', headers: authHeaders({ Accept: 'application/json' }), body: formData });
+      return await response.json();
+    } catch (e) { return { status: 'error', message: 'Erreur réseau' }; }
+  },
+  async supprimerPartage(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/partages/${id}`, { method: 'DELETE', headers: authHeaders({ Accept: 'application/json' }) });
+      return await response.json();
+    } catch (e) { return { status: 'error', message: 'Erreur réseau' }; }
+  },
+
   // Journal d'audit (administrateur)
   async getJournal(filtres = {}) {
     try {
