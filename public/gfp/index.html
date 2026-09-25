@@ -750,7 +750,7 @@
         if (etape === 'EN_ATTENTE_GESTIONNAIRE_RH') return 'Destination immédiate : Gestionnaire RH.';
         if (etape === 'EN_ATTENTE_VISA_SOUS_DIRECTEUR') return 'Destination immédiate : Sous-Directeur (visa).';
         if (etape === 'EN_ATTENTE_VISA_DIRECTEUR') return 'Destination immédiate : Directeur (visa).';
-        if (etape === 'EN_ATTENTE_RH') return 'Destination immédiate : DRH (décision finale).';
+        if (etape === 'EN_ATTENTE_RH' || etape === 'EN_ATTENTE_DRH') return 'Destination immédiate : DRH (décision finale).';
         if (etape === 'RETOUR_CORRECTION') return 'Retournée à l’agent pour correction.';
         if (statut === 'EN_ATTENTE_N1') return 'Destination immédiate : Gestionnaire RH.';
         if (statut === 'VALIDEE') return 'Destination immédiate : notification envoyée à l’agent demandeur (via le Gestionnaire RH).';
@@ -1233,10 +1233,12 @@
                 <p class="mt-1 text-[10px] text-red-700 font-bold">Motif du retour : ${escapeHtml(r.motif_retour)}</p>
                 <button data-corriger class="mt-1 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>` : ''}
               ${r.statut === 'REJETEE' && r.motif_rejet ? `<p class="mt-1 text-[10px] text-red-700">Motif du rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
+              <div><button data-suivi class="mt-1.5 px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Suivre le dossier</button></div>
             </td>
           `;
           const btnCorriger = tr.querySelector('[data-corriger]');
           if (btnCorriger) btnCorriger.onclick = () => ouvrirCorrection(r, rafraichirVue);
+          tr.querySelector('[data-suivi]').onclick = () => ouvrirSuivi(r);
           tbody.appendChild(tr);
         });
       }

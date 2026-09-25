@@ -77,6 +77,17 @@ const API = {
     }
   },
 
+  // Détail d'un dossier avec son historique (accès limité au déclarant et aux acteurs du circuit).
+  async getDossier(nature, dossierId) {
+    const segment = { DEMANDE_PERMISSION: 'permissions', DECLARATION_NAISSANCE: 'naissances', DECLARATION_DECES: 'deces' }[nature];
+    try {
+      const response = await fetch(`${API_BASE_URL}/${segment}/${dossierId}`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) {
+      return { status: 'error', message: 'Erreur réseau' };
+    }
+  },
+
   // Ouvre un justificatif (téléchargement authentifié, droits contrôlés par le serveur).
   async ouvrirPiece(pieceId) {
     const fenetre = window.open('', '_blank');
@@ -420,4 +431,140 @@ function ouvrirCorrection(r, onDone) {
       erreur.classList.remove('hidden');
     }
   };
+}
+
+// -----------------------------------------------------------
+// Suivi du dossier : frise chronologique des étapes
+// -----------------------------------------------------------
+const ETAPES_SUIVI = {
+  SOUMISSION: 'Demande soumise',
+  BROUILLON: 'Brouillon enregistré',
+  CORRECTION_RESOUMISSION: 'Demande corrigée et renvoyée',
+  CORRECTION: 'Dossier corrigé et renvoyé',
+  RETOUR_CORRECTION: 'Retourné pour correction',
+  REJET_RH: 'Rejetée par le Gestionnaire RH',
+  TRANSMISSION_VISA: 'Vérifiée par le Gestionnaire RH, transmise pour visa',
+  TRANSMISSION_DRH: 'Vérifiée par le Gestionnaire RH, transmise au DRH',
+  CONTROLE_CONFORME: 'Vérifiée par le Gestionnaire RH, transmise à la DRH',
+  VERIFICATION_CONFORME: 'Vérifiée par le Gestionnaire RH, transmise à la DRH',
+  VISA_FAVORABLE: 'Visa hiérarchique accordé',
+  REFUS_VISA: 'Visa hiérarchique refusé',
+  VALIDATION_DRH: 'Validée par le DRH',
+  REJET_DRH: 'Rejetée par le DRH',
+  VALIDATION: 'Validée par la DRH',
+  REJET: 'Rejetée par la DRH',
+  NOTIFICATION_AGENT: 'Décision notifiée par le Gestionnaire RH',
+  ARCHIVAGE: 'Dossier archivé'
+};
+
+const ROLES_SUIVI = {
+  ROLE_AGENT: 'Agent', ROLE_GESTIONNAIRE_RH: 'Gestionnaire RH', ROLE_SOUS_DIRECTEUR: 'Sous-Directeur',
+  ROLE_DIRECTEUR: 'Directeur', ROLE_DRH: 'DRH', ROLE_SERVICE_ADMINISTRATIF: 'Service administratif'
+};
+
+// Étapes dont le commentaire est un motif à montrer à l'agent.
+const ETAPES_AVEC_MOTIF = ['RETOUR_CORRECTION', 'REJET_RH', 'REFUS_VISA', 'REJET_DRH', 'REJET'];
+
+function prochaineEtape(r) {
+  const etape = r.etape || r.statut;
+  const attentes = {
+    EN_ATTENTE_GESTIONNAIRE_RH: 'En attente de vérification par le Gestionnaire RH',
+    EN_ATTENTE_VISA_SOUS_DIRECTEUR: 'En attente du visa du Sous-Directeur',
+    EN_ATTENTE_VISA_DIRECTEUR: 'En attente du visa du Directeur',
+    EN_ATTENTE_DRH: 'En attente de la décision du DRH',
+    EN_ATTENTE_RH: 'En attente de la décision de la DRH',
+    RETOUR_CORRECTION: 'À corriger par vous, puis à renvoyer'
+  };
+  if (attentes[etape]) return attentes[etape];
+  if (r.nature === 'DEMANDE_PERMISSION' && ['VALIDEE', 'REJETEE'].includes(etape) && !r.notifie) {
+    return 'En attente de la notification du Gestionnaire RH';
+  }
+  return null;
+}
+
+function formatDateSuivi(valeur) {
+  const date = new Date(valeur);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Abidjan' }).format(date);
+}
+
+async function ouvrirSuivi(r) {
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4';
+  overlay.innerHTML = `
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between gap-3 p-5 border-b border-slate-200">
+        <div>
+          <h2 class="font-bold text-base text-slate-900">Suivi du dossier</h2>
+          <p class="text-xs text-slate-500 font-mono mt-0.5" data-ref></p>
+        </div>
+        <button type="button" data-fermer class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg">Fermer</button>
+      </div>
+      <ol data-frise class="p-5 space-y-0"><li class="text-sm text-slate-500 italic">Chargement…</li></ol>
+    </div>`;
+  document.body.appendChild(overlay);
+  const fermer = () => overlay.remove();
+  overlay.querySelector('[data-fermer]').onclick = fermer;
+  overlay.addEventListener('click', e => { if (e.target === overlay) fermer(); });
+  overlay.querySelector('[data-ref]').textContent = r.id;
+
+  const frise = overlay.querySelector('[data-frise]');
+  const res = await API.getDossier(r.nature, r.dossier_id);
+  if (res.status !== 'success') {
+    frise.innerHTML = '';
+    const li = document.createElement('li');
+    li.className = 'text-sm text-red-600 font-bold';
+    li.textContent = res.message || 'Suivi indisponible.';
+    frise.appendChild(li);
+    return;
+  }
+
+  // L'API renvoie la plus récente en premier : on remet dans l'ordre chronologique.
+  const etapes = [...(res.data.historique || [])].reverse();
+  const attente = prochaineEtape(r);
+  frise.innerHTML = '';
+
+  const ajouterEtape = ({ titre, sousTitre, date, motif, ton, derniere }) => {
+    const pastille = {
+      fait: 'bg-emerald-700 border-emerald-700',
+      rejet: 'bg-red-600 border-red-600',
+      retour: 'bg-slate-500 border-slate-500',
+      attente: 'bg-white border-slate-400 border-dashed'
+    }[ton];
+    const li = document.createElement('li');
+    li.className = 'relative pl-8 pb-6';
+    li.innerHTML = `
+      ${derniere ? '' : '<span class="absolute left-[9px] top-5 bottom-0 w-0.5 bg-slate-200"></span>'}
+      <span class="absolute left-0 top-1 w-5 h-5 rounded-full border-2 ${pastille}"></span>
+      <p data-titre class="text-sm font-bold ${ton === 'attente' ? 'text-slate-500' : 'text-slate-900'}"></p>
+      <p data-sous class="text-xs text-slate-600 mt-0.5"></p>
+      <p data-date class="text-[11px] text-slate-400 font-mono mt-0.5"></p>
+      <p data-motif class="hidden mt-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1"></p>`;
+    li.querySelector('[data-titre]').textContent = titre;
+    li.querySelector('[data-sous]').textContent = sousTitre || '';
+    li.querySelector('[data-date]').textContent = date || '';
+    if (motif) {
+      const node = li.querySelector('[data-motif]');
+      node.textContent = 'Motif : ' + motif;
+      node.classList.remove('hidden');
+    }
+    frise.appendChild(li);
+  };
+
+  etapes.forEach((h, i) => {
+    const ton = /REJET|REFUS/.test(h.action) ? 'rejet' : (h.action === 'RETOUR_CORRECTION' ? 'retour' : 'fait');
+    const role = ROLES_SUIVI[h.acteur_role] || '';
+    ajouterEtape({
+      titre: ETAPES_SUIVI[h.action] || h.action,
+      sousTitre: [h.acteur_nom, role && `(${role})`].filter(Boolean).join(' '),
+      date: formatDateSuivi(h.created_at),
+      motif: ETAPES_AVEC_MOTIF.includes(h.action) ? h.commentaire : null,
+      ton,
+      derniere: !attente && i === etapes.length - 1
+    });
+  });
+
+  if (attente) {
+    ajouterEtape({ titre: attente, sousTitre: 'Étape en cours', ton: 'attente', derniere: true });
+  }
 }

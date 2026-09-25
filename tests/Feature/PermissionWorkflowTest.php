@@ -448,4 +448,18 @@ class PermissionWorkflowTest extends TestCase
             ->postJson('/api/status', ['id' => $ligne['id'], 'statut' => 'EN_ATTENTE_RH'])->assertOk();
         $this->assertDatabaseHas('demandes_permission', ['id' => $ligne['dossier_id'], 'statut' => DemandePermission::EN_ATTENTE_DRH]);
     }
+
+    /** Suivi du dossier : le demandeur voit toutes les étapes, un autre agent n'y a pas accès. */
+    public function test_suivi_du_dossier_reserve_au_demandeur(): void
+    {
+        $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-05');
+        PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
+
+        $historique = $this->actingAs(User::where('matricule', 'AGT001')->firstOrFail(), 'sanctum')
+            ->getJson("/api/permissions/{$demande->id}")->assertOk()->json('data.historique');
+        $this->assertEquals(['TRANSMISSION_DRH', 'SOUMISSION'], array_column($historique, 'action'));
+
+        $this->actingAs(User::where('matricule', 'SVC001')->firstOrFail(), 'sanctum')
+            ->getJson("/api/permissions/{$demande->id}")->assertForbidden();
+    }
 }
