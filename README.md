@@ -1,3 +1,5 @@
+<p align="center"><img src="public/gfp/assets/logo-gfp.svg" alt="GFP" width="96"></p>
+
 # GFP — Plateforme de gestion des services administratifs
 
 Application web réalisée pour le **Ministère de la Fonction Publique et de la Modernisation de l’Administration** (Côte d’Ivoire). Elle remplace le traitement papier de trois démarches courantes du personnel : les demandes de permission, les déclarations d’état civil (naissance et décès) et la diffusion des notes de service.
