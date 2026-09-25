@@ -8,9 +8,9 @@ Version PDF : [Conception_Merise_GFP.pdf](Conception_Merise_GFP.pdf)
 
 ## Lire les schémas
 
-**MCD — Modèle Conceptuel des Données.** Décrit les informations manipulées : les entités (rectangles verts, identifiant souligné), les associations qui les relient (ovales orange, avec leurs propres attributs) et les cardinalités. Une cardinalité « 0,n » se lit : une occurrence de l’entité peut participer de zéro à plusieurs fois à l’association ; « 1,1 » : exactement une fois.
+**MCD — Modèle Conceptuel des Données.** Décrit les informations manipulées : les entités (rectangles à bordure épaisse, identifiant souligné), les associations qui les relient (ovales, avec leurs propres attributs) et les cardinalités. Une cardinalité « 0,n » se lit : une occurrence de l’entité peut participer de zéro à plusieurs fois à l’association ; « 1,1 » : exactement une fois.
 
-**MCT — Modèle Conceptuel des Traitements.** Décrit ce que fait le système, sans dire qui ni où : des événements (ovales orange) déclenchent des opérations (rectangles verts, avec leurs règles de gestion) qui produisent des résultats (hexagones gris, rouges pour un refus ou un rejet). Les branches portent la condition d’émission du résultat.
+**MCT — Modèle Conceptuel des Traitements.** Décrit ce que fait le système, sans dire qui ni où : des événements (ovales en pointillés longs) déclenchent des opérations (rectangles à bordure épaisse, avec leurs règles de gestion) qui produisent des résultats (hexagones ; bordure en pointillés serrés pour un refus ou un rejet). Les branches portent la condition d’émission du résultat.
 
 **MOT — Modèle Organisationnel des Traitements.** Précise qui fait quoi : chaque opération du MCT est affectée à un poste de travail (couloir) avec sa nature (manuelle, interactive ou automatique), sa durée et ses règles. Le schéma en couloirs donne les échanges entre les postes ; le tableau donne le détail de chaque opération.
 
@@ -23,8 +23,8 @@ Un agent appartient à au plus une structure (Direction Générale, Direction, S
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef ent fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef asso fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
+  classDef ent fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000
+  classDef asso fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
   AG["<b>AGENT</b><hr/><u>id_agent</u><br/>matricule<br/>civilité<br/>nom<br/>prénom<br/>date_naissance<br/>sexe<br/>téléphone<br/>email<br/>solde_permission_annuel"]:::ent
   ST["<b>STRUCTURE</b><hr/><u>id_structure</u><br/>code<br/>nom<br/>sigle<br/>type<br/>officielle"]:::ent
   FO["<b>FONCTION</b><hr/><u>id_fonction</u><br/>code<br/>libellé<br/>niveau_hiérarchique"]:::ent
@@ -61,8 +61,8 @@ Une demande est déposée par un agent, relève d’un type de permission et por
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef ent fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef asso fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
+  classDef ent fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000
+  classDef asso fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
   AG["<b>AGENT</b><hr/><u>id_agent</u><br/>matricule<br/>nom<br/>prénom<br/>solde_permission_annuel"]:::ent
   TP["<b>TYPE_PERMISSION</b><hr/><u>id_type</u><br/>libellé<br/>durée_max"]:::ent
   DP["<b>DEMANDE_PERMISSION</b><hr/><u>id_demande</u><br/>code_dossier<br/>date_début<br/>date_fin<br/>nombre_jours<br/>motif<br/>statut<br/>motif_retour<br/>motif_rejet"]:::ent
@@ -108,8 +108,8 @@ Les deux déclarations ont la même structure et le même circuit ; elles diffè
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef ent fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef asso fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
+  classDef ent fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000
+  classDef asso fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
   AG["<b>AGENT</b><hr/><u>id_agent</u><br/>matricule<br/>nom<br/>prénom"]:::ent
   DN["<b>DÉCLARATION_NAISSANCE</b><hr/><u>id_déclaration</u><br/>code_dossier<br/>nom_enfant<br/>prénom_enfant<br/>date_naissance_enfant<br/>lieu_naissance_enfant<br/>statut<br/>motif_retour<br/>motif_rejet"]:::ent
   DD["<b>DÉCLARATION_DÉCÈS</b><hr/><u>id_déclaration</u><br/>code_dossier<br/>nom_défunt<br/>prénom_défunt<br/>lien_parenté<br/>date_décès<br/>lieu_décès<br/>statut<br/>motif_retour<br/>motif_rejet"]:::ent
@@ -147,8 +147,8 @@ Une note est émise par une autorité (DRH, Directeur de Cabinet, Directeur ou S
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef ent fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef asso fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
+  classDef ent fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000
+  classDef asso fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
   AG["<b>AGENT</b><hr/><u>id_agent</u><br/>matricule<br/>nom<br/>prénom"]:::ent
   NS["<b>NOTE_SERVICE</b><hr/><u>id_note</u><br/>numéro_référence<br/>objet<br/>contenu<br/>fichier<br/>statut<br/>date_émission<br/>date_diffusion"]:::ent
   ST["<b>STRUCTURE</b><hr/><u>id_structure</u><br/>code<br/>nom<br/>sigle"]:::ent
@@ -183,10 +183,10 @@ Un seul circuit pour toutes les demandes. Le gestionnaire RH vérifie le dossier
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
+  classDef ev fill:#ffffff,stroke:#000000,stroke-width:1.5px,stroke-dasharray:6 3,color:#000000
+  classDef op fill:#ffffff,stroke:#000000,stroke-width:3px,color:#000000
+  classDef re fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
+  classDef ko fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray:2 3,color:#000000
   E1(["<b>É1</b> — L’agent dépose une demande de permission"]):::ev
   O1["<b>OP1 — Enregistrer la demande</b><hr/>durée entre 1 et 30 jours<br/>justificatif et lieu obligatoires<br/>statut : EN_ATTENTE_GESTIONNAIRE_RH"]:::op
   R1{{"Demande enregistrée<br/>gestionnaire RH alerté"}}:::re
@@ -242,10 +242,10 @@ Un seul circuit pour les deux types. L’agent déclare et joint la pièce offic
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
+  classDef ev fill:#ffffff,stroke:#000000,stroke-width:1.5px,stroke-dasharray:6 3,color:#000000
+  classDef op fill:#ffffff,stroke:#000000,stroke-width:3px,color:#000000
+  classDef re fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
+  classDef ko fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray:2 3,color:#000000
   E1(["<b>É1</b> — L’agent déclare une naissance ou un décès"]):::ev
   O1["<b>OP1 — Enregistrer la déclaration</b><hr/>pièce obligatoire : extrait d’acte de naissance<br/>ou certificat de décès<br/>statut : EN_ATTENTE_GESTIONNAIRE_RH"]:::op
   R1{{"Déclaration enregistrée<br/>gestionnaire RH alerté"}}:::re
@@ -288,10 +288,10 @@ L’autorité émet la note et la transmet à sa secrétaire, qui la saisit et l
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart TB
-  classDef ev fill:#fff7ed,stroke:#d97706,stroke-width:2px,color:#0f172a
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef re fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
+  classDef ev fill:#ffffff,stroke:#000000,stroke-width:1.5px,stroke-dasharray:6 3,color:#000000
+  classDef op fill:#ffffff,stroke:#000000,stroke-width:3px,color:#000000
+  classDef re fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000
+  classDef ko fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray:2 3,color:#000000
   E1(["<b>É1</b> — Une autorité décide d’émettre une note<br/>(DRH, Directeur de Cabinet, Directeur, Sous-Directeur)"]):::ev
   O1["<b>OP1 — Rédiger et transmettre au secrétariat</b><hr/>objet + structures destinataires<br/>numéro de référence attribué<br/>statut : EN_ATTENTE_SAISIE"]:::op
   R1{{"Note transmise<br/>secrétaire alertée"}}:::re
@@ -335,8 +335,8 @@ Postes : Agent, Gestionnaire RH, Sous-Directeur ou Directeur (seulement pour les
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
+  classDef op fill:#ffffff,stroke:#000000,stroke-width:3px,color:#000000
+  classDef ko fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray:2 3,color:#000000
   subgraph L1["Agent"]
     direction TB
     a1["<b>1</b> Déposer la demande"]:::op
@@ -382,8 +382,8 @@ Postes : Agent, Gestionnaire RH, DRH.
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
+  classDef op fill:#ffffff,stroke:#000000,stroke-width:3px,color:#000000
+  classDef ko fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray:2 3,color:#000000
   subgraph L1["Agent"]
     direction TB
     a1["<b>1</b> Déclarer"]:::op
@@ -421,8 +421,8 @@ Postes : autorité émettrice (DRH, Directeur de Cabinet, Directeur ou Sous-Dire
 ```mermaid
 %%{init: {'flowchart': {'htmlLabels': true, 'curve': 'basis'}, 'themeVariables': {'fontSize': '14px'}}}%%
 flowchart LR
-  classDef op fill:#ecfdf5,stroke:#047857,stroke-width:2px,color:#0f172a
-  classDef ko fill:#fef2f2,stroke:#d03b3b,stroke-width:2px,color:#0f172a
+  classDef op fill:#ffffff,stroke:#000000,stroke-width:3px,color:#000000
+  classDef ko fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray:2 3,color:#000000
   subgraph L1["Autorité émettrice"]
     direction TB
     u1["<b>1</b> Rédiger et transmettre"]:::op
