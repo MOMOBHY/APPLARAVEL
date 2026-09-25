@@ -106,6 +106,10 @@ L’administrateur peut aussi passer par le lien « Accès réservé à l’admi
 
 Ces comptes servent uniquement aux démonstrations : pensez à changer les mots de passe avant toute mise en ligne.
 
+## Conception
+
+La modélisation Merise de la plateforme (MCD, MCT et MOT de chaque circuit) est dans [docs/MERISE.md](docs/MERISE.md), avec une version PDF : [docs/Conception_Merise_GFP.pdf](docs/Conception_Merise_GFP.pdf).
+
 ## Tests
 
 ```bash
