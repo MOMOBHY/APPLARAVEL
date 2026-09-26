@@ -20,15 +20,24 @@ class DemandeReinitialisation extends Model
 
     protected $table = 'demandes_reinitialisation';
 
-    protected $fillable = ['user_id', 'code_hash', 'statut', 'traite_par_id', 'traite_le', 'utilise_le'];
+    protected $fillable = [
+        'user_id',
+        'code_hash',
+        'statut',
+        'traite_par_id',
+        'traite_le',
+        'utilise_le',
+    ];
 
     protected $hidden = ['code_hash'];
 
+    /** Conversion automatique des colonnes (dates, booléens, mot de passe haché). */
     protected function casts(): array
     {
         return ['traite_le' => 'datetime', 'utilise_le' => 'datetime'];
     }
 
+    /** Utilisateur qui a demandé la réinitialisation. */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

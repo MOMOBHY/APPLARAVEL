@@ -23,23 +23,29 @@ class StatistiquesTest extends TestCase
 
     private function demande(): DemandePermission
     {
-        return PermissionWorkflowService::soumettre(Agent::where('matricule', 'AGT001')->firstOrFail(), [
-            'type_permission_id' => TypePermission::firstOrFail()->id,
-            'date_debut' => '2026-10-01',
-            'date_fin' => '2026-10-05',
-            'motif' => 'Motif de test',
-        ]);
+        return PermissionWorkflowService::soumettre(
+            Agent::where('matricule', 'AGT001')->firstOrFail(),
+            [
+                'type_permission_id' => TypePermission::firstOrFail()->id,
+                'date_debut' => '2026-10-01',
+                'date_fin' => '2026-10-05',
+                'motif' => 'Motif de test',
+            ],
+        );
     }
 
     public function test_tableau_de_bord_reserve_au_drh_et_a_l_administrateur(): void
     {
         $this->actingAs(User::where('matricule', 'AGT001')->firstOrFail(), 'sanctum')
-            ->getJson('/api/statistiques')->assertForbidden();
+            ->getJson('/api/statistiques')
+            ->assertForbidden();
         $this->actingAs(User::where('matricule', 'RH001')->firstOrFail(), 'sanctum')
-            ->getJson('/api/statistiques')->assertForbidden();
+            ->getJson('/api/statistiques')
+            ->assertForbidden();
 
         $this->actingAs(User::where('matricule', 'ADM001')->firstOrFail(), 'sanctum')
-            ->getJson('/api/statistiques')->assertOk();
+            ->getJson('/api/statistiques')
+            ->assertOk();
     }
 
     public function test_indicateurs_par_statut_et_delai(): void
@@ -54,7 +60,8 @@ class StatistiquesTest extends TestCase
         $this->demande();
 
         $this->actingAs(User::where('matricule', 'DRH001')->firstOrFail(), 'sanctum')
-            ->getJson('/api/statistiques')->assertOk()
+            ->getJson('/api/statistiques')
+            ->assertOk()
             ->assertJsonPath('indicateurs.total', 3)
             ->assertJsonPath('indicateurs.en_cours', 1)
             ->assertJsonPath('indicateurs.taux_validation', 50)

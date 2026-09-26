@@ -22,6 +22,7 @@ class NoteServiceTransmise extends Notification
         return ['mail'];
     }
 
+    /** Construit l'email envoyé aux destinataires lors de la diffusion d'une note de service. */
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)

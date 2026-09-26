@@ -11,7 +11,12 @@ return new class extends Migration
         Schema::table('notes_service', function (Blueprint $table) {
             $table->string('fichier_path')->nullable()->after('contenu');
             $table->timestamp('valide_le')->nullable()->after('date_diffusion');
-            $table->foreignId('valideur_id')->nullable()->after('valide_le')->constrained('agents')->nullOnDelete();
+            $table
+                ->foreignId('valideur_id')
+                ->nullable()
+                ->after('valide_le')
+                ->constrained('agents')
+                ->nullOnDelete();
         });
 
         Schema::create('note_historique', function (Blueprint $table) {
@@ -60,7 +65,11 @@ return new class extends Migration
             $table->string('nom_fichier');
             $table->string('type_mime', 100)->nullable();
             $table->string('chemin_stockage');
-            $table->foreignId('televerse_par_id')->nullable()->constrained('agents')->nullOnDelete();
+            $table
+                ->foreignId('televerse_par_id')
+                ->nullable()
+                ->constrained('agents')
+                ->nullOnDelete();
             $table->timestamps();
             $table->index(['dossier_type', 'dossier_id']);
         });

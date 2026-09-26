@@ -28,13 +28,32 @@ class DemandePermission extends Model
     public const REJETEE = 'REJETEE';
 
     protected $fillable = [
-        'code_dossier', 'agent_id', 'type_permission_id', 'date_debut', 'date_fin',
-        'nombre_jours', 'motif', 'piece_path', 'statut', 'gestionnaire_id',
-        'avis_gestionnaire', 'visa_direction_id', 'visa_attendu', 'avis_direction',
-        'decision_drh', 'motif_rejet', 'motif_retour', 'decideur_drh_id',
-        'date_verif_rh', 'date_visa', 'date_decision', 'notifie_le', 'notifie_par_id',
+        'code_dossier',
+        'agent_id',
+        'type_permission_id',
+        'date_debut',
+        'date_fin',
+        'nombre_jours',
+        'motif',
+        'piece_path',
+        'statut',
+        'gestionnaire_id',
+        'avis_gestionnaire',
+        'visa_direction_id',
+        'visa_attendu',
+        'avis_direction',
+        'decision_drh',
+        'motif_rejet',
+        'motif_retour',
+        'decideur_drh_id',
+        'date_verif_rh',
+        'date_visa',
+        'date_decision',
+        'notifie_le',
+        'notifie_par_id',
     ];
 
+    /** Conversion automatique des colonnes (dates, booléens, mot de passe haché). */
     protected function casts(): array
     {
         return [
@@ -47,16 +66,19 @@ class DemandePermission extends Model
         ];
     }
 
+    /** Agent qui a déposé la demande. */
     public function agent(): BelongsTo
     {
         return $this->belongsTo(Agent::class);
     }
 
+    /** Type de permission demandé. */
     public function type(): BelongsTo
     {
         return $this->belongsTo(TypePermission::class, 'type_permission_id');
     }
 
+    /** Étapes du dossier, de la plus ancienne à la plus récente. */
     public function historique(): HasMany
     {
         return $this->hasMany(DemandeHistorique::class, 'demande_id')->latest('id');

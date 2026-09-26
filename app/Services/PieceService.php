@@ -17,8 +17,17 @@ class PieceService
 
     public const MAX_KO = 5120;
 
-    public static function deposer(UploadedFile $fichier, string $dossierType, ?int $dossierId, ?string $reference, ?Agent $auteur): PieceJointe
-    {
+    /**
+     * Enregistre un justificatif sur le disque privé et crée sa fiche (nom, type, chemin, dossier
+     * concerné, auteur).
+     */
+    public static function deposer(
+        UploadedFile $fichier,
+        string $dossierType,
+        ?int $dossierId,
+        ?string $reference,
+        ?Agent $auteur,
+    ): PieceJointe {
         $chemin = $fichier->store("pieces/{$dossierType}", 'local');
 
         return PieceJointe::create([
@@ -32,6 +41,10 @@ class PieceService
         ]);
     }
 
+    /**
+     * Indique si l'utilisateur a le droit d'ouvrir une pièce : administrateur, auteur de la pièce, ou
+     * rôle habilité selon le type de dossier.
+     */
     public static function autorise(User $user, PieceJointe $piece): bool
     {
         if ($user->hasRole('ROLE_ADMIN_DSI')) {
@@ -44,7 +57,12 @@ class PieceService
         return match ($piece->dossier_type) {
             'permission' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
             'naissance', 'deces' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
-            'note' => $user->hasRole('ROLE_SECRETAIRE', 'ROLE_DRH', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR'),
+            'note' => $user->hasRole(
+                'ROLE_SECRETAIRE',
+                'ROLE_DRH',
+                'ROLE_DIRECTEUR',
+                'ROLE_SOUS_DIRECTEUR',
+            ),
             default => false,
         };
     }

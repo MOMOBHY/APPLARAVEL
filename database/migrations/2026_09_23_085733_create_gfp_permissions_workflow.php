@@ -28,7 +28,11 @@ return new class extends Migration
             $table->string('statut', 40)->default('SOUMISE');
             $table->foreignId('gestionnaire_id')->nullable()->constrained('agents')->nullOnDelete();
             $table->text('avis_gestionnaire')->nullable();
-            $table->foreignId('visa_direction_id')->nullable()->constrained('agents')->nullOnDelete();
+            $table
+                ->foreignId('visa_direction_id')
+                ->nullable()
+                ->constrained('agents')
+                ->nullOnDelete();
             $table->text('avis_direction')->nullable();
             $table->text('decision_drh')->nullable();
             $table->text('motif_rejet')->nullable();

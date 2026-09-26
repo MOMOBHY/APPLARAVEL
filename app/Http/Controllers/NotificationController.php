@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    /** Liste des notifications de l'agent connecté, avec le nombre de non lues. */
     public function index(Request $request)
     {
         $query = $request->user()->agent->id
@@ -20,6 +21,7 @@ class NotificationController extends Controller
         ]);
     }
 
+    /** Marque toutes les notifications de l'agent connecté comme lues. */
     public function lire(Request $request)
     {
         Notification::where('agent_id', $request->user()->agent_id)->update(['est_lu' => true]);

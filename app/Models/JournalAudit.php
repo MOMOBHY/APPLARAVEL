@@ -14,16 +14,30 @@ class JournalAudit extends Model
     public const UPDATED_AT = null;
 
     public const CONNEXION = 'CONNEXION';
+
     public const DOSSIER = 'DOSSIER';
+
     public const COMPTE = 'COMPTE';
+
     public const MOT_DE_PASSE = 'MOT_DE_PASSE';
+
     public const PIECE = 'PIECE';
 
     protected $fillable = [
-        'user_id', 'matricule', 'nom', 'role', 'categorie', 'action', 'description',
-        'reference', 'reussi', 'ip', 'appareil',
+        'user_id',
+        'matricule',
+        'nom',
+        'role',
+        'categorie',
+        'action',
+        'description',
+        'reference',
+        'reussi',
+        'ip',
+        'appareil',
     ];
 
+    /** Conversion automatique des colonnes (dates, booléens, mot de passe haché). */
     protected function casts(): array
     {
         return ['reussi' => 'boolean', 'created_at' => 'datetime'];
@@ -33,14 +47,22 @@ class JournalAudit extends Model
      * Enregistre un événement. Ne lève jamais d'exception : l'audit ne doit pas bloquer l'application.
      * Sans utilisateur (connexion refusée), $matricule garde la valeur saisie.
      */
-    public static function noter(string $categorie, string $action, ?User $user = null, ?string $description = null, ?string $reference = null, bool $reussi = true, ?string $matricule = null): void
-    {
+    public static function noter(
+        string $categorie,
+        string $action,
+        ?User $user = null,
+        ?string $description = null,
+        ?string $reference = null,
+        bool $reussi = true,
+        ?string $matricule = null,
+    ): void {
         try {
             $requete = request();
             $user?->loadMissing('roles');
             self::create([
                 'user_id' => $user?->id,
-                'matricule' => $user?->matricule ?? ($matricule !== null ? Str::limit(strtoupper(trim($matricule)), 30, '') : null),
+                'matricule' => $user?->matricule ??
+                    ($matricule !== null ? Str::limit(strtoupper(trim($matricule)), 30, '') : null),
                 'nom' => $user?->name,
                 'role' => $user?->roles->first()?->code,
                 'categorie' => $categorie,

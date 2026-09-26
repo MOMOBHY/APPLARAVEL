@@ -26,10 +26,21 @@ use Throwable;
 class NoteWorkflowService
 {
     /** Autorités habilitées à émettre une note de service. */
-    public const ROLES_EMETTEURS = ['ROLE_DRH', 'ROLE_DIRECTEUR_CABINET', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR'];
+    public const ROLES_EMETTEURS = [
+        'ROLE_DRH',
+        'ROLE_DIRECTEUR_CABINET',
+        'ROLE_DIRECTEUR',
+        'ROLE_SOUS_DIRECTEUR',
+    ];
 
     /** Rôles du circuit interne, qui consultent toutes les notes quel que soit leur état. */
-    public const ROLES_INTERNES = ['ROLE_ADMIN_DSI', 'ROLE_DRH', 'ROLE_DIRECTEUR', 'ROLE_SOUS_DIRECTEUR', 'ROLE_SECRETAIRE'];
+    public const ROLES_INTERNES = [
+        'ROLE_ADMIN_DSI',
+        'ROLE_DRH',
+        'ROLE_DIRECTEUR',
+        'ROLE_SOUS_DIRECTEUR',
+        'ROLE_SECRETAIRE',
+    ];
 
     /**
      * Notes consultables par l'utilisateur : tout pour le circuit interne ;
@@ -46,8 +57,12 @@ class NoteWorkflowService
 
         return $query->where(function (Builder $visibles) use ($user) {
             $visibles->where(function (Builder $diffusees) use ($user) {
-                $diffusees->whereIn('statut', [NoteService::DIFFUSEE, NoteService::ARCHIVEE])
-                    ->whereHas('structures', fn (Builder $s) => $s->where('structures.id', $user->agent?->structure_id));
+                $diffusees
+                    ->whereIn('statut', [NoteService::DIFFUSEE, NoteService::ARCHIVEE])
+                    ->whereHas(
+                        'structures',
+                        fn (Builder $s) => $s->where('structures.id', $user->agent?->structure_id),
+                    );
             });
             if ($user->agent_id) {
                 $visibles->orWhere('signataire_id', $user->agent_id);
@@ -69,8 +84,15 @@ class NoteWorkflowService
         ]);
         $note->structures()->sync(self::structuresCibles($data['structure_ids'] ?? null));
 
-        self::tracer($note, $autorite, 'AUTORITE', 'REDACTION', null, $note->statut,
-            "Note rédigée par {$autorite->fullName()}.");
+        self::tracer(
+            $note,
+            $autorite,
+            'AUTORITE',
+            'REDACTION',
+            null,
+            $note->statut,
+            "Note rédigée par {$autorite->fullName()}.",
+        );
 
         return $note->refresh();
     }
@@ -87,12 +109,24 @@ class NoteWorkflowService
 
         $ancien = $note->statut;
         $note->update(['statut' => NoteService::EN_ATTENTE_SAISIE]);
-        self::tracer($note, $autorite, 'AUTORITE', 'TRANSMISSION_SECRETARIAT', $ancien, $note->statut,
-            'Note transmise au secrétariat.');
+        self::tracer(
+            $note,
+            $autorite,
+            'AUTORITE',
+            'TRANSMISSION_SECRETARIAT',
+            $ancien,
+            $note->statut,
+            'Note transmise au secrétariat.',
+        );
 
         foreach (self::secretairesDe($autorite) as $secretaire) {
-            self::notifier($secretaire->id, 'Note à saisir',
-                "La note {$note->numero_reference} attend saisie et mise en forme.", 'ATTENTE_SAISIE', $note->numero_reference);
+            self::notifier(
+                $secretaire->id,
+                'Note à saisir',
+                "La note {$note->numero_reference} attend saisie et mise en forme.",
+                'ATTENTE_SAISIE',
+                $note->numero_reference,
+            );
         }
 
         return $note->refresh();
@@ -122,12 +156,23 @@ class NoteWorkflowService
         if (! empty($data['structure_ids'])) {
             $note->structures()->sync(self::structuresCibles($data['structure_ids']));
         }
-        self::tracer($note, $secretaire, 'ROLE_SECRETAIRE', 'SAISIE_MISE_EN_FORME', $ancien, $note->statut,
-            'Note saisie, mise en forme et enregistrée.');
+        self::tracer(
+            $note,
+            $secretaire,
+            'ROLE_SECRETAIRE',
+            'SAISIE_MISE_EN_FORME',
+            $ancien,
+            $note->statut,
+            'Note saisie, mise en forme et enregistrée.',
+        );
 
-        self::notifier($note->signataire_id, 'Note saisie par le secrétariat',
+        self::notifier(
+            $note->signataire_id,
+            'Note saisie par le secrétariat',
             "La note {$note->numero_reference} est saisie et prête à être transmise aux destinataires.",
-            'INFO', $note->numero_reference);
+            'INFO',
+            $note->numero_reference,
+        );
 
         return $note->refresh();
     }
@@ -143,8 +188,20 @@ class NoteWorkflowService
         }
 
         $ancien = $note->statut;
-        $note->update(['statut' => NoteService::VALIDEE, 'valide_le' => now(), 'valideur_id' => $autorite->id]);
-        self::tracer($note, $autorite, 'AUTORITE', 'VALIDATION', $ancien, $note->statut, 'Note validée, diffusable.');
+        $note->update([
+            'statut' => NoteService::VALIDEE,
+            'valide_le' => now(),
+            'valideur_id' => $autorite->id,
+        ]);
+        self::tracer(
+            $note,
+            $autorite,
+            'AUTORITE',
+            'VALIDATION',
+            $ancien,
+            $note->statut,
+            'Note validée, diffusable.',
+        );
 
         return $note->refresh();
     }
@@ -164,11 +221,24 @@ class NoteWorkflowService
 
         $ancien = $note->statut;
         $note->update(['statut' => NoteService::REJETEE]);
-        self::tracer($note, $autorite, 'AUTORITE', 'REFUS_VALIDATION', $ancien, $note->statut, $motif);
+        self::tracer(
+            $note,
+            $autorite,
+            'AUTORITE',
+            'REFUS_VALIDATION',
+            $ancien,
+            $note->statut,
+            $motif,
+        );
 
         foreach (self::secretaires() as $secretaire) {
-            self::notifier($secretaire->id, 'Note refusée à la validation',
-                "La note {$note->numero_reference} a été refusée : {$motif}", 'REFUS_VALIDATION', $note->numero_reference);
+            self::notifier(
+                $secretaire->id,
+                'Note refusée à la validation',
+                "La note {$note->numero_reference} a été refusée : {$motif}",
+                'REFUS_VALIDATION',
+                $note->numero_reference,
+            );
         }
 
         return $note->refresh();
@@ -177,7 +247,13 @@ class NoteWorkflowService
     /** Étape 3 — transmission aux destinataires par la secrétaire, une fois la note saisie. */
     public static function diffuser(NoteService $note, Agent $secretaire): NoteService
     {
-        if (! in_array($note->statut, [NoteService::EN_ATTENTE_VALIDATION, NoteService::VALIDEE], true)) {
+        if (
+            ! in_array(
+                $note->statut,
+                [NoteService::EN_ATTENTE_VALIDATION, NoteService::VALIDEE],
+                true,
+            )
+        ) {
             abort(422, 'Seule une note saisie (et non refusée) peut être transmise.');
         }
 
@@ -187,18 +263,35 @@ class NoteWorkflowService
             'secretaire_id' => $note->secretaire_id ?? $secretaire->id,
             'date_diffusion' => now(),
         ]);
-        self::tracer($note, $secretaire, 'ROLE_SECRETAIRE', 'DIFFUSION', $ancien, $note->statut,
-            'Note diffusée aux structures destinataires.');
+        self::tracer(
+            $note,
+            $secretaire,
+            'ROLE_SECRETAIRE',
+            'DIFFUSION',
+            $ancien,
+            $note->statut,
+            'Note diffusée aux structures destinataires.',
+        );
 
-        $agents = Agent::with('user')->whereIn('structure_id', $note->structures()->pluck('structures.id'))->get();
+        $agents = Agent::with('user')
+            ->whereIn('structure_id', $note->structures()->pluck('structures.id'))
+            ->get();
         foreach ($agents as $agent) {
-            self::notifier($agent->id, 'Nouvelle note de service',
-                "{$note->numero_reference} : {$note->objet}", 'NOTE_SERVICE', $note->numero_reference);
+            self::notifier(
+                $agent->id,
+                'Nouvelle note de service',
+                "{$note->numero_reference} : {$note->objet}",
+                'NOTE_SERVICE',
+                $note->numero_reference,
+            );
         }
 
         // Transmission par email ; une panne de messagerie ne bloque pas la diffusion.
         try {
-            NotificationFacade::send($agents->pluck('user')->filter(), new NoteServiceTransmise($note->loadMissing('signataire')));
+            NotificationFacade::send(
+                $agents->pluck('user')->filter(),
+                new NoteServiceTransmise($note->loadMissing('signataire')),
+            );
         } catch (Throwable $e) {
             report($e);
         }
@@ -206,6 +299,7 @@ class NoteWorkflowService
         return $note->refresh();
     }
 
+    /** Archive une note validée ou diffusée. La note reste consultable. */
     public static function archiver(NoteService $note, Agent $acteur): NoteService
     {
         if (! in_array($note->statut, [NoteService::DIFFUSEE, NoteService::VALIDEE], true)) {
@@ -213,7 +307,15 @@ class NoteWorkflowService
         }
         $ancien = $note->statut;
         $note->update(['statut' => NoteService::ARCHIVEE]);
-        self::tracer($note, $acteur, null, 'ARCHIVAGE', $ancien, $note->statut, 'Note archivée, toujours consultable.');
+        self::tracer(
+            $note,
+            $acteur,
+            null,
+            'ARCHIVAGE',
+            $ancien,
+            $note->statut,
+            'Note archivée, toujours consultable.',
+        );
 
         return $note->refresh();
     }
@@ -222,7 +324,8 @@ class NoteWorkflowService
     public static function destinataires(NoteService $note): array
     {
         $structures = $note->structures()->get();
-        $agents = Agent::with('structure')->whereIn('structure_id', $structures->pluck('id'))
+        $agents = Agent::with('structure')
+            ->whereIn('structure_id', $structures->pluck('id'))
             ->get(['id', 'matricule', 'nom', 'prenom', 'structure_id']);
 
         return ['structures' => $structures, 'agents' => $agents];
@@ -236,7 +339,11 @@ class NoteWorkflowService
     {
         $rang = NoteService::count() + 1;
         do {
-            $numero = 'NOTE N° '.str_pad((string) $rang++, 4, '0', STR_PAD_LEFT).'/MFP/CAB/'.now()->year;
+            $numero =
+                'NOTE N° '.
+                str_pad((string) $rang++, 4, '0', STR_PAD_LEFT).
+                '/MFP/CAB/'.
+                now()->year;
         } while (NoteService::where('numero_reference', $numero)->exists());
 
         return $numero;
@@ -250,18 +357,26 @@ class NoteWorkflowService
         return $siennes->isNotEmpty() ? $siennes : self::secretaires();
     }
 
+    /** Retrouve toutes les secrétaires (agents portant le rôle ROLE_SECRETAIRE). */
     protected static function secretaires(): Collection
     {
         return Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_SECRETAIRE'))->get();
     }
 
+    /**
+     * Détermine les structures destinataires d'une note : une liste d'identifiants, ou un nom de
+     * structure (recherche partielle). Sans indication, ou si le nom est introuvable, la note est
+     * adressée à toutes les structures.
+     */
     protected static function structuresCibles(mixed $structures): array
     {
         if (is_array($structures) && $structures !== []) {
             return Structure::whereIn('id', $structures)->pluck('id')->all();
         }
         if (is_string($structures) && trim($structures) !== '') {
-            $trouvees = Structure::where('nom', 'like', '%'.trim($structures).'%')->pluck('id')->all();
+            $trouvees = Structure::where('nom', 'like', '%'.trim($structures).'%')
+                ->pluck('id')
+                ->all();
 
             return $trouvees === [] ? Structure::pluck('id')->all() : $trouvees;
         }
@@ -269,8 +384,16 @@ class NoteWorkflowService
         return Structure::pluck('id')->all();
     }
 
-    public static function tracer(NoteService $note, ?Agent $acteur, ?string $role, string $action, ?string $ancien, ?string $nouveau, ?string $commentaire = null): void
-    {
+    /** Inscrit une étape dans l'historique de la note et dans le journal d'audit. */
+    public static function tracer(
+        NoteService $note,
+        ?Agent $acteur,
+        ?string $role,
+        string $action,
+        ?string $ancien,
+        ?string $nouveau,
+        ?string $commentaire = null,
+    ): void {
         NoteHistorique::create([
             'note_id' => $note->id,
             'acteur_agent_id' => $acteur?->id,
@@ -281,13 +404,33 @@ class NoteWorkflowService
             'nouveau_statut' => $nouveau,
             'commentaire' => $commentaire,
         ]);
-        JournalAudit::noter(JournalAudit::DOSSIER, $action, $acteur?->user, trim(($role ? "[{$role}] " : '').($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').($commentaire ? " — {$commentaire}" : '')), $note->numero_reference);
+        JournalAudit::noter(
+            JournalAudit::DOSSIER,
+            $action,
+            $acteur?->user,
+            trim(
+                ($role ? "[{$role}] " : '').
+                    ($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').
+                    ($commentaire ? " — {$commentaire}" : ''),
+            ),
+            $note->numero_reference,
+        );
     }
 
-    protected static function notifier(int $agentId, string $titre, string $message, string $type, ?string $ref): void
-    {
+    /** Crée une notification pour un agent. */
+    protected static function notifier(
+        int $agentId,
+        string $titre,
+        string $message,
+        string $type,
+        ?string $ref,
+    ): void {
         Notification::create([
-            'agent_id' => $agentId, 'titre' => $titre, 'message' => $message, 'type' => $type, 'reference_dossier' => $ref,
+            'agent_id' => $agentId,
+            'titre' => $titre,
+            'message' => $message,
+            'type' => $type,
+            'reference_dossier' => $ref,
         ]);
     }
 }

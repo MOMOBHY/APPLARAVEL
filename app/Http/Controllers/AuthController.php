@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
-use App\Models\Role;
 use App\Models\JournalAudit;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +13,10 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    /**
+     * Connexion par matricule et mot de passe. Refuse les comptes suspendus et journalise chaque
+     * tentative. Formulaire Blade : session web ; appel JSON : jeton d'accès.
+     */
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -21,24 +25,47 @@ class AuthController extends Controller
         ]);
 
         $user = User::with(['roles', 'agent.structure', 'agent.fonction'])
-            ->where('matricule', strtoupper(trim($data['matricule'])))->first();
+            ->where('matricule', strtoupper(trim($data['matricule'])))
+            ->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, $user ? 'Mot de passe incorrect' : 'Matricule inconnu', null, false, $data['matricule']);
+            JournalAudit::noter(
+                JournalAudit::CONNEXION,
+                'CONNEXION_REFUSEE',
+                $user,
+                $user ? 'Mot de passe incorrect' : 'Matricule inconnu',
+                null,
+                false,
+                $data['matricule'],
+            );
             if ($request->expectsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'], 401);
+                return response()->json(
+                    ['status' => 'error', 'message' => 'Matricule ou mot de passe incorrect.'],
+                    401,
+                );
             }
 
-            return back()->withErrors(['matricule' => 'Matricule ou mot de passe incorrect.'])->onlyInput('matricule');
+            return back()
+                ->withErrors(['matricule' => 'Matricule ou mot de passe incorrect.'])
+                ->onlyInput('matricule');
         }
 
         if (! $user->actif) {
-            JournalAudit::noter(JournalAudit::CONNEXION, 'CONNEXION_REFUSEE', $user, 'Compte suspendu', null, false);
+            JournalAudit::noter(
+                JournalAudit::CONNEXION,
+                'CONNEXION_REFUSEE',
+                $user,
+                'Compte suspendu',
+                null,
+                false,
+            );
             $message = 'Ce compte est suspendu. Contactez l’administrateur.';
 
             return $request->expectsJson()
                 ? response()->json(['status' => 'error', 'message' => $message], 403)
-                : back()->withErrors(['matricule' => $message])->onlyInput('matricule');
+                : back()
+                    ->withErrors(['matricule' => $message])
+                    ->onlyInput('matricule');
         }
 
         $user->update(['derniere_connexion' => now()]);
@@ -66,6 +93,7 @@ class AuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
+    /** Inscription d'un agent avec son compte et son rôle. */
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -97,12 +125,21 @@ class AuthController extends Controller
         ]);
         $user->roles()->attach(Role::where('code', 'ROLE_AGENT')->firstOrFail());
 
-        return response()->json(['status' => 'success', 'message' => 'Compte créé.', 'matricule' => $user->matricule], 201);
+        return response()->json(
+            ['status' => 'success', 'message' => 'Compte créé.', 'matricule' => $user->matricule],
+            201,
+        );
     }
 
+    /** Déconnexion : supprime le jeton d'accès (ou ferme la session web) et journalise la sortie. */
     public function logout(Request $request)
     {
-        JournalAudit::noter(JournalAudit::CONNEXION, 'DECONNEXION', $request->user(), 'Déconnexion');
+        JournalAudit::noter(
+            JournalAudit::CONNEXION,
+            'DECONNEXION',
+            $request->user(),
+            'Déconnexion',
+        );
 
         // Une session web porte un TransientToken, qui n'est pas supprimable.
         $token = $request->user()?->currentAccessToken();
@@ -123,6 +160,7 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
+    /** Renvoie l'utilisateur connecté avec ses rôles et sa structure. */
     public function me(Request $request)
     {
         $user = $request->user()->load(['roles', 'agent.structure']);

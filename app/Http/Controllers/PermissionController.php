@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
+    /**
+     * Liste des demandes de permission. Chaque rôle voit son périmètre : le Sous-Directeur les
+     * demandes en attente de son visa, le Directeur celles en attente du sien, le DRH celles en
+     * attente de sa décision, le gestionnaire RH celles à vérifier, les siennes et les dossiers
+     * clôturés, l'administrateur tout, et l'agent uniquement ses propres demandes.
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -37,12 +43,15 @@ class PermissionController extends Controller
         return view('permissions.index', ['demandes' => $query->paginate(20)]);
     }
 
+    /** Détail d'une demande avec son historique. Réservé au demandeur et aux rôles de suivi. */
     public function show(Request $request, DemandePermission $permission)
     {
         $user = $request->user();
         abort_unless(
-            $permission->agent_id === $user->agent_id || $user->hasRole(...PermissionWorkflowService::ROLES_SUIVI),
-            403, 'Accès non autorisé à cette demande.'
+            $permission->agent_id === $user->agent_id ||
+                $user->hasRole(...PermissionWorkflowService::ROLES_SUIVI),
+            403,
+            'Accès non autorisé à cette demande.',
         );
 
         $permission->load(['agent.structure', 'type', 'historique']);
@@ -50,6 +59,10 @@ class PermissionController extends Controller
         return response()->json(['status' => 'success', 'data' => $permission]);
     }
 
+    /**
+     * Dépose une demande de permission. La durée doit être de 1 à 30 jours ; le justificatif est
+     * enregistré sur le disque privé.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -58,7 +71,12 @@ class PermissionController extends Controller
             'date_fin' => ['required', 'date', 'after_or_equal:date_debut'],
             'motif' => ['required', 'string', 'min:5'],
             'nombre_jours' => ['nullable', 'integer', 'min:1', 'max:30'],
-            'piece' => ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO],
+            'piece' => [
+                'nullable',
+                'file',
+                'mimes:'.implode(',', PieceService::MIMES),
+                'max:'.PieceService::MAX_KO,
+            ],
         ]);
 
         $demande = PermissionWorkflowService::soumettre($request->user()->agent, [
@@ -71,7 +89,13 @@ class PermissionController extends Controller
         ]);
 
         if ($request->hasFile('piece')) {
-            $piece = PieceService::deposer($request->file('piece'), 'permission', $demande->id, $demande->code_dossier, $request->user()->agent);
+            $piece = PieceService::deposer(
+                $request->file('piece'),
+                'permission',
+                $demande->id,
+                $demande->code_dossier,
+                $request->user()->agent,
+            );
             $demande->update(['piece_path' => $piece->chemin_stockage]);
         }
 
@@ -79,7 +103,9 @@ class PermissionController extends Controller
             return response()->json(['status' => 'success', 'data' => $demande], 201);
         }
 
-        return redirect()->route('permissions.index')->with('success', "Demande {$demande->code_dossier} soumise au gestionnaire RH.");
+        return redirect()
+            ->route('permissions.index')
+            ->with('success', "Demande {$demande->code_dossier} soumise au gestionnaire RH.");
     }
 
     /** Agent corrige une demande retournée puis la resoumet. */
@@ -91,17 +117,32 @@ class PermissionController extends Controller
             'date_fin' => ['required', 'date', 'after_or_equal:date_debut'],
             'motif' => ['nullable', 'string', 'min:5'],
             'nombre_jours' => ['nullable', 'integer', 'min:1', 'max:30'],
-            'piece' => ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO],
+            'piece' => [
+                'nullable',
+                'file',
+                'mimes:'.implode(',', PieceService::MIMES),
+                'max:'.PieceService::MAX_KO,
+            ],
         ]);
 
         PermissionWorkflowService::exigerCorrigeable($permission, $request->user()->agent);
 
         if ($request->hasFile('piece')) {
-            $piece = PieceService::deposer($request->file('piece'), 'permission', $permission->id, $permission->code_dossier, $request->user()->agent);
+            $piece = PieceService::deposer(
+                $request->file('piece'),
+                'permission',
+                $permission->id,
+                $permission->code_dossier,
+                $request->user()->agent,
+            );
             $data['piece_path'] = $piece->chemin_stockage;
         }
 
-        $demande = PermissionWorkflowService::corrigerEtResoumettre($permission, $request->user()->agent, $data);
+        $demande = PermissionWorkflowService::corrigerEtResoumettre(
+            $permission,
+            $request->user()->agent,
+            $data,
+        );
 
         return response()->json(['status' => 'success', 'data' => $demande]);
     }
@@ -116,7 +157,11 @@ class PermissionController extends Controller
         ]);
 
         $demande = PermissionWorkflowService::verifierRh(
-            $permission, $request->user()->agent, $data['decision'], $data['motif'] ?? null, $data['visa'] ?? null
+            $permission,
+            $request->user()->agent,
+            $data['decision'],
+            $data['motif'] ?? null,
+            $data['visa'] ?? null,
         );
 
         return response()->json(['status' => 'success', 'data' => $demande]);
@@ -134,7 +179,11 @@ class PermissionController extends Controller
         $role = $user->hasRole('ROLE_SOUS_DIRECTEUR') ? 'SOUS_DIRECTEUR' : 'DIRECTEUR';
 
         $demande = PermissionWorkflowService::viser(
-            $permission, $user->agent, $role, (bool) $data['favorable'], $data['motif'] ?? null
+            $permission,
+            $user->agent,
+            $role,
+            (bool) $data['favorable'],
+            $data['motif'] ?? null,
         );
 
         return response()->json(['status' => 'success', 'data' => $demande]);
@@ -149,7 +198,10 @@ class PermissionController extends Controller
         ]);
 
         $demande = PermissionWorkflowService::trancherDrh(
-            $permission, $request->user()->agent, (bool) $data['valide'], $data['motif'] ?? null
+            $permission,
+            $request->user()->agent,
+            (bool) $data['valide'],
+            $data['motif'] ?? null,
         );
 
         return response()->json(['status' => 'success', 'data' => $demande]);

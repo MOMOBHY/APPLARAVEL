@@ -10,7 +10,12 @@ return new class extends Migration
     {
         Schema::table('structures', function (Blueprint $table) {
             $table->string('sigle', 20)->nullable()->after('nom');
-            $table->foreignId('parent_id')->nullable()->after('type')->constrained('structures')->nullOnDelete();
+            $table
+                ->foreignId('parent_id')
+                ->nullable()
+                ->after('type')
+                ->constrained('structures')
+                ->nullOnDelete();
             // false = structure fictive de démonstration (comptes d'essai), absente de l'annuaire officiel.
             $table->boolean('officielle')->default(true)->after('parent_id');
         });

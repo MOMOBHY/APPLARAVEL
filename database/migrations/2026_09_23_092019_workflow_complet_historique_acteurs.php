@@ -9,14 +9,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('structures', function (Blueprint $table) {
-            $table->foreignId('responsable_agent_id')->nullable()->after('type')->constrained('agents')->nullOnDelete();
+            $table
+                ->foreignId('responsable_agent_id')
+                ->nullable()
+                ->after('type')
+                ->constrained('agents')
+                ->nullOnDelete();
         });
 
         Schema::table('demandes_permission', function (Blueprint $table) {
             $table->string('visa_attendu', 20)->nullable()->after('visa_direction_id');
             $table->text('motif_retour')->nullable()->after('motif_rejet');
             $table->timestamp('notifie_le')->nullable()->after('date_decision');
-            $table->foreignId('notifie_par_id')->nullable()->after('notifie_le')->constrained('agents')->nullOnDelete();
+            $table
+                ->foreignId('notifie_par_id')
+                ->nullable()
+                ->after('notifie_le')
+                ->constrained('agents')
+                ->nullOnDelete();
         });
 
         Schema::create('demande_historique', function (Blueprint $table) {

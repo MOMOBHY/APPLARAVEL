@@ -29,26 +29,42 @@ class NoteService extends Model
     public const ARCHIVEE = 'ARCHIVEE';
 
     protected $fillable = [
-        'numero_reference', 'objet', 'contenu', 'fichier_path', 'signataire_id',
-        'secretaire_id', 'statut', 'date_emission', 'date_diffusion',
-        'valide_le', 'valideur_id',
+        'numero_reference',
+        'objet',
+        'contenu',
+        'fichier_path',
+        'signataire_id',
+        'secretaire_id',
+        'statut',
+        'date_emission',
+        'date_diffusion',
+        'valide_le',
+        'valideur_id',
     ];
 
+    /** Conversion automatique des colonnes (dates, booléens, mot de passe haché). */
     protected function casts(): array
     {
-        return ['date_emission' => 'date', 'date_diffusion' => 'datetime', 'valide_le' => 'datetime'];
+        return [
+            'date_emission' => 'date',
+            'date_diffusion' => 'datetime',
+            'valide_le' => 'datetime',
+        ];
     }
 
+    /** Structures destinataires de la note. */
     public function structures(): BelongsToMany
     {
         return $this->belongsToMany(Structure::class, 'note_structure', 'note_id', 'structure_id');
     }
 
+    /** Autorité qui émet et signe la note. */
     public function signataire(): BelongsTo
     {
         return $this->belongsTo(Agent::class, 'signataire_id');
     }
 
+    /** Étapes de la note, de la plus ancienne à la plus récente. */
     public function historique(): HasMany
     {
         return $this->hasMany(NoteHistorique::class, 'note_id')->latest('id');

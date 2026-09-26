@@ -12,10 +12,16 @@ class PieceJointe extends Model
     public const TYPES = ['permission', 'naissance', 'deces', 'note'];
 
     protected $fillable = [
-        'dossier_type', 'dossier_id', 'reference_dossier', 'nom_fichier',
-        'type_mime', 'chemin_stockage', 'televerse_par_id',
+        'dossier_type',
+        'dossier_id',
+        'reference_dossier',
+        'nom_fichier',
+        'type_mime',
+        'chemin_stockage',
+        'televerse_par_id',
     ];
 
+    /** Agent qui a téléversé la pièce. */
     public function auteur(): BelongsTo
     {
         return $this->belongsTo(Agent::class, 'televerse_par_id');

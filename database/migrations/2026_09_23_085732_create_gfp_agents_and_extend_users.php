@@ -19,7 +19,11 @@ return new class extends Migration
             $table->string('telephone')->nullable();
             $table->string('email')->nullable();
             $table->unsignedInteger('solde_permission_annuel')->default(30);
-            $table->foreignId('structure_id')->nullable()->constrained('structures')->nullOnDelete();
+            $table
+                ->foreignId('structure_id')
+                ->nullable()
+                ->constrained('structures')
+                ->nullOnDelete();
             $table->foreignId('fonction_id')->nullable()->constrained('fonctions')->nullOnDelete();
             $table->timestamps();
             $table->unique(['nom', 'prenom']);
@@ -27,8 +31,18 @@ return new class extends Migration
 
         Schema::table('users', function (Blueprint $table) {
             $table->string('matricule', 30)->nullable()->unique()->after('email');
-            $table->foreignId('agent_id')->nullable()->after('matricule')->constrained('agents')->nullOnDelete();
-            $table->foreignId('structure_id')->nullable()->after('agent_id')->constrained('structures')->nullOnDelete();
+            $table
+                ->foreignId('agent_id')
+                ->nullable()
+                ->after('matricule')
+                ->constrained('agents')
+                ->nullOnDelete();
+            $table
+                ->foreignId('structure_id')
+                ->nullable()
+                ->after('agent_id')
+                ->constrained('structures')
+                ->nullOnDelete();
             $table->timestamp('derniere_connexion')->nullable()->after('remember_token');
         });
     }

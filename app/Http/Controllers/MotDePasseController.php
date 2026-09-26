@@ -18,26 +18,44 @@ use Illuminate\Support\Str;
  */
 class MotDePasseController extends Controller
 {
+    /**
+     * Étape 1 (publique) : un utilisateur qui a oublié son mot de passe dépose une demande. Les
+     * demandes précédentes sont annulées, un code de suivi est généré (affiché une seule fois) et les
+     * administrateurs sont alertés.
+     */
     public function demander(Request $request)
     {
         $data = $request->validate(['matricule' => ['required', 'string', 'max:30']]);
 
-        $user = User::whereRaw('UPPER(matricule) = ?', [strtoupper(trim($data['matricule']))])->first();
+        $user = User::whereRaw('UPPER(matricule) = ?', [
+            strtoupper(trim($data['matricule'])),
+        ])->first();
         if (! $user) {
             return response()->json(['status' => 'error', 'message' => 'Matricule inconnu.'], 422);
         }
 
         // Une seule demande active par compte : les précédentes sont annulées.
         DemandeReinitialisation::where('user_id', $user->id)
-            ->whereIn('statut', [DemandeReinitialisation::EN_ATTENTE, DemandeReinitialisation::AUTORISEE])
+            ->whereIn('statut', [
+                DemandeReinitialisation::EN_ATTENTE,
+                DemandeReinitialisation::AUTORISEE,
+            ])
             ->update(['statut' => DemandeReinitialisation::ANNULEE]);
 
         $code = strtoupper(Str::random(8));
         DemandeReinitialisation::create(['user_id' => $user->id, 'code_hash' => Hash::make($code)]);
 
-        JournalAudit::noter(JournalAudit::MOT_DE_PASSE, 'REINITIALISATION_DEMANDEE', $user, 'Mot de passe oublié : demande transmise à l’administrateur');
+        JournalAudit::noter(
+            JournalAudit::MOT_DE_PASSE,
+            'REINITIALISATION_DEMANDEE',
+            $user,
+            'Mot de passe oublié : demande transmise à l’administrateur',
+        );
 
-        $admins = Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_ADMIN_DSI'))->pluck('id');
+        $admins = Agent::whereHas(
+            'user.roles',
+            fn ($q) => $q->where('code', 'ROLE_ADMIN_DSI'),
+        )->pluck('id');
         foreach ($admins as $adminAgentId) {
             Notification::create([
                 'agent_id' => $adminAgentId,
@@ -48,13 +66,21 @@ class MotDePasseController extends Controller
             ]);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'code' => $code,
-            'message' => "Demande transmise à l'administrateur. Conservez votre code de suivi : il vous sera demandé pour choisir votre nouveau mot de passe.",
-        ], 201);
+        return response()->json(
+            [
+                'status' => 'success',
+                'code' => $code,
+                'message' => "Demande transmise à l'administrateur. Conservez votre code de suivi : il vous sera demandé pour choisir votre nouveau mot de passe.",
+            ],
+            201,
+        );
     }
 
+    /**
+     * Étape 3 (publique) : l'utilisateur choisit un nouveau mot de passe avec son matricule et son
+     * code de suivi. Refusé tant que l'administrateur n'a pas autorisé la demande. Le code sert une
+     * seule fois.
+     */
     public function reinitialiser(Request $request)
     {
         $data = $request->validate([
@@ -63,13 +89,18 @@ class MotDePasseController extends Controller
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
-        $user = User::whereRaw('UPPER(matricule) = ?', [strtoupper(trim($data['matricule']))])->first();
+        $user = User::whereRaw('UPPER(matricule) = ?', [
+            strtoupper(trim($data['matricule'])),
+        ])->first();
         $demande = $user
             ? DemandeReinitialisation::where('user_id', $user->id)->latest('id')->first()
             : null;
 
         if (! $demande || ! Hash::check(strtoupper(trim($data['code'])), $demande->code_hash)) {
-            return response()->json(['status' => 'error', 'message' => 'Matricule ou code de suivi incorrect.'], 422);
+            return response()->json(
+                ['status' => 'error', 'message' => 'Matricule ou code de suivi incorrect.'],
+                422,
+            );
         }
 
         $message = match ($demande->statut) {
@@ -79,58 +110,97 @@ class MotDePasseController extends Controller
             default => 'Ce code a déjà été utilisé ou annulé : faites une nouvelle demande.',
         };
         if ($message !== null) {
-            return response()->json(['status' => 'error', 'etat' => $demande->statut, 'message' => $message], 422);
+            return response()->json(
+                ['status' => 'error', 'etat' => $demande->statut, 'message' => $message],
+                422,
+            );
         }
 
         $user->password = $data['password'];
         $user->save();
         $user->tokens()->delete();
         $demande->update(['statut' => DemandeReinitialisation::UTILISEE, 'utilise_le' => now()]);
-        JournalAudit::noter(JournalAudit::MOT_DE_PASSE, 'MOT_DE_PASSE_REINITIALISE', $user, 'Nouveau mot de passe choisi après autorisation');
+        JournalAudit::noter(
+            JournalAudit::MOT_DE_PASSE,
+            'MOT_DE_PASSE_REINITIALISE',
+            $user,
+            'Nouveau mot de passe choisi après autorisation',
+        );
 
-        return response()->json(['status' => 'success', 'message' => 'Mot de passe réinitialisé. Vous pouvez vous connecter.']);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Mot de passe réinitialisé. Vous pouvez vous connecter.',
+        ]);
     }
 
     /** Administrateur : demandes en attente d'autorisation. */
     public function index()
     {
         $demandes = DemandeReinitialisation::with('user.roles')
-            ->where('statut', DemandeReinitialisation::EN_ATTENTE)->latest('id')->get()
-            ->map(fn (DemandeReinitialisation $d) => [
-                'id' => $d->id,
-                'matricule' => $d->user->matricule,
-                'nom' => $d->user->name,
-                'roles' => $d->user->roles->pluck('libelle')->join(', '),
-                'date' => $d->created_at?->format('Y-m-d H:i:s'),
-            ]);
+            ->where('statut', DemandeReinitialisation::EN_ATTENTE)
+            ->latest('id')
+            ->get()
+            ->map(
+                fn (DemandeReinitialisation $d) => [
+                    'id' => $d->id,
+                    'matricule' => $d->user->matricule,
+                    'nom' => $d->user->name,
+                    'roles' => $d->user->roles->pluck('libelle')->join(', '),
+                    'date' => $d->created_at?->format('Y-m-d H:i:s'),
+                ],
+            );
 
         return response()->json(['status' => 'success', 'demandes' => $demandes]);
     }
 
+    /** Administrateur : autorise une demande de réinitialisation. */
     public function autoriser(Request $request, DemandeReinitialisation $demande)
     {
         return $this->traiter($request, $demande, DemandeReinitialisation::AUTORISEE);
     }
 
+    /** Administrateur : refuse une demande de réinitialisation. */
     public function refuser(Request $request, DemandeReinitialisation $demande)
     {
         return $this->traiter($request, $demande, DemandeReinitialisation::REFUSEE);
     }
 
+    /**
+     * Applique la décision de l'administrateur à une demande en attente, prévient l'utilisateur et
+     * journalise l'action.
+     */
     private function traiter(Request $request, DemandeReinitialisation $demande, string $statut)
     {
-        abort_unless($demande->statut === DemandeReinitialisation::EN_ATTENTE, 422, 'Demande déjà traitée.');
-        $demande->update(['statut' => $statut, 'traite_par_id' => $request->user()->id, 'traite_le' => now()]);
+        abort_unless(
+            $demande->statut === DemandeReinitialisation::EN_ATTENTE,
+            422,
+            'Demande déjà traitée.',
+        );
+        $demande->update([
+            'statut' => $statut,
+            'traite_par_id' => $request->user()->id,
+            'traite_le' => now(),
+        ]);
 
-        JournalAudit::noter(JournalAudit::MOT_DE_PASSE, $statut === DemandeReinitialisation::AUTORISEE ? 'REINITIALISATION_AUTORISEE' : 'REINITIALISATION_REFUSEE', $request->user(), "Demande de {$demande->user->matricule} traitée", $demande->user->matricule);
+        JournalAudit::noter(
+            JournalAudit::MOT_DE_PASSE,
+            $statut === DemandeReinitialisation::AUTORISEE
+                ? 'REINITIALISATION_AUTORISEE'
+                : 'REINITIALISATION_REFUSEE',
+            $request->user(),
+            "Demande de {$demande->user->matricule} traitée",
+            $demande->user->matricule,
+        );
 
         if ($agentId = $demande->user->agent_id) {
             Notification::create([
                 'agent_id' => $agentId,
-                'titre' => $statut === DemandeReinitialisation::AUTORISEE ? 'Réinitialisation autorisée' : 'Réinitialisation refusée',
+                'titre' => $statut === DemandeReinitialisation::AUTORISEE
+                        ? 'Réinitialisation autorisée'
+                        : 'Réinitialisation refusée',
                 'message' => $statut === DemandeReinitialisation::AUTORISEE
-                    ? "L'administrateur a autorisé la réinitialisation de votre mot de passe."
-                    : "L'administrateur a refusé la réinitialisation de votre mot de passe.",
+                        ? "L'administrateur a autorisé la réinitialisation de votre mot de passe."
+                        : "L'administrateur a refusé la réinitialisation de votre mot de passe.",
                 'type' => 'REINITIALISATION',
                 'reference_dossier' => $demande->user->matricule,
             ]);

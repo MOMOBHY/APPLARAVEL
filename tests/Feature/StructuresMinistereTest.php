@@ -17,7 +17,8 @@ class StructuresMinistereTest extends TestCase
         $this->getJson('/api/annuaire-structures')->assertUnauthorized();
 
         $reponse = $this->actingAs(User::where('matricule', 'ADM001')->firstOrFail(), 'sanctum')
-            ->getJson('/api/annuaire-structures')->assertOk();
+            ->getJson('/api/annuaire-structures')
+            ->assertOk();
 
         $noms = collect($reponse->json('structures'))->pluck('nom');
         $this->assertTrue($noms->contains('Direction Générale de la Fonction Publique'));

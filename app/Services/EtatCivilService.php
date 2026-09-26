@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Models\Agent;
-use App\Models\JournalAudit;
 use App\Models\DeclarationDeces;
 use App\Models\DeclarationHistorique;
 use App\Models\DeclarationNaissance;
+use App\Models\JournalAudit;
 use App\Models\Notification;
 use Illuminate\Support\Str;
 
@@ -44,37 +44,57 @@ class EtatCivilService
     // ---------------------------------------------------------------
     // AGENT : déclarer (brouillon ou soumission directe)
     // ---------------------------------------------------------------
-    public static function declarer(string $type, Agent $agent, array $data, ?string $piecePath): DeclarationNaissance|DeclarationDeces
-    {
+    public static function declarer(
+        string $type,
+        Agent $agent,
+        array $data,
+        ?string $piecePath,
+    ): DeclarationNaissance|DeclarationDeces {
         $modele = self::MODELES[$type];
         $soumettre = $data['soumettre'] ?? true;
 
         $communs = [
-            'code_dossier' => ($type === 'NAISSANCE' ? 'NAISS' : 'DECES').'-'.now()->year.'-'.strtoupper(Str::random(6)),
+            'code_dossier' => ($type === 'NAISSANCE' ? 'NAISS' : 'DECES').
+                '-'.
+                now()->year.
+                '-'.
+                strtoupper(Str::random(6)),
             'agent_id' => $agent->id,
             'statut' => $soumettre ? self::EN_ATTENTE_GESTIONNAIRE_RH : self::BROUILLON,
         ];
 
-        $declaration = $type === 'NAISSANCE'
-            ? $modele::create($communs + [
-                'nom_enfant' => strtoupper(trim($data['nom_enfant'])),
-                'prenom_enfant' => trim($data['prenom_enfant']),
-                'date_naissance_enfant' => $data['date_naissance_enfant'],
-                'lieu_naissance_enfant' => $data['lieu_naissance_enfant'],
-                'extrait_path' => $piecePath,
-            ])
-            : $modele::create($communs + [
-                'nom_defunt' => strtoupper(trim($data['nom_defunt'])),
-                'prenom_defunt' => trim($data['prenom_defunt']),
-                'lien_parente' => $data['lien_parente'],
-                'date_deces' => $data['date_deces'],
-                'lieu_deces' => $data['lieu_deces'],
-                'certificat_path' => $piecePath,
-            ]);
+        $declaration =
+            $type === 'NAISSANCE'
+                ? $modele::create(
+                    $communs + [
+                        'nom_enfant' => strtoupper(trim($data['nom_enfant'])),
+                        'prenom_enfant' => trim($data['prenom_enfant']),
+                        'date_naissance_enfant' => $data['date_naissance_enfant'],
+                        'lieu_naissance_enfant' => $data['lieu_naissance_enfant'],
+                        'extrait_path' => $piecePath,
+                    ],
+                )
+                : $modele::create(
+                    $communs + [
+                        'nom_defunt' => strtoupper(trim($data['nom_defunt'])),
+                        'prenom_defunt' => trim($data['prenom_defunt']),
+                        'lien_parente' => $data['lien_parente'],
+                        'date_deces' => $data['date_deces'],
+                        'lieu_deces' => $data['lieu_deces'],
+                        'certificat_path' => $piecePath,
+                    ],
+                );
 
-        self::tracer($type, $declaration, $agent, 'ROLE_AGENT',
-            $soumettre ? 'SOUMISSION' : 'BROUILLON', null, $declaration->statut,
-            $soumettre ? 'Déclaration transmise au Gestionnaire RH.' : 'Brouillon enregistré.');
+        self::tracer(
+            $type,
+            $declaration,
+            $agent,
+            'ROLE_AGENT',
+            $soumettre ? 'SOUMISSION' : 'BROUILLON',
+            null,
+            $declaration->statut,
+            $soumettre ? 'Déclaration transmise au Gestionnaire RH.' : 'Brouillon enregistré.',
+        );
 
         if ($soumettre) {
             self::avertirGestionnaire($type, $declaration, $agent);
@@ -83,8 +103,15 @@ class EtatCivilService
         return $declaration;
     }
 
-    public static function soumettreBrouillon(string $type, DeclarationNaissance|DeclarationDeces $declaration, Agent $agent): DeclarationNaissance|DeclarationDeces
-    {
+    /**
+     * Agent : soumet au gestionnaire RH une déclaration restée en brouillon. Seul le déclarant peut la
+     * soumettre.
+     */
+    public static function soumettreBrouillon(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $agent,
+    ): DeclarationNaissance|DeclarationDeces {
         if ($declaration->statut !== self::BROUILLON) {
             abort(422, 'Seul un brouillon peut être soumis.');
         }
@@ -94,8 +121,16 @@ class EtatCivilService
 
         $ancien = $declaration->statut;
         $declaration->update(['statut' => self::EN_ATTENTE_GESTIONNAIRE_RH]);
-        self::tracer($type, $declaration, $agent, 'ROLE_AGENT', 'SOUMISSION', $ancien, $declaration->statut,
-            'Brouillon soumis au Gestionnaire RH.');
+        self::tracer(
+            $type,
+            $declaration,
+            $agent,
+            'ROLE_AGENT',
+            'SOUMISSION',
+            $ancien,
+            $declaration->statut,
+            'Brouillon soumis au Gestionnaire RH.',
+        );
         self::avertirGestionnaire($type, $declaration, $agent);
 
         return $declaration->refresh();
@@ -107,9 +142,20 @@ class EtatCivilService
     /**
      * @param  'conforme'|'retourner'  $decision
      */
-    public static function controler(string $type, DeclarationNaissance|DeclarationDeces $declaration, Agent $controleur, string $decision, ?string $motif = null): DeclarationNaissance|DeclarationDeces
-    {
-        if (! in_array($declaration->statut, [self::EN_ATTENTE_GESTIONNAIRE_RH, self::EN_ATTENTE_SERVICE], true)) {
+    public static function controler(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $controleur,
+        string $decision,
+        ?string $motif = null,
+    ): DeclarationNaissance|DeclarationDeces {
+        if (
+            ! in_array(
+                $declaration->statut,
+                [self::EN_ATTENTE_GESTIONNAIRE_RH, self::EN_ATTENTE_SERVICE],
+                true,
+            )
+        ) {
             abort(422, 'Vérification impossible à ce stade.');
         }
         if ($decision === 'retourner' && blank($motif)) {
@@ -120,24 +166,56 @@ class EtatCivilService
 
         if ($decision === 'retourner') {
             $declaration->update(['statut' => self::RETOUR_CORRECTION, 'motif_retour' => $motif]);
-            self::tracer($type, $declaration, $controleur, 'ROLE_GESTIONNAIRE_RH', 'RETOUR_CORRECTION', $ancien, $declaration->statut, $motif);
-            self::notifier($declaration->agent_id, 'Dossier incomplet à corriger',
-                "Votre déclaration {$declaration->code_dossier} est retournée par le Gestionnaire RH : {$motif}", 'RETOUR', $declaration->code_dossier);
+            self::tracer(
+                $type,
+                $declaration,
+                $controleur,
+                'ROLE_GESTIONNAIRE_RH',
+                'RETOUR_CORRECTION',
+                $ancien,
+                $declaration->statut,
+                $motif,
+            );
+            self::notifier(
+                $declaration->agent_id,
+                'Dossier incomplet à corriger',
+                "Votre déclaration {$declaration->code_dossier} est retournée par le Gestionnaire RH : {$motif}",
+                'RETOUR',
+                $declaration->code_dossier,
+            );
 
             return $declaration->refresh();
         }
 
         $declaration->update(['statut' => self::EN_ATTENTE_RH, 'motif_retour' => null]);
-        self::tracer($type, $declaration, $controleur, 'ROLE_GESTIONNAIRE_RH', 'VERIFICATION_CONFORME', $ancien, $declaration->statut,
-            'Dossier complet et pièces conformes, transmis à la DRH.');
+        self::tracer(
+            $type,
+            $declaration,
+            $controleur,
+            'ROLE_GESTIONNAIRE_RH',
+            'VERIFICATION_CONFORME',
+            $ancien,
+            $declaration->statut,
+            'Dossier complet et pièces conformes, transmis à la DRH.',
+        );
 
         $drh = PermissionWorkflowService::drh();
         if ($drh) {
-            self::notifier($drh->id, 'Acte à valider',
-                "Déclaration {$declaration->code_dossier} vérifiée par le Gestionnaire RH, décision DRH requise.", 'ATTENTE_DRH', $declaration->code_dossier);
+            self::notifier(
+                $drh->id,
+                'Acte à valider',
+                "Déclaration {$declaration->code_dossier} vérifiée par le Gestionnaire RH, décision DRH requise.",
+                'ATTENTE_DRH',
+                $declaration->code_dossier,
+            );
         }
-        self::notifier($declaration->agent_id, 'Dossier transmis à la DRH',
-            "Votre déclaration {$declaration->code_dossier} a été vérifiée avec succès par le Gestionnaire RH et transmise à la DRH.", 'INFO', $declaration->code_dossier);
+        self::notifier(
+            $declaration->agent_id,
+            'Dossier transmis à la DRH',
+            "Votre déclaration {$declaration->code_dossier} a été vérifiée avec succès par le Gestionnaire RH et transmise à la DRH.",
+            'INFO',
+            $declaration->code_dossier,
+        );
 
         return $declaration->refresh();
     }
@@ -146,8 +224,10 @@ class EtatCivilService
     // AGENT : corriger un dossier retourné
     // ---------------------------------------------------------------
     /** Contrôle à faire avant tout dépôt de pièce : dossier retourné, corrigé par son déclarant. */
-    public static function exigerCorrigeable(DeclarationNaissance|DeclarationDeces $declaration, ?Agent $agent): void
-    {
+    public static function exigerCorrigeable(
+        DeclarationNaissance|DeclarationDeces $declaration,
+        ?Agent $agent,
+    ): void {
         if ($declaration->statut !== self::RETOUR_CORRECTION) {
             abort(422, 'Seul un dossier retourné peut être corrigé.');
         }
@@ -156,20 +236,50 @@ class EtatCivilService
         }
     }
 
-    public static function corriger(string $type, DeclarationNaissance|DeclarationDeces $declaration, Agent $agent, array $data, ?string $piecePath): DeclarationNaissance|DeclarationDeces
-    {
+    /**
+     * Agent : corrige et renvoie une déclaration retournée. La pièce officielle reste obligatoire ; le
+     * dossier revient au gestionnaire RH.
+     */
+    public static function corriger(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $agent,
+        array $data,
+        ?string $piecePath,
+    ): DeclarationNaissance|DeclarationDeces {
         self::exigerCorrigeable($declaration, $agent);
-        if ($type === 'NAISSANCE' && isset($data['nom_enfant']) && blank($piecePath) && blank($declaration->extrait_path)) {
+        if (
+            $type === 'NAISSANCE' &&
+            isset($data['nom_enfant']) &&
+            blank($piecePath) &&
+            blank($declaration->extrait_path)
+        ) {
             abort(422, "L'extrait d'acte de naissance reste obligatoire.");
         }
-        if ($type === 'DECES' && isset($data['nom_defunt']) && blank($piecePath) && blank($declaration->certificat_path)) {
+        if (
+            $type === 'DECES' &&
+            isset($data['nom_defunt']) &&
+            blank($piecePath) &&
+            blank($declaration->certificat_path)
+        ) {
             abort(422, 'Le certificat de décès officiel reste obligatoire.');
         }
 
         $ancien = $declaration->statut;
         $maj = ['statut' => self::EN_ATTENTE_GESTIONNAIRE_RH, 'motif_retour' => null];
-        foreach (['nom_enfant', 'prenom_enfant', 'date_naissance_enfant', 'lieu_naissance_enfant',
-            'nom_defunt', 'prenom_defunt', 'lien_parente', 'date_deces', 'lieu_deces'] as $champ) {
+        foreach (
+            [
+                'nom_enfant',
+                'prenom_enfant',
+                'date_naissance_enfant',
+                'lieu_naissance_enfant',
+                'nom_defunt',
+                'prenom_defunt',
+                'lien_parente',
+                'date_deces',
+                'lieu_deces',
+            ] as $champ
+        ) {
             if (array_key_exists($champ, $data) && $data[$champ] !== null) {
                 $maj[$champ] = in_array($champ, ['nom_enfant', 'nom_defunt'], true)
                     ? strtoupper(trim($data[$champ]))
@@ -181,8 +291,16 @@ class EtatCivilService
         }
         $declaration->update($maj);
 
-        self::tracer($type, $declaration, $agent, 'ROLE_AGENT', 'CORRECTION', $ancien, $declaration->statut,
-            'Dossier corrigé et renvoyé au Gestionnaire RH.');
+        self::tracer(
+            $type,
+            $declaration,
+            $agent,
+            'ROLE_AGENT',
+            'CORRECTION',
+            $ancien,
+            $declaration->statut,
+            'Dossier corrigé et renvoyé au Gestionnaire RH.',
+        );
         self::avertirGestionnaire($type, $declaration, $agent);
 
         return $declaration->refresh();
@@ -191,8 +309,13 @@ class EtatCivilService
     // ---------------------------------------------------------------
     // DRH : valider / rejeter / archiver
     // ---------------------------------------------------------------
-    public static function trancher(string $type, DeclarationNaissance|DeclarationDeces $declaration, Agent $drh, bool $valide, ?string $motif = null): DeclarationNaissance|DeclarationDeces
-    {
+    public static function trancher(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $drh,
+        bool $valide,
+        ?string $motif = null,
+    ): DeclarationNaissance|DeclarationDeces {
         if ($declaration->statut !== self::EN_ATTENTE_RH) {
             abort(422, 'Décision DRH impossible à ce stade.');
         }
@@ -207,27 +330,50 @@ class EtatCivilService
             'valideur_id' => $drh->id,
             'validated_at' => now(),
         ]);
-        self::tracer($type, $declaration, $drh, 'ROLE_DRH', $valide ? 'VALIDATION' : 'REJET', $ancien, $declaration->statut,
-            $valide ? 'Déclaration validée, dossier statutaire mis à jour.' : $motif);
-        self::notifier($declaration->agent_id,
+        self::tracer(
+            $type,
+            $declaration,
+            $drh,
+            'ROLE_DRH',
+            $valide ? 'VALIDATION' : 'REJET',
+            $ancien,
+            $declaration->statut,
+            $valide ? 'Déclaration validée, dossier statutaire mis à jour.' : $motif,
+        );
+        self::notifier(
+            $declaration->agent_id,
             $valide ? 'Déclaration validée' : 'Déclaration rejetée',
             $valide
                 ? "Votre déclaration {$declaration->code_dossier} a été validée par la DRH."
                 : "Votre déclaration {$declaration->code_dossier} a été rejetée par la DRH : {$motif}",
             $valide ? 'VALIDATION' : 'REJET',
-            $declaration->code_dossier);
+            $declaration->code_dossier,
+        );
 
         return $declaration->refresh();
     }
 
-    public static function archiver(string $type, DeclarationNaissance|DeclarationDeces $declaration, Agent $drh): DeclarationNaissance|DeclarationDeces
-    {
+    /** DRH : archive une déclaration clôturée (validée ou rejetée). Le dossier reste consultable. */
+    public static function archiver(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $drh,
+    ): DeclarationNaissance|DeclarationDeces {
         if (! in_array($declaration->statut, [self::VALIDEE, self::REJETEE], true)) {
             abort(422, 'Seul un dossier clôturé peut être archivé.');
         }
         $ancien = $declaration->statut;
         $declaration->update(['statut' => self::ARCHIVEE]);
-        self::tracer($type, $declaration, $drh, 'ROLE_DRH', 'ARCHIVAGE', $ancien, $declaration->statut, 'Dossier archivé.');
+        self::tracer(
+            $type,
+            $declaration,
+            $drh,
+            'ROLE_DRH',
+            'ARCHIVAGE',
+            $ancien,
+            $declaration->statut,
+            'Dossier archivé.',
+        );
 
         return $declaration->refresh();
     }
@@ -240,21 +386,43 @@ class EtatCivilService
         return self::MODELES[$type];
     }
 
-    protected static function avertirGestionnaire(string $type, DeclarationNaissance|DeclarationDeces $declaration, Agent $agent): void
-    {
+    /** Alerte le gestionnaire RH de l'agent qu'une déclaration attend son contrôle. */
+    protected static function avertirGestionnaire(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $agent,
+    ): void {
         $libelle = $type === 'NAISSANCE' ? 'naissance' : 'décès';
         $gestionnaire = PermissionWorkflowService::gestionnairePour($agent);
         if ($gestionnaire) {
-            self::notifier($gestionnaire->id, "Déclaration de {$libelle} à vérifier",
+            self::notifier(
+                $gestionnaire->id,
+                "Déclaration de {$libelle} à vérifier",
                 "Nouvelle déclaration {$declaration->code_dossier} soumise par {$agent->fullName()}.",
-                'ATTENTE_CONTROLE', $declaration->code_dossier);
+                'ATTENTE_CONTROLE',
+                $declaration->code_dossier,
+            );
         }
-        self::notifier($agent->id, 'Déclaration transmise',
-            "Votre déclaration {$declaration->code_dossier} a été transmise au Gestionnaire RH pour vérification.", 'INFO', $declaration->code_dossier);
+        self::notifier(
+            $agent->id,
+            'Déclaration transmise',
+            "Votre déclaration {$declaration->code_dossier} a été transmise au Gestionnaire RH pour vérification.",
+            'INFO',
+            $declaration->code_dossier,
+        );
     }
 
-    public static function tracer(string $type, DeclarationNaissance|DeclarationDeces $declaration, ?Agent $acteur, ?string $role, string $action, ?string $ancien, ?string $nouveau, ?string $commentaire = null): void
-    {
+    /** Inscrit une étape dans l'historique de la déclaration et dans le journal d'audit. */
+    public static function tracer(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        ?Agent $acteur,
+        ?string $role,
+        string $action,
+        ?string $ancien,
+        ?string $nouveau,
+        ?string $commentaire = null,
+    ): void {
         DeclarationHistorique::create([
             'type_dossier' => $type,
             'dossier_id' => $declaration->id,
@@ -267,13 +435,33 @@ class EtatCivilService
             'nouveau_statut' => $nouveau,
             'commentaire' => $commentaire,
         ]);
-        JournalAudit::noter(JournalAudit::DOSSIER, $action, $acteur?->user, trim(($role ? "[{$role}] " : '').($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').($commentaire ? " — {$commentaire}" : '')), $declaration->code_dossier);
+        JournalAudit::noter(
+            JournalAudit::DOSSIER,
+            $action,
+            $acteur?->user,
+            trim(
+                ($role ? "[{$role}] " : '').
+                    ($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').
+                    ($commentaire ? " — {$commentaire}" : ''),
+            ),
+            $declaration->code_dossier,
+        );
     }
 
-    protected static function notifier(int $agentId, string $titre, string $message, string $type, ?string $ref): void
-    {
+    /** Crée une notification pour un agent. */
+    protected static function notifier(
+        int $agentId,
+        string $titre,
+        string $message,
+        string $type,
+        ?string $ref,
+    ): void {
         Notification::create([
-            'agent_id' => $agentId, 'titre' => $titre, 'message' => $message, 'type' => $type, 'reference_dossier' => $ref,
+            'agent_id' => $agentId,
+            'titre' => $titre,
+            'message' => $message,
+            'type' => $type,
+            'reference_dossier' => $ref,
         ]);
     }
 }
