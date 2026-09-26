@@ -8,7 +8,7 @@ Version PDF : [Conception_Merise_GFP.pdf](Conception_Merise_GFP.pdf) (tous les s
 
 ## Graphes des flux minimaux
 
-Un graphe par cas, en version minimale (Agent, plateforme, vérification, mise à jour du statut, retour à l’agent), en PDF et en PNG (pour les insérer dans un document) : [demande de permission](schemas/11-flux-demande-de-permission.pdf), [déclaration de naissance](schemas/12-flux-declaration-de-naissance.pdf) et [déclaration de décès](schemas/13-flux-declaration-de-deces.pdf).
+Un graphe par cas, en version minimale (Agent, plateforme, vérification, mise à jour du statut, retour à l’agent), en PDF et en PNG (pour les insérer dans un document) : [demande de permission](schemas/11-flux-demande-de-permission.pdf) et [déclaration de naissance ou de décès](schemas/12-flux-declaration-de-naissance-ou-de-deces.pdf).
 
 ## Lire les schémas
 
