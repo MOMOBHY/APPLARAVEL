@@ -6,6 +6,10 @@ Ce document décrit la plateforme avec la méthode Merise : modèles conceptuels
 
 Version PDF : [Conception_Merise_GFP.pdf](Conception_Merise_GFP.pdf) (tous les schémas), ou un PDF par schéma dans le dossier [schemas/](schemas/) : [MCD organisation](schemas/01-MCD-organisation-comptes-et-droits.pdf), [MCD permission](schemas/02-MCD-demandes-de-permission.pdf), [MCD déclarations](schemas/03-MCD-declarations-de-naissance-et-de-deces.pdf), [MCD notes](schemas/04-MCD-notes-de-service.pdf), [MCT permission](schemas/05-MCT-demande-de-permission.pdf), [MCT déclarations](schemas/06-MCT-declaration-de-naissance-ou-de-deces.pdf), [MCT notes](schemas/07-MCT-note-de-service.pdf), [MOT permission](schemas/08-MOT-demande-de-permission.pdf), [MOT déclarations](schemas/09-MOT-declaration-de-naissance-ou-de-deces.pdf), [MOT notes](schemas/10-MOT-note-de-service.pdf).
 
+## Graphes des flux minimaux
+
+Un graphe par cas, en version minimale (Agent, plateforme, vérification, mise à jour du statut, retour à l’agent), en PDF et en PNG (pour les insérer dans un document) : [demande de permission](schemas/11-flux-demande-de-permission.pdf), [déclaration de naissance](schemas/12-flux-declaration-de-naissance.pdf) et [déclaration de décès](schemas/13-flux-declaration-de-deces.pdf).
+
 ## Lire les schémas
 
 **MCD — Modèle Conceptuel des Données.** Décrit les informations manipulées : les entités (rectangles à bordure épaisse, identifiant souligné), les associations qui les relient (ovales, avec leurs propres attributs) et les cardinalités. Une cardinalité « 0,n » se lit : une occurrence de l’entité peut participer de zéro à plusieurs fois à l’association ; « 1,1 » : exactement une fois.
