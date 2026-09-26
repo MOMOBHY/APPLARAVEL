@@ -1,322 +1,469 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" class="h-full">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png">
-  <title>Espace DRH - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      position: relative;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url('../assets/ministere_bg.png');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      filter: blur(5px);
-      opacity: 0.15;
-      z-index: 0;
-      pointer-events: none;
-    }
-    header, main, nav, div {
-      position: relative;
-      z-index: 1;
-    }
-  </style>
-  <link rel="stylesheet" href="../assets/theme.css">
-</head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-
-  <!-- BANDEAU TRICOLORE -->
-  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
-    <div class="h-full w-1/3 bg-orange-500"></div>
-    <div class="h-full w-1/3 bg-white"></div>
-    <div class="h-full w-1/3 bg-emerald-600"></div>
-  </div>
-
-  <!-- HEADER -->
-  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-    <div id="gfp-entete" data-sous-titre="Espace Direction des Ressources Humaines" data-role="DRH" data-base="../"></div>
-    <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-        <button onclick="showTab('permissions')" id="nav-permissions" class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white">Permissions d'Absence</button>
-        <button onclick="showTab('etatcivil')" id="nav-etatcivil" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Actes d'État Civil</button>
-        <button onclick="showTab('historique')" id="nav-historique" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Historique des Décisions</button>
-        <button onclick="showTab('statistiques')" id="nav-statistiques" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Statistiques</button>
-        <button onclick="showTab('structures')" id="nav-structures" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200">Structures du ministère</button>
-      </div>
-    </nav>
-  </header>
-
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-
-    <!-- TAB : PERMISSIONS EN ATTENTE RH -->
-    <div id="tab-permissions" class="space-y-6">
-      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-        <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Demandes de Permission à Valider</h2>
-            <p class="text-xs text-slate-500">Dossiers ayant reçu l'avis favorable du Gestionnaire RH. Validation définitive DRH requise.</p>
-          </div>
-          <span id="permPendingCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
-            0 dossier
-          </span>
-        </div>
-
-        <!-- INFO CIRCUIT -->
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <h3 class="text-xs font-bold text-slate-800 uppercase mb-2">Circuit de Validation</h3>
-          <div class="flex items-center space-x-2 text-xs font-bold">
-            <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">1. Agent</span>
-            <span class="text-slate-400">→</span>
-            <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">2. Gestionnaire RH</span>
-            <span class="text-slate-400">→</span>
-            <span class="bg-emerald-700 text-white px-2 py-1 rounded">3. DRH</span>
-          </div>
-          <p class="text-xs text-slate-700 mt-2">Votre décision est définitive et clôt le dossier.</p>
-        </div>
-
-        <div id="permContainer" class="space-y-4"></div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png" />
+    <title>
+      Espace DRH - Ministère de la Fonction Publique et de la Modernisation de l’Administration
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        position: relative;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url('../assets/ministere_bg.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        filter: blur(5px);
+        opacity: 0.15;
+        z-index: 0;
+        pointer-events: none;
+      }
+      header,
+      main,
+      nav,
+      div {
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+    <link rel="stylesheet" href="../assets/theme.css" />
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+    <!-- BANDEAU TRICOLORE -->
+    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
+      <div class="h-full w-1/3 bg-orange-500"></div>
+      <div class="h-full w-1/3 bg-white"></div>
+      <div class="h-full w-1/3 bg-emerald-600"></div>
     </div>
 
-    <!-- TAB : ACTES D'ETAT CIVIL -->
-    <div id="tab-etatcivil" class="hidden space-y-6">
-      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-        <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Actes d'État Civil en Attente de Contrôle</h2>
-            <p class="text-xs text-slate-500">Déclarations de naissance et de décès soumises par les agents.</p>
+    <!-- HEADER -->
+    <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+      <div
+        id="gfp-entete"
+        data-sous-titre="Espace Direction des Ressources Humaines"
+        data-role="DRH"
+        data-base="../"
+      ></div>
+      <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+          <button
+            onclick="showTab('permissions')"
+            id="nav-permissions"
+            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white"
+          >
+            Permissions d'Absence
+          </button>
+          <button
+            onclick="showTab('etatcivil')"
+            id="nav-etatcivil"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+          >
+            Actes d'État Civil
+          </button>
+          <button
+            onclick="showTab('historique')"
+            id="nav-historique"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+          >
+            Historique des Décisions
+          </button>
+          <button
+            onclick="showTab('statistiques')"
+            id="nav-statistiques"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+          >
+            Statistiques
+          </button>
+          <button
+            onclick="showTab('structures')"
+            id="nav-structures"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+          >
+            Structures du ministère
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <!-- TAB : PERMISSIONS EN ATTENTE RH -->
+      <div id="tab-permissions" class="space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Demandes de Permission à Valider</h2>
+              <p class="text-xs text-slate-500">
+                Dossiers ayant reçu l'avis favorable du Gestionnaire RH. Validation définitive DRH
+                requise.
+              </p>
+            </div>
+            <span
+              id="permPendingCount"
+              class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold"
+            >
+              0 dossier
+            </span>
           </div>
-          <span id="etatCivilCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">
-            0 acte
-          </span>
-        </div>
-        <div id="etatCivilContainer" class="space-y-4"></div>
-      </div>
-    </div>
 
-    <!-- TAB : HISTORIQUE -->
-    <div id="tab-statistiques" class="hidden space-y-6"></div>
-    <div id="tab-structures" class="hidden space-y-6"></div>
+          <!-- INFO CIRCUIT -->
+          <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <h3 class="text-xs font-bold text-slate-800 uppercase mb-2">Circuit de Validation</h3>
+            <div class="flex items-center space-x-2 text-xs font-bold">
+              <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">1. Agent</span>
+              <span class="text-slate-400">→</span>
+              <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">2. Gestionnaire RH</span>
+              <span class="text-slate-400">→</span>
+              <span class="bg-emerald-700 text-white px-2 py-1 rounded">3. DRH</span>
+            </div>
+            <p class="text-xs text-slate-700 mt-2">
+              Votre décision est définitive et clôt le dossier.
+            </p>
+          </div>
 
-    <div id="tab-historique" class="hidden space-y-6">
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200">
-          <h2 class="text-base font-bold text-slate-900">Historique de Toutes les Décisions RH</h2>
-          <p class="text-xs text-slate-500">Toutes les demandes traitées, validées ou rejetées.</p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
-              <tr>
-                <th class="px-4 py-3">Réf Dossier</th>
-                <th class="px-4 py-3">Matricule & Agent</th>
-                <th class="px-4 py-3">Nature</th>
-                <th class="px-4 py-3">Type / Motif</th>
-                <th class="px-4 py-3">Statut Final</th>
-              </tr>
-            </thead>
-            <tbody id="historiqueTable" class="divide-y divide-slate-200"></tbody>
-          </table>
+          <div id="permContainer" class="space-y-4"></div>
         </div>
       </div>
-    </div>
 
-  </main>
+      <!-- TAB : ACTES D'ETAT CIVIL -->
+      <div id="tab-etatcivil" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">
+                Actes d'État Civil en Attente de Contrôle
+              </h2>
+              <p class="text-xs text-slate-500">
+                Déclarations de naissance et de décès soumises par les agents.
+              </p>
+            </div>
+            <span
+              id="etatCivilCount"
+              class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold"
+            >
+              0 acte
+            </span>
+          </div>
+          <div id="etatCivilContainer" class="space-y-4"></div>
+        </div>
+      </div>
 
-  <script src="../js/api.js"></script>
-  <script src="../js/shell.js"></script>
-  <script>
+      <!-- TAB : HISTORIQUE -->
+      <div id="tab-statistiques" class="hidden space-y-6"></div>
+      <div id="tab-structures" class="hidden space-y-6"></div>
 
-    let user = null;
-    let requests = [];
+      <div id="tab-historique" class="hidden space-y-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200">
+            <h2 class="text-base font-bold text-slate-900">
+              Historique de Toutes les Décisions RH
+            </h2>
+            <p class="text-xs text-slate-500">
+              Toutes les demandes traitées, validées ou rejetées.
+            </p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Réf Dossier</th>
+                  <th class="px-4 py-3">Matricule & Agent</th>
+                  <th class="px-4 py-3">Nature</th>
+                  <th class="px-4 py-3">Type / Motif</th>
+                  <th class="px-4 py-3">Statut Final</th>
+                </tr>
+              </thead>
+              <tbody id="historiqueTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
 
-    async function init() {
-      const saved = sessionStorage.getItem('currentUser');
-      if (!saved) { window.location.href = 'login.html'; return; }
-      user = JSON.parse(saved);
-      if (user.role !== 'DRH') { window.location.href = 'login.html'; return; }
-      document.getElementById('navName').textContent = user.name;
-      document.getElementById('navStructure').textContent = user.structure || 'Structure non assignée';
-      loadAvatar();
-      await loadData();
-      renderAll();
-    }
+    <script src="../js/api.js"></script>
+    <script src="../js/shell.js"></script>
+    <script>
+      let user = null;
+      let requests = [];
 
-    async function loadData() {
-      const r = await API.getRequests();
-      requests = r.status === 'success' ? r.requests : [];
-    }
-
-    setInterval(async () => { if (typeof loadData === 'function') { await loadData(); if (typeof renderValidation === 'function') renderValidation(); if (typeof renderAll === 'function') renderAll(); } }, 20000);
-
-    function renderAll() {
-      renderPermissions();
-      renderEtatCivil();
-      renderHistorique();
-    }
-
-    function renderPermissions() {
-      const pending = requests.filter(r => r.nature === 'DEMANDE_PERMISSION' && (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH'));
-      document.getElementById('permPendingCount').textContent = pending.length + ' dossier' + (pending.length > 1 ? 's' : '');
-      const container = document.getElementById('permContainer');
-      container.innerHTML = '';
-
-      if (!pending.length) {
-        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucune demande de permission en attente de décision finale.</div>`;
-        return;
+      /**
+       * Démarre la page : vérifie la session et le profil DRH, puis charge les dossiers.
+       */
+      async function init() {
+        const saved = sessionStorage.getItem('currentUser');
+        if (!saved) {
+          window.location.href = 'login.html';
+          return;
+        }
+        user = JSON.parse(saved);
+        if (user.role !== 'DRH') {
+          window.location.href = 'login.html';
+          return;
+        }
+        document.getElementById('navName').textContent = user.name;
+        document.getElementById('navStructure').textContent =
+          user.structure || 'Structure non assignée';
+        loadAvatar();
+        await loadData();
+        renderAll();
       }
 
-      pending.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
-        const jours = r.jours || 1;
-        const circuitLabel = jours <= 2
-          ? `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique Direction accordé</span>`
-          : `<span class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
+      /**
+       * Recharge depuis le serveur tous les dossiers visibles par le DRH.
+       */
+      async function loadData() {
+        const r = await API.getRequests();
+        requests = r.status === 'success' ? r.requests : [];
+      }
 
-        div.innerHTML = `
+      setInterval(async () => {
+        if (typeof loadData === 'function') {
+          await loadData();
+          if (typeof renderValidation === 'function') renderValidation();
+          if (typeof renderAll === 'function') renderAll();
+        }
+      }, 20000);
+
+      /**
+       * Redessine les trois onglets de dossiers (permissions, état civil, historique).
+       */
+      function renderAll() {
+        renderPermissions();
+        renderEtatCivil();
+        renderHistorique();
+      }
+
+      /**
+       * Dessine les demandes de permission en attente de décision finale, avec les boutons Valider et Rejeter.
+       */
+      function renderPermissions() {
+        const pending = requests.filter(
+          (r) =>
+            r.nature === 'DEMANDE_PERMISSION' &&
+            (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH'),
+        );
+        document.getElementById('permPendingCount').textContent =
+          pending.length + ' dossier' + (pending.length > 1 ? 's' : '');
+        const container = document.getElementById('permContainer');
+        container.innerHTML = '';
+
+        if (!pending.length) {
+          container.innerHTML = `<div
+            class="text-center py-10 text-slate-500 italic text-sm">Aucune demande de permission en attente de décision finale.</div>`;
+          return;
+        }
+
+        pending.forEach((r) => {
+          const div = document.createElement('div');
+          div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
+          const jours = r.jours || 1;
+          const circuitLabel =
+            jours <= 2
+              ? `<span
+                class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique Direction accordé</span>`
+              : `<span
+                class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
+
+          div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
               <span class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
-              <p class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong></p>
-              <p class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong></p>
-              <p class="text-xs text-slate-500 mt-1">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong></p>
+              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span
+                class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <p
+                class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong>
+              </p>
+              <p
+                class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong>
+              </p>
+              <p
+                class="text-xs text-slate-500 mt-1">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong>
+              </p>
               <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
               <div class="mt-2">${circuitLabel}</div>
-              <p class="text-xs text-slate-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
+              <p
+                class="text-xs text-slate-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
             </div>
-            <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
+            <span
+              class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
-            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')"
+              class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Refuser la Permission
             </button>
-            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')"
+              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Valider Définitivement
             </button>
           </div>
         `;
-        container.appendChild(div);
-      });
-    }
-
-    function renderEtatCivil() {
-      const pending = requests.filter(r => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_RH'));
-      document.getElementById('etatCivilCount').textContent = pending.length + ' acte' + (pending.length > 1 ? 's' : '');
-      const container = document.getElementById('etatCivilContainer');
-      container.innerHTML = '';
-
-      if (!pending.length) {
-        container.innerHTML = `<div class="text-center py-10 text-slate-500 italic text-sm">Aucun acte d'état civil en attente de décision finale.</div>`;
-        return;
+          container.appendChild(div);
+        });
       }
 
-      pending.forEach(r => {
-        const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
-        const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
-        const detail = isNaissance ? ('Enfant : ' + (r.nomChild || '')) : ('Défunt : ' + (r.nomDefunt || ''));
-        const color = isNaissance ? 'emerald' : 'slate';
+      /**
+       * Dessine les déclarations de naissance et de décès en attente de décision finale.
+       */
+      function renderEtatCivil() {
+        const pending = requests.filter(
+          (r) =>
+            (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') &&
+            (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_RH'),
+        );
+        document.getElementById('etatCivilCount').textContent =
+          pending.length + ' acte' + (pending.length > 1 ? 's' : '');
+        const container = document.getElementById('etatCivilContainer');
+        container.innerHTML = '';
 
-        const div = document.createElement('div');
-        div.className = `border border-${color}-200 rounded-xl p-5 bg-${color}-50 space-y-4`;
-        div.innerHTML = `
+        if (!pending.length) {
+          container.innerHTML = `<div
+            class="text-center py-10 text-slate-500 italic text-sm">Aucun acte d'état civil en attente de décision finale.</div>`;
+          return;
+        }
+
+        pending.forEach((r) => {
+          const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
+          const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
+          const detail = isNaissance
+            ? 'Enfant : ' + (r.nomChild || '')
+            : 'Défunt : ' + (r.nomDefunt || '');
+          const color = isNaissance ? 'emerald' : 'slate';
+
+          const div = document.createElement('div');
+          div.className = `border border-${color}-200 rounded-xl p-5 bg-${color}-50 space-y-4`;
+          div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-${color}-600 font-bold">${escapeHtml(r.id)} - ${label}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
+              <span
+                class="font-mono text-xs text-${color}-600 font-bold">${escapeHtml(r.id)} - ${label}</span>
+              <h3
+                class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span
+                class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p class="text-xs text-slate-600">${escapeHtml(detail)}</p>
-              <p class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong></p>
+              <p
+                class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong>
+                </p>
               <p class="text-xs text-slate-600">Pièce scannée : ${pieceHtml(r)}</p>
               <div class="mt-2">
-                <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
+                <span
+                  class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
                   Circuit : Agent → Gestionnaire RH → DRH → Agent
                 </span>
               </div>
-              <p class="text-xs text-slate-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
+              <p
+                class="text-xs text-slate-700 italic mt-1">Dossier vérifié par le Gestionnaire RH. Contrôle, décision et mise à jour du dossier statutaire de l'agent.</p>
             </div>
-            <span class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">
+            <span
+              class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">
               Décision Finale DRH
             </span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-${color}-200">
-            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
+            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')"
+              class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
               Rejeter la Déclaration
             </button>
-            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
+            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')"
+              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
               Enregistrer et Valider
             </button>
           </div>
         `;
-        container.appendChild(div);
-      });
-    }
-
-    function renderHistorique() {
-      const done = requests.filter(r => r.statut === 'VALIDEE' || r.statut === 'REJETEE');
-      const tbody = document.getElementById('historiqueTable');
-      tbody.innerHTML = '';
-      if (!done.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500 italic">Aucun dossier clôturé.</td></tr>`;
-        return;
+          container.appendChild(div);
+        });
       }
-      done.forEach(r => {
-        const badge = r.statut === 'VALIDEE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+
+      /**
+       * Dessine l'historique des dossiers clôturés (validés ou rejetés).
+       */
+      function renderHistorique() {
+        const done = requests.filter((r) => r.statut === 'VALIDEE' || r.statut === 'REJETEE');
+        const tbody = document.getElementById('historiqueTable');
+        tbody.innerHTML = '';
+        if (!done.length) {
+          tbody.innerHTML = `<tr><td colspan="5"
+            class="px-4 py-6 text-center text-slate-500 italic">Aucun dossier clôturé.</td></tr>`;
+          return;
+        }
+        done.forEach((r) => {
+          const badge =
+            r.statut === 'VALIDEE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
           <td class="px-4 py-3 font-mono font-bold">${escapeHtml(r.id)}</td>
           <td class="px-4 py-3">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
           <td class="px-4 py-3 text-slate-600">${escapeHtml(r.nature)}</td>
-          <td class="px-4 py-3">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
-          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${escapeHtml(r.statut)}</span></td>
+          <td
+            class="px-4 py-3">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
+          <td class="px-4 py-3"><span
+            class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${escapeHtml(r.statut)}</span>
+            </td>
         `;
-        tbody.appendChild(tr);
-      });
-    }
+          tbody.appendChild(tr);
+        });
+      }
 
-    function showTab(name) {
-      ['permissions','etatcivil','historique','statistiques','structures'].forEach(t => {
-        document.getElementById('tab-' + t).classList.add('hidden');
-        const btn = document.getElementById('nav-' + t);
-        if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
-      });
-      document.getElementById('tab-' + name).classList.remove('hidden');
-      if (name === 'statistiques') afficherStatistiques(document.getElementById('tab-statistiques'));
-      if (name === 'structures') afficherStructures(document.getElementById('tab-structures'));
-      const active = document.getElementById('nav-' + name);
-      if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
-    }
-
-    async function decide(id, statut) {
-      let motif = null;
-      if (statut === 'REJETEE') {
-        motif = prompt('Motif du rejet (obligatoire) :');
-        if (!motif || !motif.trim()) {
-          alert('Le motif est obligatoire pour rejeter un dossier.');
-          return;
+      /**
+       * Affiche l'onglet demandé et masque les autres ; les statistiques et les structures se chargent à l'ouverture.
+       * @param {string} name permissions, etatcivil, historique, statistiques ou structures.
+       */
+      function showTab(name) {
+        ['permissions', 'etatcivil', 'historique', 'statistiques', 'structures'].forEach((t) => {
+          document.getElementById('tab-' + t).classList.add('hidden');
+          const btn = document.getElementById('nav-' + t);
+          if (btn) {
+            btn.classList.remove('bg-emerald-700', 'text-white');
+            btn.classList.add('text-slate-600');
+          }
+        });
+        document.getElementById('tab-' + name).classList.remove('hidden');
+        if (name === 'statistiques')
+          afficherStatistiques(document.getElementById('tab-statistiques'));
+        if (name === 'structures') afficherStructures(document.getElementById('tab-structures'));
+        const active = document.getElementById('nav-' + name);
+        if (active) {
+          active.classList.add('bg-emerald-700', 'text-white');
+          active.classList.remove('text-slate-600');
         }
-        motif = motif.trim();
       }
-      const res = await API.updateStatus(id, statut, motif);
-      if (res.status === 'success') {
-        alert(statut === 'VALIDEE' ? 'Dossier validé et dossier statutaire mis à jour.' : 'Dossier rejeté avec motif.');
-        await loadData();
-        renderAll();
-      } else {
-        alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+
+      /**
+       * Décision finale du DRH sur un dossier. Un rejet demande un motif obligatoire.
+       * @param {string} id Référence du dossier.
+       * @param {string} statut VALIDEE ou REJETEE.
+       */
+      async function decide(id, statut) {
+        let motif = null;
+        if (statut === 'REJETEE') {
+          motif = prompt('Motif du rejet (obligatoire) :');
+          if (!motif || !motif.trim()) {
+            alert('Le motif est obligatoire pour rejeter un dossier.');
+            return;
+          }
+          motif = motif.trim();
+        }
+        const res = await API.updateStatus(id, statut, motif);
+        if (res.status === 'success') {
+          alert(
+            statut === 'VALIDEE'
+              ? 'Dossier validé et dossier statutaire mis à jour.'
+              : 'Dossier rejeté avec motif.',
+          );
+          await loadData();
+          renderAll();
+        } else {
+          alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+        }
       }
-    }
 
-
-    window.onload = init;
-  </script>
-
-</body>
+      window.onload = init;
+    </script>
+  </body>
 </html>

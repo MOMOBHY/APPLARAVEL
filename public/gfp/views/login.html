@@ -1,108 +1,147 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" class="h-full">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png">
-  <title>Connexion - Ministère de la Fonction Publique et de la Modernisation de l’Administration</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      position: relative;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url('../assets/ministere_bg.png');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      filter: blur(5px);
-      opacity: 0.15;
-      z-index: 0;
-      pointer-events: none;
-    }
-    .relative-content {
-      position: relative;
-      z-index: 1;
-    }
-  </style>
-  <link rel="stylesheet" href="../assets/theme.css">
-</head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-
-  <!-- BANDEAU TRICOLORE -->
-  <div class="h-2 w-full flex" style="position:relative;z-index:10;">
-    <div class="h-full w-1/3 bg-orange-500"></div>
-    <div class="h-full w-1/3 bg-white"></div>
-    <div class="h-full w-1/3 bg-emerald-600"></div>
-  </div>
-
-  <div class="flex-1 flex items-center justify-center p-4 relative-content">
-    <div class="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-8 space-y-6">
-
-      <div class="text-center space-y-3">
-        <img src="../assets/logo.png" alt="Armoiries de Côte d'Ivoire" class="h-16 w-auto object-contain mx-auto mb-1">
-        <div>
-          <h1 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">République de Côte d'Ivoire</h1>
-          <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION</h2>
-          <p class="text-xs text-slate-600">Secrétariat général</p>
-        </div>
-        <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
-        <p class="text-xs text-slate-500 font-medium">Plateforme Web de Gestion des Services Administratifs</p>
-      </div>
-
-      <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule Agent *</label>
-          <input type="text" id="loginMat" required placeholder="Votre matricule"
-            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:bg-white focus:ring-2 focus:ring-emerald-600">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de Passe *</label>
-          <input type="password" id="loginPass" required
-            class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600">
-        </div>
-
-        <p id="loginError" class="hidden text-xs text-red-600 font-bold text-center">Matricule ou mot de passe incorrect.</p>
-
-        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
-          Se Connecter à l'Espace Intranet
-        </button>
-      </form>
-      <a href="../mot-de-passe-oublie.html" class="block text-center text-xs font-bold text-emerald-700 hover:text-emerald-900 mt-3">Mot de passe oublié ?</a>
-
-      <div class="border-t border-slate-200 pt-5 mt-5 flex items-center justify-between gap-3">
-        <div>
-          <h3 class="text-sm font-extrabold text-slate-900">Nouveau sur la plateforme ?</h3>
-          <p class="text-xs text-slate-500 mt-1">Inscrivez-vous en choisissant votre rôle.</p>
-        </div>
-        <a href="../inscription.html" class="shrink-0 px-3 py-2 border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold">Créer un compte</a>
-      </div>
-
-
-    </div>
-  </div>
-
-  <script src="../js/api.js"></script>
-  <script>
-    async function handleLogin(e) {
-      e.preventDefault();
-      const mat  = document.getElementById('loginMat').value.trim();
-      const pwd  = document.getElementById('loginPass').value.trim();
-
-      const res = await API.login(mat, '', pwd); // profil déduit des rôles du compte
-      if (res.status === 'success') {
-        sessionStorage.setItem('currentUser', JSON.stringify(res.user));
-        window.location.href = API.urlEspace(res.user.role);
-      } else {
-        document.getElementById('loginError').classList.remove('hidden');
-        document.getElementById('loginError').textContent = res.message || 'Matricule ou mot de passe incorrect.';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png" />
+    <title>
+      Connexion - Ministère de la Fonction Publique et de la Modernisation de l’Administration
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        position: relative;
       }
-    }
-  </script>
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url('../assets/ministere_bg.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        filter: blur(5px);
+        opacity: 0.15;
+        z-index: 0;
+        pointer-events: none;
+      }
+      .relative-content {
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+    <link rel="stylesheet" href="../assets/theme.css" />
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
+    <!-- BANDEAU TRICOLORE -->
+    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
+      <div class="h-full w-1/3 bg-orange-500"></div>
+      <div class="h-full w-1/3 bg-white"></div>
+      <div class="h-full w-1/3 bg-emerald-600"></div>
+    </div>
 
-</body>
+    <div class="flex-1 flex items-center justify-center p-4 relative-content">
+      <div
+        class="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-8 space-y-6"
+      >
+        <div class="text-center space-y-3">
+          <img
+            src="../assets/logo.png"
+            alt="Armoiries de Côte d'Ivoire"
+            class="h-16 w-auto object-contain mx-auto mb-1"
+          />
+          <div>
+            <h1 class="text-xs font-extrabold uppercase tracking-widest text-slate-500">
+              République de Côte d'Ivoire
+            </h1>
+            <h2 class="text-xs font-bold text-emerald-800 uppercase mt-0.5">
+              MINISTÈRE DE LA FONCTION PUBLIQUE ET DE LA MODERNISATION DE L’ADMINISTRATION
+            </h2>
+            <p class="text-xs text-slate-600">Secrétariat général</p>
+          </div>
+          <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
+          <p class="text-xs text-slate-500 font-medium">
+            Plateforme Web de Gestion des Services Administratifs
+          </p>
+        </div>
+
+        <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
+              >Matricule Agent *</label
+            >
+            <input
+              type="text"
+              id="loginMat"
+              required
+              placeholder="Votre matricule"
+              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:bg-white focus:ring-2 focus:ring-emerald-600"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
+              >Mot de Passe *</label
+            >
+            <input
+              type="password"
+              id="loginPass"
+              required
+              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600"
+            />
+          </div>
+
+          <p id="loginError" class="hidden text-xs text-red-600 font-bold text-center">
+            Matricule ou mot de passe incorrect.
+          </p>
+
+          <button
+            type="submit"
+            class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition"
+          >
+            Se Connecter à l'Espace Intranet
+          </button>
+        </form>
+        <a
+          href="../mot-de-passe-oublie.html"
+          class="block text-center text-xs font-bold text-emerald-700 hover:text-emerald-900 mt-3"
+          >Mot de passe oublié ?</a
+        >
+
+        <div class="border-t border-slate-200 pt-5 mt-5 flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Nouveau sur la plateforme ?</h3>
+            <p class="text-xs text-slate-500 mt-1">Inscrivez-vous en choisissant votre rôle.</p>
+          </div>
+          <a
+            href="../inscription.html"
+            class="shrink-0 px-3 py-2 border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold"
+            >Créer un compte</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+      /**
+       * Traite le formulaire de connexion : appelle l'API, mémorise l'utilisateur dans la session puis ouvre l'espace de son profil ; affiche l'erreur sinon.
+       */
+      async function handleLogin(e) {
+        e.preventDefault();
+        const mat = document.getElementById('loginMat').value.trim();
+        const pwd = document.getElementById('loginPass').value.trim();
+
+        const res = await API.login(mat, '', pwd); // profil déduit des rôles du compte
+        if (res.status === 'success') {
+          sessionStorage.setItem('currentUser', JSON.stringify(res.user));
+          window.location.href = API.urlEspace(res.user.role);
+        } else {
+          document.getElementById('loginError').classList.remove('hidden');
+          document.getElementById('loginError').textContent =
+            res.message || 'Matricule ou mot de passe incorrect.';
+        }
+      }
+    </script>
+  </body>
 </html>
