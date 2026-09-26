@@ -109,7 +109,7 @@ Ces comptes servent uniquement aux démonstrations : pensez à changer les mots 
 
 ## Conception
 
-La modélisation Merise de la plateforme (MCD, MCT et MOT de la permission, des déclarations et des notes de service) est dans [docs/MERISE.md](docs/MERISE.md), avec une version PDF : [docs/Conception_Merise_GFP.pdf](docs/Conception_Merise_GFP.pdf). Le modèle physique des données (MPD complet et par domaine), l'architecture technique et l'environnement de développement sont illustrés dans [docs/chapitre-v/](docs/chapitre-v/). Des versions compactes de tous les schémas (figure seule, taille ajustée, PDF et PNG), prêtes à insérer dans un document, sont dans [docs/compact/](docs/compact/).
+La modélisation Merise de la plateforme (MCD, MCT et MOT de la permission, des déclarations et des notes de service) est dans [docs/MERISE.md](docs/MERISE.md), avec une version PDF : [docs/Conception_Merise_GFP.pdf](docs/Conception_Merise_GFP.pdf). Le modèle physique des données (MPD complet et par domaine), l'architecture technique et l'environnement de développement sont illustrés dans [docs/chapitre-v/](docs/chapitre-v/). Le chapitre V du mémoire (architecture et choix technologiques), rédigé avec ses schémas intégrés, est dans [docs/Chapitre_V_Architecture_et_choix_technologiques.docx](docs/Chapitre_V_Architecture_et_choix_technologiques.docx). Des versions compactes de tous les schémas (figure seule, taille ajustée, PDF et PNG), prêtes à insérer dans un document, sont dans [docs/compact/](docs/compact/).
 
 ## Tests
 
