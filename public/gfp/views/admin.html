@@ -90,6 +90,13 @@
             Journal d'audit
           </button>
           <button
+            onclick="showTab('responsables')"
+            id="nav-responsables"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+          >
+            Directeurs et responsables
+          </button>
+          <button
             onclick="showTab('structures')"
             id="nav-structures"
             class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
@@ -371,6 +378,7 @@
       <!-- TAB : NOTES DE SERVICE -->
       <div id="tab-statistiques" class="hidden space-y-6"></div>
       <div id="tab-structures" class="hidden space-y-6"></div>
+      <div id="tab-responsables" class="hidden space-y-6"></div>
 
       <!-- TAB : JOURNAL D'AUDIT -->
       <div id="tab-journal" class="hidden space-y-6">
@@ -702,8 +710,12 @@
           tr.innerHTML = `
           <td class="px-3 py-3 font-mono font-bold">${m}</td>
           <td
-            class="px-3 py-3 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}${u.telephone ? `<br>
-          <span class="text-slate-500">${escapeHtml(u.telephone)}</span>` : ''}</td>
+            class="px-3 py-3 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}${
+              u.telephone
+                ? `<br>
+          <span class="text-slate-500">${escapeHtml(u.telephone)}</span>`
+                : ''
+            }</td>
           <td class="px-3 py-3"><select id="role_${m}"
             class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-44">${optionsRoles(u.role_code, false)}</select>
           </td>
@@ -960,7 +972,15 @@
        * @param {string} name users, search, notes, statistiques, journal ou structures.
        */
       function showTab(name) {
-        ['users', 'search', 'notes', 'statistiques', 'journal', 'structures'].forEach((t) => {
+        [
+          'users',
+          'search',
+          'notes',
+          'statistiques',
+          'journal',
+          'structures',
+          'responsables',
+        ].forEach((t) => {
           document.getElementById('tab-' + t).classList.add('hidden');
           const btn = document.getElementById('nav-' + t);
           if (btn) {
@@ -973,11 +993,206 @@
           afficherStatistiques(document.getElementById('tab-statistiques'));
         if (name === 'journal') chargerJournal(1);
         if (name === 'structures') afficherStructures(document.getElementById('tab-structures'));
+        if (name === 'responsables') renderResponsables();
         const active = document.getElementById('nav-' + name);
         if (active) {
           active.classList.add('bg-emerald-700', 'text-white');
           active.classList.remove('text-slate-600');
         }
+      }
+
+      // ---- Directeurs, chefs de service et autres responsables ----
+      // Groupes affichés, dans l'ordre hiérarchique : [code du rôle, titre au pluriel].
+      const GROUPES_RESPONSABLES = [
+        ['ROLE_DRH', 'Direction des Ressources Humaines (DRH)'],
+        ['ROLE_DIRECTEUR_CABINET', 'Directeur de Cabinet'],
+        ['ROLE_DIRECTEUR', 'Directeurs centraux'],
+        ['ROLE_SOUS_DIRECTEUR', 'Sous-Directeurs'],
+        ['ROLE_CHEF_DE_SERVICE', 'Chefs de service'],
+        ['ROLE_GESTIONNAIRE_RH', 'Gestionnaires RH'],
+        ['ROLE_SECRETAIRE', 'Secrétaires'],
+      ];
+
+      /**
+       * Dessine l'annuaire des responsables : directeurs, sous-directeurs, chefs de service,
+       * DRH, gestionnaires RH et secrétaires, regroupés par fonction avec leur structure,
+       * les structures qu'ils dirigent, leur statut et leur dernière connexion.
+       * Les filtres (recherche et statut) sont relus à chaque appel.
+       */
+      function renderResponsables() {
+        const conteneur = document.getElementById('tab-responsables');
+        const q = (document.getElementById('rQ')?.value || '').toLowerCase();
+        const statut = document.getElementById('rStatut')?.value || '';
+
+        // Le premier appel construit la barre d'outils ; les suivants ne redessinent que les groupes.
+        if (!document.getElementById('rGroupes')) {
+          conteneur.innerHTML = `
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex flex-wrap justify-between items-center gap-3">
+                <div>
+                  <h2
+                    class="text-base font-bold text-slate-900">Directeurs, chefs de service et responsables</h2>
+                  <p
+                    class="text-xs text-slate-500">Toutes les personnes qui occupent une fonction de direction, de service ou de gestion.</p>
+                </div>
+                <button onclick="exporterResponsables()"
+                  class="border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs">
+                  Exporter en CSV</button>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input type="text" id="rQ" oninput="renderResponsables()"
+                  placeholder="Matricule, nom ou structure..."
+                  class="md:col-span-2 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                <select id="rStatut" onchange="renderResponsables()"
+                  class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                  <option value="">Tous les statuts</option>
+                  <option value="ACTIF">Actifs</option>
+                  <option value="SUSPENDU">Suspendus</option>
+                </select>
+              </div>
+              <div id="rResume" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+            </div>
+            <div id="rGroupes" class="space-y-6"></div>`;
+        }
+
+        // Une personne apparaît dans chacun des groupes dont elle porte le rôle.
+        const groupes = GROUPES_RESPONSABLES.map(([code, titre]) => ({
+          code,
+          titre,
+          membres: users.filter(
+            (u) =>
+              (u.roles || []).some((r) => r.code_role === code) &&
+              (!statut || u.statut === statut) &&
+              (!q ||
+                [u.matricule, u.nom, u.prenom, u.structure, (u.responsable_de || []).join(' ')]
+                  .join(' ')
+                  .toLowerCase()
+                  .includes(q)),
+          ),
+        }));
+
+        const total = new Set(groupes.flatMap((g) => g.membres.map((u) => u.matricule))).size;
+        const tuile = (titre, valeur) => `
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-500 uppercase">${titre}</p>
+            <p class="text-2xl font-black text-slate-800">${valeur}</p>
+          </div>`;
+        const compte = (code) => groupes.find((g) => g.code === code).membres.length;
+        document.getElementById('rResume').innerHTML =
+          tuile('Responsables', total) +
+          tuile(
+            'Directeurs',
+            compte('ROLE_DIRECTEUR') + compte('ROLE_DIRECTEUR_CABINET') + compte('ROLE_DRH'),
+          ) +
+          tuile('Sous-Directeurs', compte('ROLE_SOUS_DIRECTEUR')) +
+          tuile('Chefs de service', compte('ROLE_CHEF_DE_SERVICE'));
+
+        document.getElementById('rGroupes').innerHTML = groupes
+          .map(
+            (g) => `
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-slate-900">
+                ${escapeHtml(g.titre)}
+                <span class="text-xs font-bold text-slate-500">(${g.membres.length})</span>
+              </h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                    <tr>
+                      <th class="px-3 py-2">Matricule</th>
+                      <th class="px-3 py-2">Nom et prénom</th>
+                      <th class="px-3 py-2">Structure</th>
+                      <th class="px-3 py-2">Dirige</th>
+                      <th class="px-3 py-2">Statut</th>
+                      <th class="px-3 py-2">Dernière connexion</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    ${
+                      g.membres
+                        .map(
+                          (u) => `
+                    <tr>
+                      <td class="px-3 py-2 font-mono font-bold">${escapeHtml(u.matricule)}</td>
+                      <td
+                        class="px-3 py-2 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}</td>
+                      <td class="px-3 py-2 text-slate-600">${escapeHtml(u.structure)}</td>
+                      <td
+                        class="px-3 py-2 text-slate-600">${escapeHtml((u.responsable_de || []).join(', ') || '—')}</td>
+                      <td class="px-3 py-2">
+                        <span
+                          class="px-2 py-0.5 rounded-full border font-bold ${u.statut === 'ACTIF' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}">
+                          ${u.statut === 'ACTIF' ? 'Actif' : 'Suspendu'}</span>
+                      </td>
+                      <td
+                        class="px-3 py-2 text-slate-500 whitespace-nowrap">${escapeHtml(u.derniere_connexion || 'Jamais')}</td>
+                    </tr>`,
+                        )
+                        .join('') ||
+                      '<tr><td colspan="6" class="px-3 py-4 text-center text-slate-500 italic">Aucune personne.</td></tr>'
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>`,
+          )
+          .join('');
+      }
+
+      /**
+       * Télécharge la liste des responsables affichée (avec les filtres) au format CSV,
+       * lisible dans Excel : fonction, matricule, nom, structure, structures dirigées, statut.
+       */
+      function exporterResponsables() {
+        const q = (document.getElementById('rQ')?.value || '').toLowerCase();
+        const statut = document.getElementById('rStatut')?.value || '';
+        const lignes = [
+          [
+            'Fonction',
+            'Matricule',
+            'Nom',
+            'Prénom',
+            'Structure',
+            'Dirige',
+            'Statut',
+            'Dernière connexion',
+          ],
+        ];
+        GROUPES_RESPONSABLES.forEach(([code, titre]) => {
+          users
+            .filter(
+              (u) =>
+                (u.roles || []).some((r) => r.code_role === code) &&
+                (!statut || u.statut === statut) &&
+                (!q ||
+                  [u.matricule, u.nom, u.prenom, u.structure, (u.responsable_de || []).join(' ')]
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(q)),
+            )
+            .forEach((u) =>
+              lignes.push([
+                titre,
+                u.matricule,
+                u.nom,
+                u.prenom,
+                u.structure,
+                (u.responsable_de || []).join(' ; '),
+                u.statut,
+                u.derniere_connexion || '',
+              ]),
+            );
+        });
+        const csv =
+          '\uFEFF' +
+          lignes
+            .map((l) => l.map((c) => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';'))
+            .join('\n');
+        const lien = document.createElement('a');
+        lien.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        lien.download = 'responsables.csv';
+        lien.click();
+        URL.revokeObjectURL(lien.href);
       }
 
       // ---- Journal d'audit ----

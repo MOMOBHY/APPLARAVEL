@@ -55,6 +55,20 @@ class GestionUtilisateursTest extends TestCase
         );
     }
 
+    public function test_la_liste_des_comptes_indique_les_structures_dirigees_par_chaque_responsable(): void
+    {
+        $users = collect($this->actingAs($this->admin, 'sanctum')->getJson('/api/users')->json('users'))
+            ->keyBy('matricule');
+
+        // Le Sous-Directeur SD001 dirige deux structures, le DRH une seule, un simple agent aucune.
+        $this->assertEqualsCanonicalizing(
+            ['Sous-Direction du Personnel', 'Service des Études'],
+            $users['SD001']['responsable_de'],
+        );
+        $this->assertSame(['Direction des Ressources Humaines'], $users['DRH001']['responsable_de']);
+        $this->assertSame([], $users['AGT001']['responsable_de']);
+    }
+
     public function test_compte_suspendu_ne_peut_plus_se_connecter_et_perd_ses_jetons(): void
     {
         $token = $this->postJson('/api/login', [

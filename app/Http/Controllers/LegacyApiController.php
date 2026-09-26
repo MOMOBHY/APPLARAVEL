@@ -869,14 +869,21 @@ class LegacyApiController extends Controller
      */
     public function users()
     {
+        // Structures dirigées par chaque agent (responsable de structure, qui donne le visa).
+        $dirigees = Structure::whereNotNull('responsable_agent_id')
+            ->orderBy('nom')
+            ->get()
+            ->groupBy('responsable_agent_id');
+
         $users = User::with(['roles', 'agent.structure', 'agent.fonction'])
             ->orderBy('id')
             ->get()
-            ->map(function (User $u) {
+            ->map(function (User $u) use ($dirigees) {
                 $code = $u->roles->first()?->code;
 
                 return [
                     'id_agent' => $u->agent?->id,
+                    'responsable_de' => ($dirigees[$u->agent_id] ?? collect())->pluck('nom')->values(),
                     'id_utilisateur' => $u->id,
                     'matricule' => $u->matricule,
                     'civilite' => $u->agent?->civilite ?? 'M.',
