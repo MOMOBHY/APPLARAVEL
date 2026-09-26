@@ -96,7 +96,7 @@ Tous les comptes utilisent le mot de passe `test123`. On se connecte avec le mat
 | Agent | `AGT001` |
 | Gestionnaire RH | `RH001` |
 | Sous-Directeur | `SD001` |
-| Directeur Central | `DIR001` |
+| Directeur | `DIR001` |
 | DRH | `DRH001` |
 | Directeur de Cabinet | `CAB001` |
 | Secrétaire | `SEC001` |

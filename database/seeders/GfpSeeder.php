@@ -40,7 +40,7 @@ class GfpSeeder extends Seeder
             ['code' => 'AGENT', 'libelle' => 'Agent', 'niveau_hierarchique' => 1],
             ['code' => 'GEST_RH', 'libelle' => 'Gestionnaire RH', 'niveau_hierarchique' => 2],
             ['code' => 'SD', 'libelle' => 'Sous-Directeur', 'niveau_hierarchique' => 3],
-            ['code' => 'DIR', 'libelle' => 'Directeur Central', 'niveau_hierarchique' => 4],
+            ['code' => 'DIR', 'libelle' => 'Directeur', 'niveau_hierarchique' => 4],
             ['code' => 'DRH', 'libelle' => 'Directeur RH', 'niveau_hierarchique' => 5],
         ];
         foreach ($fonctions as $f) {
@@ -51,7 +51,7 @@ class GfpSeeder extends Seeder
             'ROLE_AGENT' => 'Agent',
             'ROLE_GESTIONNAIRE_RH' => 'Gestionnaire RH',
             'ROLE_SOUS_DIRECTEUR' => 'Sous-Directeur',
-            'ROLE_DIRECTEUR' => 'Directeur Central',
+            'ROLE_DIRECTEUR' => 'Directeur',
             'ROLE_DRH' => 'Directeur des Ressources Humaines',
             'ROLE_SECRETAIRE' => 'Secrétaire',
             'ROLE_SERVICE_ADMINISTRATIF' => 'Service chargé de la gestion administrative',
