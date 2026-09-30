@@ -13,10 +13,8 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
-    /**
-     * Connexion par matricule et mot de passe. Refuse les comptes suspendus et journalise chaque
-     * tentative. Formulaire Blade : session web ; appel JSON : jeton d'accès.
-     */
+    /** Connexion par matricule et mot de passe. Refuse les comptes suspendus et journalise chaque
+     * tentative. Formulaire Blade : session web ; appel JSON : jeton d'accès. */
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -166,5 +164,81 @@ class AuthController extends Controller
         $user = $request->user()->load(['roles', 'agent.structure']);
 
         return response()->json(['status' => 'success', 'user' => $user]);
+    }
+
+    /** Mon compte : l'utilisateur modifie son nom, son prénom, son email et son mot de passe (mot de
+     * passe actuel exigé) ; la session en cours est gardée. */
+    public function updateProfil(Request $request)
+    {
+        $user = $request->user();
+        $data = $request->validate([
+            'nom' => ['nullable', 'string', 'max:100'],
+            'prenom' => ['nullable', 'string', 'max:150'],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                'unique:users,email,'.$user->id,
+                function ($attribut, $valeur, $echec) {
+                    $domaine = strtolower(trim($valeur));
+                    if (! str_ends_with($domaine, '@fonctionpublique.gouv.ci') && ! str_ends_with($domaine, '@gmail.com')) {
+                        $echec("L'adresse email doit finir par @fonctionpublique.gouv.ci ou @gmail.com.");
+                    }
+                },
+            ],
+            'mot_de_passe_actuel' => ['nullable', 'string', 'required_with:nouveau_mot_de_passe'],
+            'nouveau_mot_de_passe' => ['nullable', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        if (
+            blank($data['nom'] ?? null) && blank($data['prenom'] ?? null) &&
+            blank($data['email'] ?? null) && blank($data['nouveau_mot_de_passe'] ?? null)
+        ) {
+            return response()->json(['status' => 'error', 'message' => 'Rien à enregistrer.'], 422);
+        }
+
+        if (! empty($data['nouveau_mot_de_passe']) && ! Hash::check($data['mot_de_passe_actuel'] ?? '', $user->password)) {
+            return response()->json(
+                ['status' => 'error', 'message' => 'Mot de passe actuel incorrect.'],
+                403,
+            );
+        }
+
+        $agent = $user->agent;
+        if ((! empty($data['nom']) || ! empty($data['prenom'])) && ! $agent) {
+            return response()->json(
+                ['status' => 'error', 'message' => 'Aucun dossier agent lié à ce compte.'],
+                422,
+            );
+        }
+        if ($agent) {
+            if (! empty($data['nom'])) {
+                $agent->nom = strtoupper(trim($data['nom']));
+            }
+            if (! empty($data['prenom'])) {
+                $agent->prenom = trim($data['prenom']);
+            }
+            $agent->save();
+            $user->name = $agent->fullName();
+        }
+        if (! empty($data['email'])) {
+            $user->email = strtolower(trim($data['email']));
+        }
+        if (! empty($data['nouveau_mot_de_passe'])) {
+            $user->password = $data['nouveau_mot_de_passe'];
+        }
+        $user->save();
+        JournalAudit::noter(
+            JournalAudit::COMPTE,
+            'PROFIL_MODIFIE',
+            $user,
+            'Profil mis à jour par l’utilisateur.',
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'name' => $user->name,
+            'email' => $user->email,
+        ]);
     }
 }

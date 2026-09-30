@@ -17,10 +17,8 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Administrateur ou DRH : recherche de demandes de permission par référence, motif, nom ou
-     * matricule (50 résultats au plus).
-     */
+    /** Administrateur ou DRH : recherche de demandes de permission par référence, motif, nom ou matricule
+     * (50 résultats au plus). */
     public function search(Request $request)
     {
         $q = trim((string) $request->query('q', ''));

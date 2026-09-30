@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png" />
+    <link rel="icon" href="../assets/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <title>
       Espace DRH - Ministère de la Fonction Publique et de la Modernisation de l’Administration
     </title>
@@ -36,12 +39,6 @@
     <link rel="stylesheet" href="../assets/theme.css" />
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-    <!-- BANDEAU TRICOLORE -->
-    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
-      <div class="h-full w-1/3 bg-orange-500"></div>
-      <div class="h-full w-1/3 bg-white"></div>
-      <div class="h-full w-1/3 bg-emerald-600"></div>
-    </div>
 
     <!-- HEADER -->
     <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
@@ -54,9 +51,16 @@
       <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
           <button
+            onclick="showTab('dashboard')"
+            id="nav-dashboard"
+            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white"
+          >
+            Tableau de Bord
+          </button>
+          <button
             onclick="showTab('permissions')"
             id="nav-permissions"
-            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
           >
             Permissions d'Absence
           </button>
@@ -68,13 +72,6 @@
             Actes d'État Civil
           </button>
           <button
-            onclick="showTab('historique')"
-            id="nav-historique"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
-          >
-            Historique des Décisions
-          </button>
-          <button
             onclick="showTab('statistiques')"
             id="nav-statistiques"
             class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
@@ -82,20 +79,122 @@
             Statistiques
           </button>
           <button
-            onclick="showTab('structures')"
-            id="nav-structures"
+            onclick="showTab('notes')"
+            id="nav-notes"
             class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
           >
-            Structures du ministère
+            Notes de Service
           </button>
         </div>
       </nav>
     </header>
 
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-      <!-- TAB : PERMISSIONS EN ATTENTE RH -->
-      <div id="tab-permissions" class="space-y-6">
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+      <!-- TAB : TABLEAU DE BORD -->
+      <div id="tab-dashboard" class="space-y-6">
+        <!-- Compteurs : les tâches du DRH -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <button type="button" onclick="showTab('permissions')" aria-label="Ouvrir les permissions à trancher"
+            class="text-left bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-500 hover:shadow transition cursor-pointer">
+            <span class="text-xs font-bold text-slate-400 uppercase">Permissions à trancher</span>
+            <p id="countPermDrh" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </button>
+          <button type="button" onclick="showTab('etatcivil')" aria-label="Ouvrir les actes d'état civil à trancher"
+            class="text-left bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-500 hover:shadow transition cursor-pointer">
+            <span class="text-xs font-bold text-slate-400 uppercase">Actes d'état civil</span>
+            <p id="countEcDrh" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </button>
+          <button type="button" onclick="filtrerTableauDrh('TRANCHES')" aria-label="Afficher les dossiers tranchés"
+            class="text-left bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-500 hover:shadow transition cursor-pointer">
+            <span class="text-xs font-bold text-slate-400 uppercase">Dossiers tranchés</span>
+            <p id="countTranchesDrh" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </button>
+          <button type="button" onclick="filtrerTableauDrh('')" aria-label="Afficher tous les dossiers suivis"
+            class="text-left bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-500 hover:shadow transition cursor-pointer">
+            <span class="text-xs font-bold text-slate-400 uppercase">Total en suivi</span>
+            <p id="countTotalDrh" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </button>
+        </div>
+
+        <!-- Tous les dossiers à trancher : décision finale directement depuis le tableau de bord -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <h2 class="font-bold text-base text-slate-900">Tous les dossiers suivis</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+              <input type="text" id="dashDrhSearch" oninput="pageDashDrh=1;renderDashboard()" placeholder="Réf, agent, matricule..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-44">
+              <select id="dashDrhNature" onchange="pageDashDrh=1;renderDashboard()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+                <option value="">Toutes les natures</option>
+                <option value="DEMANDE_PERMISSION">Demande de permission</option>
+                <option value="DECLARATION_NAISSANCE">Déclaration de naissance</option>
+                <option value="DECLARATION_DECES">Déclaration de décès</option>
+              </select>
+              <select id="dashDrhStatut" onchange="pageDashDrh=1;renderDashboard()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+                <option value="">Tous statuts</option>
+                <option value="A_TRANCHER">À trancher</option>
+                <option value="VALIDEE">Validée</option>
+                <option value="RETOUR_CORRECTION">Retournée</option>
+                <option value="REJETEE">Rejetée</option>
+                <option value="TRANCHES">Tous les dossiers tranchés</option>
+              </select>
+              <button type="button" onclick="exporterDossiersCsv(dossiersDashDrh, 'dossiers-drh')"
+                class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold">
+                Exporter (CSV)
+              </button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Réf Dossier</th>
+                  <th class="px-4 py-3">Matricule & Agent</th>
+                  <th class="px-4 py-3">Nature</th>
+                  <th class="px-4 py-3">Type / Motif</th>
+                  <th class="px-4 py-3">Justificatif</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashDrhTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+          <div id="dashDrhPagination" class="px-6 pb-4"></div>
+        </div>
+      </div>
+
+      <!-- TAB : PERMISSIONS — à gauche l'historique, à droite les dossiers à trancher -->
+      <div id="tab-permissions" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- GAUCHE : historique des permissions tranchées -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+            <div class="border-b border-slate-200 pb-4 flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">Historique des permissions</h2>
+                <p class="text-xs text-slate-500">
+                  Demandes de permission validées ou retournées.
+                </p>
+              </div>
+              <span
+                id="permHistoCount"
+                class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold"
+              >
+                0 dossier
+              </span>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Durée</label>
+              <select id="drhPermHistoDuree" onchange="pageDrhPermHisto=1;renderPermHistorique()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+                <option value="">Toutes</option>
+                <option value="court">2 jours ou moins</option>
+                <option value="long">Plus de 2 jours</option>
+              </select>
+            </div>
+            <div id="permHistoContainer" class="space-y-4"></div>
+            <div id="drhPermHistoPagination"></div>
+          </div>
+
+          <!-- DROITE : permissions à trancher -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
           <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
             <div>
               <h2 class="text-base font-bold text-slate-900">Demandes de Permission à Valider</h2>
@@ -112,22 +211,33 @@
             </span>
           </div>
 
-          <!-- INFO CIRCUIT -->
-          <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-            <h3 class="text-xs font-bold text-slate-800 uppercase mb-2">Circuit de Validation</h3>
-            <div class="flex items-center space-x-2 text-xs font-bold">
-              <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">1. Agent</span>
-              <span class="text-slate-400">→</span>
-              <span class="bg-slate-300 text-slate-600 px-2 py-1 rounded">2. Gestionnaire RH</span>
-              <span class="text-slate-400">→</span>
-              <span class="bg-emerald-700 text-white px-2 py-1 rounded">3. DRH</span>
+          <!-- FILTRES PERMISSIONS -->
+          <div class="flex flex-wrap gap-2 items-end bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+              <input type="text" id="drhPermSearch" oninput="renderPermissions()" placeholder="Réf, agent, matricule..." class="border border-slate-300 rounded px-2.5 py-1.5 text-xs w-36 bg-white">
             </div>
-            <p class="text-xs text-slate-700 mt-2">
-              Votre décision est définitive et clôt le dossier.
-            </p>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
+              <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="drhPermDate" onchange="renderPermissions()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white w-28">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Durée</label>
+              <select id="drhPermDuree" onchange="renderPermissions()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+                <option value="">Toutes</option>
+                <option value="court">2 jours ou moins</option>
+                <option value="long">Plus de 2 jours</option>
+              </select>
+            </div>
+            <button onclick="document.getElementById('drhPermSearch').value='';viderDateFr('drhPermDate');document.getElementById('drhPermDuree').value='';renderPermissions();"
+              class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
+              Réinitialiser
+            </button>
           </div>
 
           <div id="permContainer" class="space-y-4"></div>
+          <div id="drhPermPagination"></div>
+          </div><!-- /colonne droite -->
         </div>
       </div>
 
@@ -137,10 +247,10 @@
           <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
             <div>
               <h2 class="text-base font-bold text-slate-900">
-                Actes d'État Civil en Attente de Contrôle
+                Actes d'État Civil en Attente de Décision DRH
               </h2>
               <p class="text-xs text-slate-500">
-                Déclarations de naissance et de décès soumises par les agents.
+                Déclarations de naissance et de décès vérifiées, en attente de votre décision finale.
               </p>
             </div>
             <span
@@ -150,41 +260,89 @@
               0 acte
             </span>
           </div>
+
+          <!-- FILTRES ETAT CIVIL -->
+          <div class="flex flex-wrap gap-3 items-end bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+              <input type="text" id="drhEcSearch" oninput="pageDrhEc=1;renderEtatCivil()" placeholder="Réf, agent, enfant/défunt..." class="border border-slate-300 rounded px-2.5 py-1.5 text-xs w-48 bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Type d'acte</label>
+              <select id="drhEcType" onchange="pageDrhEc=1;renderEtatCivil()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+                <option value="">Tous les actes</option>
+                <option value="DECLARATION_NAISSANCE">Déclarations de naissance</option>
+                <option value="DECLARATION_DECES">Déclarations de décès</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
+              <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="drhEcDate" onchange="pageDrhEc=1;renderEtatCivil()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+            </div>
+            <button onclick="document.getElementById('drhEcSearch').value='';document.getElementById('drhEcType').value='';viderDateFr('drhEcDate');pageDrhEc=1;renderEtatCivil();"
+              class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
+              Réinitialiser les filtres
+            </button>
+          </div>
+
           <div id="etatCivilContainer" class="space-y-4"></div>
+          <div id="drhEcPagination"></div>
+        </div>
+      </div>
+
+      <!-- TAB : NOTES DE SERVICE (DRH : rédige vers sa direction, diffuse directement) -->
+      <div id="tab-notes" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+          <div class="border-b border-slate-200 pb-4">
+            <h2 class="text-base font-bold text-slate-900">Note de service vers ma direction</h2>
+            <p class="text-xs text-slate-500">
+              Rédigez la note à l'attention des agents de votre direction, puis diffusez-la
+              directement, sans circuit de validation.
+            </p>
+          </div>
+          <form id="formNoteDrh" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Objet de la note *</label>
+              <input type="text" id="noteDrhObjet" required maxlength="200"
+                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contenu de la note *</label>
+              <textarea id="noteDrhContenu" required rows="3" placeholder="Rédigez le contenu de la note..."
+                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Structures destinataires *
+                <span class="normal-case font-normal text-slate-500">(votre direction est présélectionnée)</span>
+              </label>
+              <select id="noteDrhStructures" multiple required
+                class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm h-24"></select>
+            </div>
+            <button type="submit"
+              class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">
+              Enregistrer le brouillon
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Mes notes de service</h2>
+              <p class="text-xs text-slate-500">Diffusez vos brouillons directement aux agents.</p>
+            </div>
+            <span id="notesDrhCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">0 note</span>
+          </div>
+          <div id="notesDrhContainer" class="space-y-3"></div>
+          <div id="notesDrhPagination"></div>
         </div>
       </div>
 
       <!-- TAB : HISTORIQUE -->
       <div id="tab-statistiques" class="hidden space-y-6"></div>
-      <div id="tab-structures" class="hidden space-y-6"></div>
 
-      <div id="tab-historique" class="hidden space-y-6">
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-200">
-            <h2 class="text-base font-bold text-slate-900">
-              Historique de Toutes les Décisions RH
-            </h2>
-            <p class="text-xs text-slate-500">
-              Toutes les demandes traitées, validées ou rejetées.
-            </p>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left">
-              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
-                <tr>
-                  <th class="px-4 py-3">Réf Dossier</th>
-                  <th class="px-4 py-3">Matricule & Agent</th>
-                  <th class="px-4 py-3">Nature</th>
-                  <th class="px-4 py-3">Type / Motif</th>
-                  <th class="px-4 py-3">Statut Final</th>
-                </tr>
-              </thead>
-              <tbody id="historiqueTable" class="divide-y divide-slate-200"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </main>
+      </main>
 
     <script src="../js/api.js"></script>
     <script src="../js/shell.js"></script>
@@ -192,18 +350,28 @@
       let user = null;
       let requests = [];
 
-      /**
-       * Démarre la page : vérifie la session et le profil DRH, puis charge les dossiers.
-       */
+      let pageDrhPerm = 1;
+      let pageDrhPermHisto = 1;
+      let pageDrhEc = 1;
+      let pageDashDrh = 1;
+      let pageNotesDrh = 1;
+      let notesDrh = [];
+      /** Dossiers du tableau de bord après filtres : ce que l'export CSV reprend. */
+      let dossiersDashDrh = [];
+      let PAGE_SIZE = taillePageMemorisee(3);
+      /** Cartes longues des permissions : une par une, avec boutons 1, 2, 3… */
+      const PAGE_SIZE_PERM = 1;
+
+      /** Démarre la page : vérifie la session et le profil DRH, puis charge les dossiers. */
       async function init() {
         const saved = sessionStorage.getItem('currentUser');
         if (!saved) {
-          window.location.href = 'login.html';
+          window.location.href = '../login.html';
           return;
         }
         user = JSON.parse(saved);
         if (user.role !== 'DRH') {
-          window.location.href = 'login.html';
+          window.location.href = '../login.html';
           return;
         }
         document.getElementById('navName').textContent = user.name;
@@ -211,43 +379,275 @@
           user.structure || 'Structure non assignée';
         loadAvatar();
         await loadData();
+        await chargerStructuresDrh();
+        showTab('dashboard');
         renderAll();
       }
 
-      /**
-       * Recharge depuis le serveur tous les dossiers visibles par le DRH.
-       */
+      /** Recharge depuis le serveur tous les dossiers visibles par le DRH. */
       async function loadData() {
         const r = await API.getRequests();
-        requests = r.status === 'success' ? r.requests : [];
+        requests = garderSiEchec(r, 'requests', requests);
+        const n = await API.getNotes();
+        notesDrh = garderSiEchec(n, 'notes', notesDrh);
       }
 
-      setInterval(async () => {
-        if (typeof loadData === 'function') {
-          await loadData();
-          if (typeof renderValidation === 'function') renderValidation();
-          if (typeof renderAll === 'function') renderAll();
-        }
-      }, 20000);
+      /* Pause quand l'onglet est caché, mise à jour dès le retour, et on ne redessine que si les données
+         ont changé : la lecture n'est pas perturbée. */
+      setInterval(rafraichirAuto, 20000);
+      document.addEventListener('visibilitychange', rafraichirAuto);
+      async function rafraichirAuto() {
+        if (document.hidden || typeof loadData !== 'function') return;
+        const avant = JSON.stringify([requests, notesDrh]);
+        await loadData();
+        if (JSON.stringify([requests, notesDrh]) === avant) return;
+        if (typeof renderAll === 'function') renderAll();
+      }
 
-      /**
-       * Redessine les trois onglets de dossiers (permissions, état civil, historique).
-       */
+      /** Redessine le tableau de bord, les notes, l'historique des permissions et les deux onglets de
+       * dossiers (permissions, état civil). */
       function renderAll() {
+        renderDashboard();
+        renderNotesDrh();
+        renderPermHistorique();
         renderPermissions();
         renderEtatCivil();
-        renderHistorique();
       }
 
-      /**
-       * Dessine les demandes de permission en attente de décision finale, avec les boutons Valider et Rejeter.
-       */
-      function renderPermissions() {
-        const pending = requests.filter(
+      /** Colonne gauche de l'onglet permissions : historique compact des demandes de permission validées
+       * ou retournées, une par une, avec filtre sur la durée. */
+      function renderPermHistorique() {
+        const dureeHisto = document.getElementById('drhPermHistoDuree')?.value || '';
+        let done = requests.filter(
+          (r) =>
+            r.nature === 'DEMANDE_PERMISSION' &&
+            (r.statut === 'VALIDEE' || r.statut === 'REJETEE' || r.statut === 'RETOUR_CORRECTION'),
+        );
+        done = filtrerDuree(done, dureeHisto);
+
+        document.getElementById('permHistoCount').textContent =
+          done.length + ' dossier' + (done.length > 1 ? 's' : '');
+        const container = document.getElementById('permHistoContainer');
+        container.innerHTML = '';
+
+        if (!done.length) {
+          container.innerHTML = `<div
+            class="text-center py-10 text-slate-500 italic text-sm">Aucune permission tranchée pour le moment.</div>`;
+          renderPagination({ container: 'drhPermHistoPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE_PERM, onPageChange: () => {} });
+          return;
+        }
+
+        const maxPage = Math.ceil(done.length / PAGE_SIZE_PERM) || 1;
+        if (pageDrhPermHisto > maxPage) pageDrhPermHisto = maxPage;
+        if (pageDrhPermHisto < 1) pageDrhPermHisto = 1;
+
+        const pageItems = done.slice((pageDrhPermHisto - 1) * PAGE_SIZE_PERM, pageDrhPermHisto * PAGE_SIZE_PERM);
+
+        pageItems.forEach((r) => {
+          const badge =
+            r.statut === 'VALIDEE'
+              ? 'bg-emerald-100 text-emerald-800'
+              : r.statut === 'RETOUR_CORRECTION'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-red-100 text-red-800';
+          const label =
+            r.statut === 'VALIDEE'
+              ? 'Validée'
+              : r.statut === 'RETOUR_CORRECTION'
+                ? 'Retournée'
+                : 'Rejetée';
+          const div = document.createElement('div');
+          div.className = 'border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-1';
+          div.innerHTML = `
+            <p class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)}</p>
+            <p class="font-bold text-sm text-slate-900">${escapeHtml(r.agentName)}
+              <span class="font-mono font-normal text-slate-500">(${escapeHtml(r.matricule)})</span></p>
+            <p class="text-xs text-slate-600">${escapeHtml(r.typePerm || r.motif || '')}</p>
+            <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
+            <p><span class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${label}</span></p>
+          `;
+          container.appendChild(div);
+        });
+
+        renderPagination({
+          container: 'drhPermHistoPagination',
+          totalItems: done.length,
+          currentPage: pageDrhPermHisto,
+          pageSize: PAGE_SIZE_PERM,
+          onPageChange: (newPage) => {
+            pageDrhPermHisto = newPage;
+            renderPermHistorique();
+          }
+        });
+      }
+
+      /** Vrai si le dossier attend la décision finale du DRH (permissions comme actes). */
+      function estATrancherDrh(r) {
+        return r.nature === 'DEMANDE_PERMISSION'
+          ? (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH')
+          : r.etape === 'EN_ATTENTE_DRH';
+      }
+
+      /** Filtre des permissions sur la durée : 'court' (2 jours ou moins, circuit avec conformité
+       * hiérarchique) ou 'long' (plus de 2 jours, transmission directe). */
+      function filtrerDuree(liste, duree) {
+        if (duree === 'court') return liste.filter((r) => (r.jours || 1) <= 2);
+        if (duree === 'long') return liste.filter((r) => (r.jours || 1) > 2);
+        return liste;
+      }
+
+      /** Tableau de bord du DRH : compteurs de ses tâches et tous les dossiers suivis, à trancher ou déjà
+       * tranchés, avec Valider / Retourner directs. */
+      function renderDashboard() {
+        const permsATrancher = requests.filter(
           (r) =>
             r.nature === 'DEMANDE_PERMISSION' &&
             (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH'),
         );
+        const ecATrancher = requests.filter(
+          (r) =>
+            (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') &&
+            r.etape === 'EN_ATTENTE_DRH',
+        );
+        const tranches = requests.filter(
+          (r) =>
+            r.statut === 'VALIDEE' || r.statut === 'REJETEE' || r.statut === 'RETOUR_CORRECTION',
+        );
+
+        document.getElementById('countPermDrh').textContent = permsATrancher.length;
+        document.getElementById('countEcDrh').textContent = ecATrancher.length;
+        document.getElementById('countTranchesDrh').textContent = tranches.length;
+        document.getElementById('countTotalDrh').textContent = requests.length;
+
+        const q = (document.getElementById('dashDrhSearch')?.value || '').toLowerCase();
+        const natureFilter = document.getElementById('dashDrhNature')?.value || '';
+        const statutFilter = document.getElementById('dashDrhStatut')?.value || '';
+
+        // Le plus récent d'abord : un dossier tranché reste visible en tête.
+        let pending = triPlusRecent(permsATrancher.concat(ecATrancher).concat(tranches));
+        if (natureFilter) {
+          pending = pending.filter((r) => r.nature === natureFilter);
+        }
+        if (statutFilter === 'A_TRANCHER') {
+          pending = pending.filter((r) => estATrancherDrh(r));
+        } else if (statutFilter === 'TRANCHES') {
+          pending = pending.filter((r) => ['VALIDEE', 'REJETEE', 'RETOUR_CORRECTION'].includes(statutReel(r)));
+        } else if (statutFilter) {
+          pending = pending.filter((r) => statutReel(r) === statutFilter);
+        }
+        if (q) {
+          pending = pending.filter((r) =>
+            (r.id || '').toLowerCase().includes(q) ||
+            (r.agentName || '').toLowerCase().includes(q) ||
+            (r.matricule || '').toLowerCase().includes(q) ||
+            (r.motif || '').toLowerCase().includes(q) ||
+            (r.nomChild || '').toLowerCase().includes(q) ||
+            (r.nomDefunt || '').toLowerCase().includes(q)
+          );
+        }
+
+        dossiersDashDrh = pending;
+        const tbody = document.getElementById('dashDrhTable');
+        tbody.innerHTML = '';
+        if (!pending.length) {
+          tbody.innerHTML = `<tr><td colspan="7"
+            class="px-4 py-6 text-center text-slate-500 italic">Aucun dossier correspondant.</td></tr>`;
+          renderPagination({ container: 'dashDrhPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE, onPageChange: () => {} });
+          return;
+        }
+
+        const maxPage = Math.ceil(pending.length / PAGE_SIZE) || 1;
+        if (pageDashDrh > maxPage) pageDashDrh = maxPage;
+        if (pageDashDrh < 1) pageDashDrh = 1;
+
+        const pageItems = pending.slice((pageDashDrh - 1) * PAGE_SIZE, pageDashDrh * PAGE_SIZE);
+
+        pageItems.forEach((r) => {
+          const codeDossier = escapeHtml(r.id);
+          const natureLabel = {DEMANDE_PERMISSION:'Demande de permission', DECLARATION_NAISSANCE:'Déclaration de naissance', DECLARATION_DECES:'Déclaration de décès'}[r.nature] || r.nature;
+          const aTrancher = estATrancherDrh(r);
+          const statut = statutReel(r);
+          const badgeStatut =
+            statut === 'VALIDEE'
+              ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">Validée</span>'
+              : statut === 'RETOUR_CORRECTION'
+                ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">Retournée</span>'
+                : statut === 'REJETEE'
+                  ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">Rejetée</span>'
+                  : '<span class="px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-800">À trancher</span>';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold">${codeDossier}</td>
+          <td class="px-4 py-3">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
+          <td class="px-4 py-3 text-slate-600">${escapeHtml(natureLabel)}</td>
+          <td
+            class="px-4 py-3">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
+          <td class="px-4 py-3">${pieceHtml(r)}</td>
+          <td class="px-4 py-3">${badgeStatut}${ancienneteBadge(r)}</td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            ${aTrancher ? `<button type="button" onclick="decide('${codeDossier}', 'VALIDEE')"
+              class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow cursor-pointer">
+              Valider
+            </button>
+            <button type="button" onclick="decide('${codeDossier}', 'RETOUR_CORRECTION')"
+              class="ml-1 px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg cursor-pointer">
+              Retourner
+            </button>` : `<button type="button" onclick="ouvrirSuivi('${codeDossier}')"
+              class="px-3 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-lg cursor-pointer">
+              Suivre
+            </button>`}
+          </td>
+        `;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'dashDrhPagination',
+          totalItems: pending.length,
+          currentPage: pageDashDrh,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pageDashDrh = newPage;
+            renderDashboard();
+          }
+        });
+      }
+
+      /** Compteur cliqué : affiche le tableau de bord filtré sur ce statut. */
+      function filtrerTableauDrh(statut) {
+        showTab('dashboard');
+        document.getElementById('dashDrhStatut').value = statut;
+        pageDashDrh = 1;
+        renderDashboard();
+        document.getElementById('dashDrhTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      /** Dessine les demandes de permission en attente de décision finale, une par une (cartes longues),
+       * avec filtre sur la durée. */
+      function renderPermissions() {
+        const q = (document.getElementById('drhPermSearch')?.value || '').toLowerCase();
+        const dateMin = dateIso(document.getElementById('drhPermDate')?.value);
+        const duree = document.getElementById('drhPermDuree')?.value || '';
+
+        let pending = requests.filter(
+          (r) =>
+            r.nature === 'DEMANDE_PERMISSION' &&
+            (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_DRH'),
+        );
+
+        if (q) {
+          pending = pending.filter((r) =>
+            (r.id || '').toLowerCase().includes(q) ||
+            (r.agentName || '').toLowerCase().includes(q) ||
+            (r.matricule || '').toLowerCase().includes(q) ||
+            (r.motif || '').toLowerCase().includes(q)
+          );
+        }
+        if (dateMin) {
+          pending = pending.filter((r) => (r.dateDebut || '') >= dateMin);
+        }
+        pending = filtrerDuree(pending, duree);
+
         document.getElementById('permPendingCount').textContent =
           pending.length + ' dossier' + (pending.length > 1 ? 's' : '');
         const container = document.getElementById('permContainer');
@@ -256,36 +656,45 @@
         if (!pending.length) {
           container.innerHTML = `<div
             class="text-center py-10 text-slate-500 italic text-sm">Aucune demande de permission en attente de décision finale.</div>`;
+          renderPagination({ container: 'drhPermPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE_PERM, onPageChange: () => {} });
           return;
         }
 
-        pending.forEach((r) => {
+        const maxPage = Math.ceil(pending.length / PAGE_SIZE_PERM) || 1;
+        if (pageDrhPerm > maxPage) pageDrhPerm = maxPage;
+        if (pageDrhPerm < 1) pageDrhPerm = 1;
+
+        const pageItems = pending.slice((pageDrhPerm - 1) * PAGE_SIZE_PERM, pageDrhPerm * PAGE_SIZE_PERM);
+
+        pageItems.forEach((r) => {
           const div = document.createElement('div');
-          div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
+          div.className = 'border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3';
           const jours = r.jours || 1;
           const circuitLabel =
             jours <= 2
               ? `<span
-                class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : Visa Hiérarchique Direction accordé</span>`
+                class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 1 (≤ 2 jours) : déclarée conforme par la Direction</span>`
               : `<span
                 class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded font-bold">Cas 2 (> 2 jours) : Transmission directe par le Gestionnaire RH</span>`;
 
+          const codeDossier = escapeHtml(r.id);
           div.innerHTML = `
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
-              <span class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)}</span>
+              <span class="font-mono text-xs text-slate-600 font-bold">${codeDossier}</span>
               <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span
                 class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p
                 class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong>
               </p>
               <p
-                class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong>
+                class="text-xs text-slate-600">Période : <strong>${escapeHtml(dateFr(r.dateDebut))} au ${escapeHtml(dateFr(r.dateFin))}</strong> — <strong>${jours} jour(s)</strong>
               </p>
               <p
                 class="text-xs text-slate-500 mt-1">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong>
               </p>
               <p class="text-xs text-slate-600">Pièce jointe : ${pieceHtml(r)}</p>
+              ${ancienneteBadge(r)}
               <div class="mt-2">${circuitLabel}</div>
               <p
                 class="text-xs text-slate-700 italic mt-1">Rappel : Votre décision sera transmise au Gestionnaire RH pour notification à l'agent.</p>
@@ -294,29 +703,60 @@
               class="bg-slate-100 text-slate-800 border border-slate-300 text-xs px-3 py-1 rounded-full font-bold">Décision Finale DRH</span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
-            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')"
-              class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
-              Refuser la Permission
+            <button type="button" onclick="decide('${codeDossier}', 'RETOUR_CORRECTION')"
+              class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg cursor-pointer">
+              Retourner
             </button>
-            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')"
-              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-              Valider Définitivement
+            <button type="button" onclick="decide('${codeDossier}', 'VALIDEE')"
+              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow cursor-pointer">
+              Valider
             </button>
           </div>
         `;
           container.appendChild(div);
         });
+
+        renderPagination({
+          container: 'drhPermPagination',
+          totalItems: pending.length,
+          currentPage: pageDrhPerm,
+          pageSize: PAGE_SIZE_PERM,
+          onPageChange: (newPage) => {
+            pageDrhPerm = newPage;
+            renderPermissions();
+          }
+        });
       }
 
-      /**
-       * Dessine les déclarations de naissance et de décès en attente de décision finale.
-       */
+      /** Dessine les déclarations de naissance et de décès en attente de décision finale, une à une
+       * (grandes cartes). */
       function renderEtatCivil() {
-        const pending = requests.filter(
+        const q = (document.getElementById('drhEcSearch')?.value || '').toLowerCase();
+        const typeFilter = document.getElementById('drhEcType')?.value || '';
+        const dateMin = dateIso(document.getElementById('drhEcDate')?.value);
+
+        let pending = requests.filter(
           (r) =>
             (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') &&
-            (r.statut === 'EN_ATTENTE_RH' || r.etape === 'EN_ATTENTE_RH'),
+            r.etape === 'EN_ATTENTE_DRH',
         );
+
+        if (typeFilter) {
+          pending = pending.filter((r) => r.nature === typeFilter);
+        }
+        if (q) {
+          pending = pending.filter((r) =>
+            (r.id || '').toLowerCase().includes(q) ||
+            (r.agentName || '').toLowerCase().includes(q) ||
+            (r.matricule || '').toLowerCase().includes(q) ||
+            (r.nomChild || '').toLowerCase().includes(q) ||
+            (r.nomDefunt || '').toLowerCase().includes(q)
+          );
+        }
+        if (dateMin) {
+          pending = pending.filter((r) => (r.dateEvt || '') >= dateMin);
+        }
+
         document.getElementById('etatCivilCount').textContent =
           pending.length + ' acte' + (pending.length > 1 ? 's' : '');
         const container = document.getElementById('etatCivilContainer');
@@ -325,16 +765,24 @@
         if (!pending.length) {
           container.innerHTML = `<div
             class="text-center py-10 text-slate-500 italic text-sm">Aucun acte d'état civil en attente de décision finale.</div>`;
+          renderPagination({ container: 'drhEcPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE_CARTES, onPageChange: () => {} });
           return;
         }
 
-        pending.forEach((r) => {
+        const maxPage = Math.ceil(pending.length / PAGE_SIZE_CARTES) || 1;
+        if (pageDrhEc > maxPage) pageDrhEc = maxPage;
+        if (pageDrhEc < 1) pageDrhEc = 1;
+
+        const pageItems = pending.slice((pageDrhEc - 1) * PAGE_SIZE_CARTES, pageDrhEc * PAGE_SIZE_CARTES);
+
+        pageItems.forEach((r) => {
           const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
           const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
           const detail = isNaissance
             ? 'Enfant : ' + (r.nomChild || '')
             : 'Défunt : ' + (r.nomDefunt || '');
           const color = isNaissance ? 'emerald' : 'slate';
+          const codeDossier = escapeHtml(r.id);
 
           const div = document.createElement('div');
           div.className = `border border-${color}-200 rounded-xl p-5 bg-${color}-50 space-y-4`;
@@ -342,15 +790,16 @@
           <div class="flex justify-between items-start flex-wrap gap-2">
             <div class="space-y-1">
               <span
-                class="font-mono text-xs text-${color}-600 font-bold">${escapeHtml(r.id)} - ${label}</span>
+                class="font-mono text-xs text-${color}-600 font-bold">${codeDossier} - ${label}</span>
               <h3
                 class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span
                 class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
               <p class="text-xs text-slate-600">${escapeHtml(detail)}</p>
               <p
-                class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong>
+                class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(dateFr(r.dateEvt))}</strong>
                 </p>
-              <p class="text-xs text-slate-600">Pièce scannée : ${pieceHtml(r)}</p>
+              <p class="text-xs text-slate-600">Document justificatif : ${pieceHtml(r)}</p>
+              ${ancienneteBadge(r)}
               <div class="mt-2">
                 <span
                   class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
@@ -366,56 +815,139 @@
             </span>
           </div>
           <div class="flex justify-end space-x-3 pt-3 border-t border-${color}-200">
-            <button onclick="decide('${escapeHtml(r.id)}', 'REJETEE')"
-              class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
-              Rejeter la Déclaration
+            <button type="button" onclick="decide('${codeDossier}', 'RETOUR_CORRECTION')"
+              class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg cursor-pointer">
+              Retourner
             </button>
-            <button onclick="decide('${escapeHtml(r.id)}', 'VALIDEE')"
-              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-              Enregistrer et Valider
+            <button type="button" onclick="decide('${codeDossier}', 'VALIDEE')"
+              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow cursor-pointer">
+              Valider
             </button>
           </div>
         `;
           container.appendChild(div);
         });
-      }
 
-      /**
-       * Dessine l'historique des dossiers clôturés (validés ou rejetés).
-       */
-      function renderHistorique() {
-        const done = requests.filter((r) => r.statut === 'VALIDEE' || r.statut === 'REJETEE');
-        const tbody = document.getElementById('historiqueTable');
-        tbody.innerHTML = '';
-        if (!done.length) {
-          tbody.innerHTML = `<tr><td colspan="5"
-            class="px-4 py-6 text-center text-slate-500 italic">Aucun dossier clôturé.</td></tr>`;
-          return;
-        }
-        done.forEach((r) => {
-          const badge =
-            r.statut === 'VALIDEE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(r.id)}</td>
-          <td class="px-4 py-3">${escapeHtml(r.matricule)} - ${escapeHtml(r.agentName)}</td>
-          <td class="px-4 py-3 text-slate-600">${escapeHtml(r.nature)}</td>
-          <td
-            class="px-4 py-3">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
-          <td class="px-4 py-3"><span
-            class="px-2 py-0.5 rounded text-xs font-bold ${badge}">${escapeHtml(r.statut)}</span>
-            </td>
-        `;
-          tbody.appendChild(tr);
+        renderPagination({
+          container: 'drhEcPagination',
+          totalItems: pending.length,
+          currentPage: pageDrhEc,
+          pageSize: PAGE_SIZE_CARTES,
+          onPageChange: (newPage) => {
+            pageDrhEc = newPage;
+            renderEtatCivil();
+          }
         });
       }
 
-      /**
-       * Affiche l'onglet demandé et masque les autres ; les statistiques et les structures se chargent à l'ouverture.
-       * @param {string} name permissions, etatcivil, historique, statistiques ou structures.
-       */
+
+      /** Notes du DRH : ses brouillons (à diffuser directement vers sa direction) puis ses notes
+       * diffusées. Aucun circuit de validation. */
+      function renderNotesDrh() {
+        const miennes = notesDrh.filter((n) => Number(n.signataire_id) === user.id_agent);
+
+        document.getElementById('notesDrhCount').textContent =
+          miennes.length + ' note' + (miennes.length > 1 ? 's' : '');
+
+        const maxPage = Math.ceil(miennes.length / PAGE_SIZE_NOTES) || 1;
+        if (pageNotesDrh > maxPage) pageNotesDrh = maxPage;
+        if (pageNotesDrh < 1) pageNotesDrh = 1;
+        const pageItems = miennes.slice((pageNotesDrh - 1) * PAGE_SIZE_NOTES, pageNotesDrh * PAGE_SIZE_NOTES);
+
+        const ETATS_DRH = {
+          BROUILLON: ['Brouillon', 'text-slate-700'],
+          DIFFUSEE: ['Diffusée', 'text-emerald-700'],
+          ARCHIVEE: ['Archivée', 'text-slate-500'],
+        };
+        const container = document.getElementById('notesDrhContainer');
+        container.innerHTML =
+          pageItems
+            .map((n) => {
+              const [libelle, couleur] = ETATS_DRH[n.statut] || [n.statut, 'text-slate-700'];
+              return `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-1">
+                <div class="flex justify-between items-start gap-3 flex-wrap">
+                  <div class="min-w-0">
+                    <p class="font-mono font-bold text-xs text-slate-500">${escapeHtml(n.numero || '')}</p>
+                    <p class="font-bold text-sm text-slate-900">${escapeHtml(n.libelle || '')}</p>
+                    <p class="text-xs text-slate-500">Destinataires : ${escapeHtml(n.service || '—')}</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-300 bg-slate-50 ${couleur}">${escapeHtml(libelle)}</span>
+                </div>
+                ${n.statut === 'BROUILLON' ? `<div class="pt-2">
+                  <button type="button" onclick="diffuserNoteDrh(${Number(n.id)})"
+                    class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Diffuser aux agents</button>
+                </div>` : ''}
+              </div>`;
+            })
+            .join('') ||
+          '<p class="text-sm text-slate-500 italic bg-white rounded-xl border border-slate-200 p-6 text-center">Aucune note de service.</p>';
+
+        renderPagination({
+          container: 'notesDrhPagination',
+          totalItems: miennes.length,
+          currentPage: pageNotesDrh,
+          pageSize: PAGE_SIZE_NOTES,
+          onPageChange: (p) => {
+            pageNotesDrh = p;
+            renderNotesDrh();
+          },
+        });
+      }
+
+      /** Remplit les destinataires, avec la direction du DRH présélectionnée. */
+      async function chargerStructuresDrh() {
+        const res = await API.getStructures();
+        const structures = (res.structures || [])
+          .slice()
+          .sort((a, b) => a.nom_structure.localeCompare(b.nom_structure, 'fr'));
+        const mienne = user?.structure_id;
+        document.getElementById('noteDrhStructures').innerHTML = structures
+          .map(
+            (s) =>
+              `<option value="${Number(s.id_structure)}"${Number(s.id_structure) === Number(mienne) ? ' selected' : ''}>${escapeHtml(s.nom_structure)}</option>`,
+          )
+          .join('');
+      }
+
+      /** DRH : diffuse directement son brouillon vers les agents destinataires. */
+      async function diffuserNoteDrh(id) {
+        if (!(await demanderConfirmation('Diffuser cette note aux agents destinataires, sans validation ?', 'Diffuser'))) return;
+        const res = await API.diffuserNoteDirecte(id);
+        if (res.status === 'success') {
+          toast('Note diffusée aux agents.');
+          await loadData();
+          renderAll();
+        } else {
+          toast('Erreur : ' + (res.message || 'Diffusion impossible.'));
+        }
+      }
+
+      document.getElementById('formNoteDrh').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const objet = document.getElementById('noteDrhObjet').value.trim();
+        const contenu = document.getElementById('noteDrhContenu').value.trim();
+        const ids = Array.from(document.getElementById('noteDrhStructures').selectedOptions).map((o) =>
+          Number(o.value),
+        );
+        if (!objet || !contenu || !ids.length) {
+          toast("Indiquez l'objet, le contenu et au moins une structure destinataire.");
+          return;
+        }
+        const res = await API.publishNote(objet, ids, contenu);
+        if (res.status === 'success') {
+          toast('Brouillon enregistré sous la référence ' + res.ref + '. Diffusez-le depuis la liste ci-dessous.');
+          e.target.reset();
+          await chargerStructuresDrh();
+          await loadData();
+          renderAll();
+        } else {
+          toast(res.message || "La note n'a pas pu être enregistrée.");
+        }
+      });
+
+      /** Affiche l'onglet demandé et masque les autres ; les statistiques se chargent à l'ouverture. */
       function showTab(name) {
-        ['permissions', 'etatcivil', 'historique', 'statistiques', 'structures'].forEach((t) => {
+        ['dashboard', 'permissions', 'etatcivil', 'statistiques', 'notes'].forEach((t) => {
           document.getElementById('tab-' + t).classList.add('hidden');
           const btn = document.getElementById('nav-' + t);
           if (btn) {
@@ -426,7 +958,6 @@
         document.getElementById('tab-' + name).classList.remove('hidden');
         if (name === 'statistiques')
           afficherStatistiques(document.getElementById('tab-statistiques'));
-        if (name === 'structures') afficherStructures(document.getElementById('tab-structures'));
         const active = document.getElementById('nav-' + name);
         if (active) {
           active.classList.add('bg-emerald-700', 'text-white');
@@ -434,32 +965,25 @@
         }
       }
 
-      /**
-       * Décision finale du DRH sur un dossier. Un rejet demande un motif obligatoire.
-       * @param {string} id Référence du dossier.
-       * @param {string} statut VALIDEE ou REJETEE.
-       */
+      /** Décision finale du DRH sur un dossier : valider, ou retourner pour correction avec un motif
+       * obligatoire. */
       async function decide(id, statut) {
         let motif = null;
-        if (statut === 'REJETEE') {
-          motif = prompt('Motif du rejet (obligatoire) :');
-          if (!motif || !motif.trim()) {
-            alert('Le motif est obligatoire pour rejeter un dossier.');
-            return;
-          }
-          motif = motif.trim();
+        if (statut === 'RETOUR_CORRECTION') {
+          motif = await demanderMotif('Motif du retour en correction (obligatoire) :');
+          if (!motif) return;
         }
         const res = await API.updateStatus(id, statut, motif);
         if (res.status === 'success') {
-          alert(
+          toast(
             statut === 'VALIDEE'
               ? 'Dossier validé et dossier statutaire mis à jour.'
-              : 'Dossier rejeté avec motif.',
+              : 'Dossier retourné pour correction.',
           );
           await loadData();
           renderAll();
         } else {
-          alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+          toast('Action impossible : ' + (res.message || 'erreur inconnue.'));
         }
       }
 

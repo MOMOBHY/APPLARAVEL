@@ -10,23 +10,35 @@ use App\Models\JournalAudit;
 use App\Models\Notification;
 use Illuminate\Support\Str;
 
-/**
- * Workflow des déclarations d'état civil (naissance & décès), indépendant
- * des permissions :
- * AGENT → GESTIONNAIRE RH (vérification) → DRH (validation) → AGENT.
- */
+/** Naissances : Agent (brouillon ou soumission, extrait obligatoire) → Gestionnaire RH (conforme ou
+ * retour) → DRH (valide, rejette ou retourne) → Agent notifié. */
 class EtatCivilService
 {
     /** Rôles qui suivent toutes les déclarations (les autres ne voient que les leurs). */
-    public const ROLES_SUIVI = ['ROLE_GESTIONNAIRE_RH', 'ROLE_DRH', 'ROLE_ADMIN_DSI'];
+    public const ROLES_SUIVI = [
+        'ROLE_GESTIONNAIRE_RH',
+        'ROLE_SOUS_DIRECTEUR',
+        'ROLE_DIRECTEUR',
+        'ROLE_DRH',
+        'ROLE_ADMIN_DSI',
+    ];
 
-    public const EN_ATTENTE_GESTIONNAIRE_RH = 'EN_ATTENTE_GESTIONNAIRE_RH';
+    /** Responsable concerné pour les naissances (validation intermédiaire). */
+    public const ROLES_RESPONSABLE = ['ROLE_SOUS_DIRECTEUR', 'ROLE_DIRECTEUR'];
 
-    public const EN_ATTENTE_SERVICE = self::EN_ATTENTE_GESTIONNAIRE_RH;
+    /** Module naissance : boîte Gestionnaire RH (soumission initiale). */
+    public const EN_ATTENTE_RH = 'EN_ATTENTE_RH';
+
+    /** Alias historique (ancien contrat) — même valeur, pour conserver les données. */
+    public const EN_ATTENTE_GESTIONNAIRE_RH = self::EN_ATTENTE_RH;
 
     public const RETOUR_CORRECTION = 'RETOUR_CORRECTION';
 
-    public const EN_ATTENTE_RH = 'EN_ATTENTE_RH';
+    /** Module naissance : attente validation du responsable concerné. */
+    public const EN_ATTENTE_VALIDATION_RESPONSABLE = 'EN_ATTENTE_VALIDATION_RESPONSABLE';
+
+    /** Module naissance/décès : attente décision finale DRH. */
+    public const EN_ATTENTE_DRH = 'EN_ATTENTE_DRH';
 
     public const VALIDEE = 'VALIDEE';
 
@@ -36,14 +48,23 @@ class EtatCivilService
 
     public const ARCHIVEE = 'ARCHIVEE';
 
+    /** Statuts exacts du module naissance (séparé des permissions). */
+    public const STATUTS_NAISSANCE = [
+        self::BROUILLON,
+        self::EN_ATTENTE_RH,
+        self::RETOUR_CORRECTION,
+        self::EN_ATTENTE_VALIDATION_RESPONSABLE,
+        self::EN_ATTENTE_DRH,
+        self::VALIDEE,
+        self::REJETEE,
+    ];
+
     private const MODELES = [
         'NAISSANCE' => DeclarationNaissance::class,
         'DECES' => DeclarationDeces::class,
     ];
 
-    // ---------------------------------------------------------------
     // AGENT : déclarer (brouillon ou soumission directe)
-    // ---------------------------------------------------------------
     public static function declarer(
         string $type,
         Agent $agent,
@@ -53,6 +74,21 @@ class EtatCivilService
         $modele = self::MODELES[$type];
         $soumettre = $data['soumettre'] ?? true;
 
+        // AGENT : le justificatif officiel est obligatoire pour soumettre
+        // (extrait d'acte de naissance / certificat de décès officiel).
+        if ($soumettre && blank($piecePath)) {
+            abort(
+                422,
+                $type === 'NAISSANCE'
+                    ? "L'extrait d'acte de naissance est obligatoire."
+                    : 'Le certificat de décès officiel est obligatoire.',
+            );
+        }
+
+        // Un sous-directeur ou un directeur ne peut pas faire viser sa déclaration
+        // par sa propre structure : elle part directement au DRH.
+        $circuitDrhDirect = $soumettre && $agent->autoriteVisa();
+
         $communs = [
             'code_dossier' => ($type === 'NAISSANCE' ? 'NAISS' : 'DECES').
                 '-'.
@@ -60,7 +96,11 @@ class EtatCivilService
                 '-'.
                 strtoupper(Str::random(6)),
             'agent_id' => $agent->id,
-            'statut' => $soumettre ? self::EN_ATTENTE_GESTIONNAIRE_RH : self::BROUILLON,
+            'statut' => match (true) {
+                ! $soumettre => self::BROUILLON,
+                $circuitDrhDirect => self::EN_ATTENTE_DRH,
+                default => self::EN_ATTENTE_RH,
+            },
         ];
 
         $declaration =
@@ -89,24 +129,32 @@ class EtatCivilService
             $type,
             $declaration,
             $agent,
-            'ROLE_AGENT',
+            self::roleActeur($agent, $circuitDrhDirect),
             $soumettre ? 'SOUMISSION' : 'BROUILLON',
             null,
             $declaration->statut,
-            $soumettre ? 'Déclaration transmise au Gestionnaire RH.' : 'Brouillon enregistré.',
+            match (true) {
+                ! $soumettre => 'Brouillon enregistré.',
+                $circuitDrhDirect => 'Déclaration transmise directement au DRH (déclarant responsable).',
+                default => 'Déclaration transmise au Gestionnaire RH.',
+            },
         );
 
-        if ($soumettre) {
+        if (! $soumettre) {
+            return $declaration;
+        }
+
+        if ($circuitDrhDirect) {
+            self::avertirDrh($type, $declaration, $agent);
+        } else {
             self::avertirGestionnaire($type, $declaration, $agent);
         }
 
         return $declaration;
     }
 
-    /**
-     * Agent : soumet au gestionnaire RH une déclaration restée en brouillon. Seul le déclarant peut la
-     * soumettre.
-     */
+    /** Agent : soumet au gestionnaire RH une déclaration restée en brouillon. Seul le déclarant peut la
+     * soumettre. */
     public static function soumettreBrouillon(
         string $type,
         DeclarationNaissance|DeclarationDeces $declaration,
@@ -118,30 +166,56 @@ class EtatCivilService
         if ($declaration->agent_id !== $agent->id) {
             abort(403, 'Seul le déclarant peut soumettre son dossier.');
         }
+        // Le justificatif officiel reste obligatoire pour entrer dans le circuit.
+        $piecePresente = $type === 'NAISSANCE'
+            ? ! blank($declaration->extrait_path)
+            : ! blank($declaration->certificat_path);
+        if (! $piecePresente) {
+            abort(
+                422,
+                $type === 'NAISSANCE'
+                    ? "L'extrait d'acte de naissance est obligatoire pour soumettre."
+                    : 'Le certificat de décès officiel est obligatoire pour soumettre.',
+            );
+        }
+
+        $circuitDrhDirect = $agent->autoriteVisa();
 
         $ancien = $declaration->statut;
-        $declaration->update(['statut' => self::EN_ATTENTE_GESTIONNAIRE_RH]);
+        $declaration->update([
+            'statut' => $circuitDrhDirect ? self::EN_ATTENTE_DRH : self::EN_ATTENTE_RH,
+        ]);
         self::tracer(
             $type,
             $declaration,
             $agent,
-            'ROLE_AGENT',
+            self::roleActeur($agent, $circuitDrhDirect),
             'SOUMISSION',
             $ancien,
             $declaration->statut,
-            'Brouillon soumis au Gestionnaire RH.',
+            $circuitDrhDirect
+                ? 'Brouillon soumis directement au DRH (déclarant responsable).'
+                : 'Brouillon soumis au Gestionnaire RH.',
         );
-        self::avertirGestionnaire($type, $declaration, $agent);
+
+        if ($circuitDrhDirect) {
+            self::avertirDrh($type, $declaration, $agent);
+        } else {
+            self::avertirGestionnaire($type, $declaration, $agent);
+        }
 
         return $declaration->refresh();
     }
 
-    // ---------------------------------------------------------------
+    /** Rôle porté dans l'historique : un sous-directeur ou un directeur agit sous son propre rôle, pas
+     * sous celui d'un agent simple. */
+    protected static function roleActeur(Agent $agent, bool $circuitDrhDirect): string
+    {
+        return $circuitDrhDirect ? 'ROLE_'.strtoupper($agent->roleVisa()) : 'ROLE_AGENT';
+    }
+
     // GESTIONNAIRE RH : vérifier complétude et justificatifs (conforme / retourner)
-    // ---------------------------------------------------------------
-    /**
-     * @param  'conforme'|'retourner'  $decision
-     */
+    /** @param 'conforme'|'retourner' $decision */
     public static function controler(
         string $type,
         DeclarationNaissance|DeclarationDeces $declaration,
@@ -149,17 +223,26 @@ class EtatCivilService
         string $decision,
         ?string $motif = null,
     ): DeclarationNaissance|DeclarationDeces {
-        if (
-            ! in_array(
-                $declaration->statut,
-                [self::EN_ATTENTE_GESTIONNAIRE_RH, self::EN_ATTENTE_SERVICE],
-                true,
-            )
-        ) {
+        // GESTIONNAIRE RH uniquement : boîte EN_ATTENTE_RH (soumission initiale).
+        if ($declaration->statut !== self::EN_ATTENTE_RH) {
             abort(422, 'Vérification impossible à ce stade.');
         }
         if ($decision === 'retourner' && blank($motif)) {
             abort(422, 'Motif obligatoire pour un retour en correction.');
+        }
+        // Si le dossier est déclaré conforme, le justificatif doit être présent.
+        if ($decision !== 'retourner') {
+            $piecePresente = $type === 'NAISSANCE'
+                ? ! blank($declaration->extrait_path)
+                : ! blank($declaration->certificat_path);
+            if (! $piecePresente) {
+                abort(
+                    422,
+                    $type === 'NAISSANCE'
+                        ? "Dossier incomplet : l'extrait d'acte de naissance est manquant."
+                        : 'Dossier incomplet : le certificat de décès officiel est manquant.',
+                );
+            }
         }
 
         $ancien = $declaration->statut;
@@ -187,7 +270,9 @@ class EtatCivilService
             return $declaration->refresh();
         }
 
-        $declaration->update(['statut' => self::EN_ATTENTE_RH, 'motif_retour' => null]);
+        // Conforme → DRH direct, pour les naissances comme pour les décès : c'est
+        // le DRH qui tranche, sans visa intermédiaire.
+        $declaration->update(['statut' => self::EN_ATTENTE_DRH, 'motif_retour' => null]);
         self::tracer(
             $type,
             $declaration,
@@ -199,7 +284,15 @@ class EtatCivilService
             'Dossier complet et pièces conformes, transmis à la DRH.',
         );
 
-        $drh = PermissionWorkflowService::drh();
+        self::notifier(
+            $declaration->agent_id,
+            'Dossier transmis à la DRH',
+            "Votre déclaration {$declaration->code_dossier} a été vérifiée avec succès par le Gestionnaire RH et transmise à la DRH.",
+            'INFO',
+            $declaration->code_dossier,
+        );
+
+        $drh = self::drh();
         if ($drh) {
             self::notifier(
                 $drh->id,
@@ -209,20 +302,11 @@ class EtatCivilService
                 $declaration->code_dossier,
             );
         }
-        self::notifier(
-            $declaration->agent_id,
-            'Dossier transmis à la DRH',
-            "Votre déclaration {$declaration->code_dossier} a été vérifiée avec succès par le Gestionnaire RH et transmise à la DRH.",
-            'INFO',
-            $declaration->code_dossier,
-        );
 
         return $declaration->refresh();
     }
 
-    // ---------------------------------------------------------------
     // AGENT : corriger un dossier retourné
-    // ---------------------------------------------------------------
     /** Contrôle à faire avant tout dépôt de pièce : dossier retourné, corrigé par son déclarant. */
     public static function exigerCorrigeable(
         DeclarationNaissance|DeclarationDeces $declaration,
@@ -236,10 +320,8 @@ class EtatCivilService
         }
     }
 
-    /**
-     * Agent : corrige et renvoie une déclaration retournée. La pièce officielle reste obligatoire ; le
-     * dossier revient au gestionnaire RH.
-     */
+    /** Agent : corrige et renvoie une déclaration retournée. La pièce officielle reste obligatoire ; le
+     * dossier revient au gestionnaire RH. */
     public static function corriger(
         string $type,
         DeclarationNaissance|DeclarationDeces $declaration,
@@ -248,25 +330,21 @@ class EtatCivilService
         ?string $piecePath,
     ): DeclarationNaissance|DeclarationDeces {
         self::exigerCorrigeable($declaration, $agent);
-        if (
-            $type === 'NAISSANCE' &&
-            isset($data['nom_enfant']) &&
-            blank($piecePath) &&
-            blank($declaration->extrait_path)
-        ) {
-            abort(422, "L'extrait d'acte de naissance reste obligatoire.");
-        }
-        if (
-            $type === 'DECES' &&
-            isset($data['nom_defunt']) &&
-            blank($piecePath) &&
-            blank($declaration->certificat_path)
-        ) {
-            abort(422, 'Le certificat de décès officiel reste obligatoire.');
+        // La pièce officielle reste obligatoire : existante ou nouvellement jointe.
+        $pieceExistante = $type === 'NAISSANCE'
+            ? $declaration->extrait_path
+            : $declaration->certificat_path;
+        if (blank($piecePath) && blank($pieceExistante)) {
+            abort(
+                422,
+                $type === 'NAISSANCE'
+                    ? "L'extrait d'acte de naissance reste obligatoire."
+                    : 'Le certificat de décès officiel reste obligatoire.',
+            );
         }
 
         $ancien = $declaration->statut;
-        $maj = ['statut' => self::EN_ATTENTE_GESTIONNAIRE_RH, 'motif_retour' => null];
+        $maj = ['statut' => self::EN_ATTENTE_RH, 'motif_retour' => null];
         foreach (
             [
                 'nom_enfant',
@@ -306,9 +384,8 @@ class EtatCivilService
         return $declaration->refresh();
     }
 
-    // ---------------------------------------------------------------
-    // DRH : valider / rejeter / archiver
-    // ---------------------------------------------------------------
+    // DRH : valider / rejeter / archiver DRH : validation finale (EN_ATTENTE_DRH → VALIDEE / REJETEE +
+    // notif agent)
     public static function trancher(
         string $type,
         DeclarationNaissance|DeclarationDeces $declaration,
@@ -316,7 +393,7 @@ class EtatCivilService
         bool $valide,
         ?string $motif = null,
     ): DeclarationNaissance|DeclarationDeces {
-        if ($declaration->statut !== self::EN_ATTENTE_RH) {
+        if ($declaration->statut !== self::EN_ATTENTE_DRH) {
             abort(422, 'Décision DRH impossible à ce stade.');
         }
         if (! $valide && blank($motif)) {
@@ -353,6 +430,49 @@ class EtatCivilService
         return $declaration->refresh();
     }
 
+    /** DRH : retourne la déclaration pour correction (au lieu de la rejeter). L'agent la corrige puis la
+     * resoumet, et le circuit reprend à la vérification RH. */
+    public static function retourner(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $drh,
+        string $motif,
+    ): DeclarationNaissance|DeclarationDeces {
+        if ($declaration->statut !== self::EN_ATTENTE_DRH) {
+            abort(422, 'Retour impossible à ce stade.');
+        }
+        if (blank($motif)) {
+            abort(422, 'Motif obligatoire pour un retour en correction.');
+        }
+
+        $ancien = $declaration->statut;
+        $declaration->update([
+            'statut' => self::RETOUR_CORRECTION,
+            'motif_retour' => $motif,
+            'valideur_id' => $drh->id,
+            'validated_at' => now(),
+        ]);
+        self::tracer(
+            $type,
+            $declaration,
+            $drh,
+            'ROLE_DRH',
+            'RETOUR',
+            $ancien,
+            $declaration->statut,
+            $motif,
+        );
+        self::notifier(
+            $declaration->agent_id,
+            'Déclaration retournée pour correction',
+            "Votre déclaration {$declaration->code_dossier} a été retournée par la DRH pour correction : {$motif}",
+            'RETOUR_CORRECTION',
+            $declaration->code_dossier,
+        );
+
+        return $declaration->refresh();
+    }
+
     /** DRH : archive une déclaration clôturée (validée ou rejetée). Le dossier reste consultable. */
     public static function archiver(
         string $type,
@@ -378,12 +498,31 @@ class EtatCivilService
         return $declaration->refresh();
     }
 
-    // ---------------------------------------------------------------
     // Helpers
-    // ---------------------------------------------------------------
     public static function modele(string $type): string
     {
         return self::MODELES[$type];
+    }
+
+    /** Gestionnaire RH destinataire d'une déclaration : celui de la structure de l'agent, sinon de la
+     * DRH, sinon le premier trouvé. */
+    public static function gestionnairePour(Agent $agent): ?Agent
+    {
+        $base = Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_GESTIONNAIRE_RH'));
+
+        return (clone $base)->where('structure_id', $agent->structure_id)->first() ??
+            ((clone $base)->whereHas('structure', fn ($q) => $q->where('code', 'DRH'))->first() ??
+                $base->first());
+    }
+
+    /** DRH destinataire d'une déclaration vérifiée (structure DRH en priorité). Résolution propre à
+     * l'état civil : ne réutilise pas le service des permissions. */
+    public static function drh(): ?Agent
+    {
+        $base = Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_DRH'));
+
+        return (clone $base)->whereHas('structure', fn ($q) => $q->where('code', 'DRH'))->first() ??
+            $base->first();
     }
 
     /** Alerte le gestionnaire RH de l'agent qu'une déclaration attend son contrôle. */
@@ -393,7 +532,7 @@ class EtatCivilService
         Agent $agent,
     ): void {
         $libelle = $type === 'NAISSANCE' ? 'naissance' : 'décès';
-        $gestionnaire = PermissionWorkflowService::gestionnairePour($agent);
+        $gestionnaire = self::gestionnairePour($agent);
         if ($gestionnaire) {
             self::notifier(
                 $gestionnaire->id,
@@ -407,6 +546,33 @@ class EtatCivilService
             $agent->id,
             'Déclaration transmise',
             "Votre déclaration {$declaration->code_dossier} a été transmise au Gestionnaire RH pour vérification.",
+            'INFO',
+            $declaration->code_dossier,
+        );
+    }
+
+    /** Déclaration déposée par un sous-directeur ou un directeur : elle n'est pas vérifiée par le
+     * gestionnaire RH (le visa serait le sien), elle part au DRH. */
+    protected static function avertirDrh(
+        string $type,
+        DeclarationNaissance|DeclarationDeces $declaration,
+        Agent $agent,
+    ): void {
+        $libelle = $type === 'NAISSANCE' ? 'naissance' : 'décès';
+        $drh = self::drh();
+        if ($drh) {
+            self::notifier(
+                $drh->id,
+                "Déclaration de {$libelle} d’un responsable à valider",
+                "{$agent->fullName()} a déposé la déclaration {$declaration->code_dossier} : décision DRH requise.",
+                'ATTENTE_DRH',
+                $declaration->code_dossier,
+            );
+        }
+        self::notifier(
+            $agent->id,
+            'Déclaration transmise',
+            "Votre déclaration {$declaration->code_dossier} a été transmise directement au DRH.",
             'INFO',
             $declaration->code_dossier,
         );

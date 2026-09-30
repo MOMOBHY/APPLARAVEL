@@ -2,27 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
 use App\Models\DemandeReinitialisation;
 use App\Models\JournalAudit;
-use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * Mot de passe oublié : l'utilisateur demande (et reçoit un code de suivi),
- * l'administrateur autorise ou refuse, puis l'utilisateur choisit son nouveau
- * mot de passe avec son matricule et son code.
- */
+/** Mot de passe oublié : un code et un lien de réinitialisation sont envoyés à l'email du compte, puis
+ * l'utilisateur choisit son mot de passe. Sans administrateur. */
 class MotDePasseController extends Controller
 {
-    /**
-     * Étape 1 (publique) : un utilisateur qui a oublié son mot de passe dépose une demande. Les
-     * demandes précédentes sont annulées, un code de suivi est généré (affiché une seule fois) et les
-     * administrateurs sont alertés.
-     */
+    /** Durée de validité du code envoyé par email. */
+    public const VALIDITE_MINUTES = 60;
+
+    /** Masque une adresse pour l'affichage (« marie.dupont@… » devient « m***@… ») : l'utilisateur sait
+     * où regarder sans exposer l'adresse complète. */
+    private static function emailMasque(?string $email): string
+    {
+        $email = strtolower(trim((string) $email));
+        $parties = explode('@', $email);
+        if (count($parties) !== 2 || $parties[0] === '') {
+            return 'votre adresse email';
+        }
+
+        return substr($parties[0], 0, 1).'***@'.$parties[1];
+    }
+
+    /** Étape 1 (publique) : le matricule saisi, le code et le lien de réinitialisation partent par email
+     * ; les demandes précédentes sont annulées. */
     public function demander(Request $request)
     {
         $data = $request->validate(['matricule' => ['required', 'string', 'max:30']]);
@@ -32,6 +40,15 @@ class MotDePasseController extends Controller
         ])->first();
         if (! $user) {
             return response()->json(['status' => 'error', 'message' => 'Matricule inconnu.'], 422);
+        }
+        if (blank($user->email)) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => "Aucune adresse email n'est enregistrée pour ce compte : contactez l'administrateur.",
+                ],
+                422,
+            );
         }
 
         // Une seule demande active par compte : les précédentes sont annulées.
@@ -43,44 +60,53 @@ class MotDePasseController extends Controller
             ->update(['statut' => DemandeReinitialisation::ANNULEE]);
 
         $code = strtoupper(Str::random(8));
-        DemandeReinitialisation::create(['user_id' => $user->id, 'code_hash' => Hash::make($code)]);
+        $demande = DemandeReinitialisation::create([
+            'user_id' => $user->id,
+            'code_hash' => Hash::make($code),
+            'statut' => DemandeReinitialisation::AUTORISEE,
+        ]);
 
         JournalAudit::noter(
             JournalAudit::MOT_DE_PASSE,
             'REINITIALISATION_DEMANDEE',
             $user,
-            'Mot de passe oublié : demande transmise à l’administrateur',
+            'Mot de passe oublié : code envoyé par email',
         );
 
-        $admins = Agent::whereHas(
-            'user.roles',
-            fn ($q) => $q->where('code', 'ROLE_ADMIN_DSI'),
-        )->pluck('id');
-        foreach ($admins as $adminAgentId) {
-            Notification::create([
-                'agent_id' => $adminAgentId,
-                'titre' => 'Réinitialisation de mot de passe à autoriser',
-                'message' => "{$user->name} ({$user->matricule}) a oublié son mot de passe.",
-                'type' => 'REINITIALISATION',
-                'reference_dossier' => $user->matricule,
-            ]);
+        $lien = rtrim(config('app.url'), '/').
+            '/gfp/mot-de-passe-oublie.html?matricule='.
+            urlencode($user->matricule).
+            '&code='.
+            urlencode($code);
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(
+                new \App\Mail\CodeReinitialisation($user->name, $code, $lien),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $demande->update(['statut' => DemandeReinitialisation::ANNULEE]);
+
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => "L'envoi de l'email a échoué : contactez l'administrateur.",
+                ],
+                503,
+            );
         }
 
         return response()->json(
             [
                 'status' => 'success',
-                'code' => $code,
-                'message' => "Demande transmise à l'administrateur. Conservez votre code de suivi : il vous sera demandé pour choisir votre nouveau mot de passe.",
+                'email_masque' => self::emailMasque($user->email),
+                'message' => "Un code de réinitialisation vient d'être envoyé à votre adresse email.",
             ],
             201,
         );
     }
 
-    /**
-     * Étape 3 (publique) : l'utilisateur choisit un nouveau mot de passe avec son matricule et son
-     * code de suivi. Refusé tant que l'administrateur n'a pas autorisé la demande. Le code sert une
-     * seule fois.
-     */
+    /** Étape 2 (publique) : l'utilisateur choisit un nouveau mot de passe avec son matricule et le code
+     * reçu par email. Le code sert une seule fois. */
     public function reinitialiser(Request $request)
     {
         $data = $request->validate([
@@ -99,6 +125,23 @@ class MotDePasseController extends Controller
         if (! $demande || ! Hash::check(strtoupper(trim($data['code'])), $demande->code_hash)) {
             return response()->json(
                 ['status' => 'error', 'message' => 'Matricule ou code de suivi incorrect.'],
+                422,
+            );
+        }
+
+        // Un code trop ancien ne sert plus : un email intercepté plus tard reste inutile.
+        if (
+            $demande->statut === DemandeReinitialisation::AUTORISEE &&
+            $demande->created_at?->lt(now()->subMinutes(self::VALIDITE_MINUTES))
+        ) {
+            $demande->update(['statut' => DemandeReinitialisation::ANNULEE]);
+
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'etat' => DemandeReinitialisation::ANNULEE,
+                    'message' => 'Ce code a expiré : faites une nouvelle demande.',
+                ],
                 422,
             );
         }
@@ -124,88 +167,12 @@ class MotDePasseController extends Controller
             JournalAudit::MOT_DE_PASSE,
             'MOT_DE_PASSE_REINITIALISE',
             $user,
-            'Nouveau mot de passe choisi après autorisation',
+            'Nouveau mot de passe choisi avec le code reçu par email',
         );
 
         return response()->json([
             'status' => 'success',
             'message' => 'Mot de passe réinitialisé. Vous pouvez vous connecter.',
         ]);
-    }
-
-    /** Administrateur : demandes en attente d'autorisation. */
-    public function index()
-    {
-        $demandes = DemandeReinitialisation::with('user.roles')
-            ->where('statut', DemandeReinitialisation::EN_ATTENTE)
-            ->latest('id')
-            ->get()
-            ->map(
-                fn (DemandeReinitialisation $d) => [
-                    'id' => $d->id,
-                    'matricule' => $d->user->matricule,
-                    'nom' => $d->user->name,
-                    'roles' => $d->user->roles->pluck('libelle')->join(', '),
-                    'date' => $d->created_at?->format('Y-m-d H:i:s'),
-                ],
-            );
-
-        return response()->json(['status' => 'success', 'demandes' => $demandes]);
-    }
-
-    /** Administrateur : autorise une demande de réinitialisation. */
-    public function autoriser(Request $request, DemandeReinitialisation $demande)
-    {
-        return $this->traiter($request, $demande, DemandeReinitialisation::AUTORISEE);
-    }
-
-    /** Administrateur : refuse une demande de réinitialisation. */
-    public function refuser(Request $request, DemandeReinitialisation $demande)
-    {
-        return $this->traiter($request, $demande, DemandeReinitialisation::REFUSEE);
-    }
-
-    /**
-     * Applique la décision de l'administrateur à une demande en attente, prévient l'utilisateur et
-     * journalise l'action.
-     */
-    private function traiter(Request $request, DemandeReinitialisation $demande, string $statut)
-    {
-        abort_unless(
-            $demande->statut === DemandeReinitialisation::EN_ATTENTE,
-            422,
-            'Demande déjà traitée.',
-        );
-        $demande->update([
-            'statut' => $statut,
-            'traite_par_id' => $request->user()->id,
-            'traite_le' => now(),
-        ]);
-
-        JournalAudit::noter(
-            JournalAudit::MOT_DE_PASSE,
-            $statut === DemandeReinitialisation::AUTORISEE
-                ? 'REINITIALISATION_AUTORISEE'
-                : 'REINITIALISATION_REFUSEE',
-            $request->user(),
-            "Demande de {$demande->user->matricule} traitée",
-            $demande->user->matricule,
-        );
-
-        if ($agentId = $demande->user->agent_id) {
-            Notification::create([
-                'agent_id' => $agentId,
-                'titre' => $statut === DemandeReinitialisation::AUTORISEE
-                        ? 'Réinitialisation autorisée'
-                        : 'Réinitialisation refusée',
-                'message' => $statut === DemandeReinitialisation::AUTORISEE
-                        ? "L'administrateur a autorisé la réinitialisation de votre mot de passe."
-                        : "L'administrateur a refusé la réinitialisation de votre mot de passe.",
-                'type' => 'REINITIALISATION',
-                'reference_dossier' => $demande->user->matricule,
-            ]);
-        }
-
-        return response()->json(['status' => 'success']);
     }
 }

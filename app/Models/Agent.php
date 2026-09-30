@@ -54,4 +54,26 @@ class Agent extends Model
     {
         return trim("{$this->civilite} {$this->nom} {$this->prenom}");
     }
+
+    /** Vrai si l'agent est lui-même sous-directeur ou directeur : son dossier ne peut pas attendre sa
+     * propre conformité, il part directement au DRH. */
+    public function autoriteVisa(): bool
+    {
+        return $this->roleVisa() !== null;
+    }
+
+    /** Niveau de visa porté par l'agent, ou null s'il n'en porte aucun. Un compte peut cumuler les deux
+     * rôles : le niveau le plus élevé l'emporte, car c'est lui qui signe en dernier. */
+    public function roleVisa(): ?string
+    {
+        $user = $this->user;
+        if (! $user) {
+            return null;
+        }
+        if ($user->hasRole('ROLE_DIRECTEUR')) {
+            return 'DIRECTEUR';
+        }
+
+        return $user->hasRole('ROLE_SOUS_DIRECTEUR') ? 'SOUS_DIRECTEUR' : null;
+    }
 }

@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png" />
+    <link rel="icon" href="../assets/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <title>
       Espace Administrateur - Ministère de la Fonction Publique et de la Modernisation de
       l’Administration
@@ -37,12 +40,6 @@
     <link rel="stylesheet" href="../assets/theme.css" />
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-    <!-- BANDEAU TRICOLORE -->
-    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
-      <div class="h-full w-1/3 bg-orange-500"></div>
-      <div class="h-full w-1/3 bg-white"></div>
-      <div class="h-full w-1/3 bg-emerald-600"></div>
-    </div>
 
     <!-- HEADER -->
     <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
@@ -110,20 +107,6 @@
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
       <!-- TAB : GESTION DES UTILISATEURS -->
       <div id="tab-users" class="space-y-6">
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
-          <div class="flex justify-between items-center">
-            <h2 class="text-base font-bold text-slate-900">
-              Mots de passe oubliés — demandes à autoriser
-            </h2>
-            <span
-              id="reinitCount"
-              class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold"
-              >0</span
-            >
-          </div>
-          <div id="reinitContainer" class="space-y-2"></div>
-        </div>
-
         <div id="usersResume" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
@@ -137,6 +120,7 @@
               </p>
             </div>
             <button
+              type="button"
               onclick="toggleCreateForm()"
               class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow"
             >
@@ -264,33 +248,40 @@
           </div>
 
           <!-- FILTRES -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <input
               type="text"
               id="uQ"
-              oninput="renderUsers()"
+              oninput="pageUsers = 1; renderUsers()"
               placeholder="Matricule ou nom..."
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             />
             <select
               id="uRole"
-              onchange="renderUsers()"
+              onchange="pageUsers = 1; renderUsers()"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             ></select>
             <select
               id="uStructure"
-              onchange="renderUsers()"
+              onchange="pageUsers = 1; renderUsers()"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             ></select>
             <select
               id="uStatut"
-              onchange="renderUsers()"
+              onchange="pageUsers = 1; renderUsers()"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             >
               <option value="">Tous les statuts</option>
               <option value="ACTIF">Actifs</option>
               <option value="SUSPENDU">Suspendus</option>
             </select>
+            <button
+              type="button"
+              onclick="document.getElementById('uQ').value='';document.getElementById('uRole').value='';document.getElementById('uStructure').value='';document.getElementById('uStatut').value='';pageUsers = 1;renderUsers();"
+              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs"
+            >
+              Réinitialiser les filtres
+            </button>
           </div>
 
           <!-- TABLEAU DES UTILISATEURS -->
@@ -311,6 +302,7 @@
               <tbody id="usersTable" class="divide-y divide-slate-200"></tbody>
             </table>
           </div>
+          <div id="usersPagination"></div>
           <p id="usersCount" class="text-xs text-slate-500"></p>
         </div>
       </div>
@@ -321,17 +313,17 @@
           <h2 class="text-base font-bold text-slate-900">
             Module de Recherche et Consultation Globale
           </h2>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <input
               type="text"
               id="searchQ"
-              onkeyup="filterSearch()"
+              onkeyup="pageSearch = 1; filterSearch()"
               placeholder="Matricule ou Réf..."
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             />
             <select
               id="searchType"
-              onchange="filterSearch()"
+              onchange="pageSearch = 1; filterSearch()"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             >
               <option value="TOUS">Toutes les natures</option>
@@ -341,18 +333,28 @@
             </select>
             <select
               id="searchStatut"
-              onchange="filterSearch()"
+              onchange="pageSearch = 1; filterSearch()"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             >
               <option value="TOUS">Tous les statuts</option>
-              <option value="EN_ATTENTE_N1">En attente N+1</option>
-              <option value="EN_ATTENTE_RH">En attente RH</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE_RH">En attente Gestionnaire RH</option>
+              <option value="EN_ATTENTE_DRH">En attente DRH</option>
               <option value="VALIDEE">Validée</option>
               <option value="REJETEE">Rejetée</option>
+              <option value="RETOUR_CORRECTION">Retour correction</option>
             </select>
             <button
+              type="button"
+              onclick="document.getElementById('searchQ').value='';document.getElementById('searchType').value='TOUS';document.getElementById('searchStatut').value='TOUS';pageSearch = 1;filterSearch();"
+              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs"
+            >
+              Réinitialiser les filtres
+            </button>
+            <button
+              type="button"
               onclick="loadData()"
-              class="bg-slate-800 text-white font-bold px-3 py-2 rounded-lg text-xs"
+              class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2 rounded-lg text-xs"
             >
               Rafraîchir
             </button>
@@ -372,6 +374,7 @@
               <tbody id="searchTable" class="divide-y divide-slate-200"></tbody>
             </table>
           </div>
+          <div id="searchPagination"></div>
         </div>
       </div>
 
@@ -424,14 +427,24 @@
               <option value="0">Échecs uniquement</option>
             </select>
             <input
-              type="date"
+              type="text"
+              data-date-fr
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="10"
+              placeholder="jj/mm/aaaa"
               id="jDu"
               onchange="chargerJournal(1)"
               title="Du"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             />
             <input
-              type="date"
+              type="text"
+              data-date-fr
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="10"
+              placeholder="jj/mm/aaaa"
               id="jAu"
               onchange="chargerJournal(1)"
               title="Au"
@@ -552,6 +565,7 @@
                 <tbody id="notesTable" class="divide-y divide-slate-200"></tbody>
               </table>
             </div>
+            <div id="adminNotesPagination"></div>
           </div>
         </div>
       </div>
@@ -564,19 +578,22 @@
       let requests = [];
       let notes = [];
       let users = [];
+      let PAGE_SIZE = taillePageMemorisee(3);
+      let pageUsers = 1;
+      let pageSearch = 1;
+      let pageAdminNotes = 1;
 
-      /**
-       * Démarre la page : vérifie la session et le profil administrateur, charge les référentiels (rôles, structures) puis les données.
-       */
+      /** Démarre la page : vérifie la session et le profil administrateur, charge les référentiels
+       * (rôles, structures) puis les données. */
       async function init() {
         const saved = sessionStorage.getItem('currentUser');
         if (!saved) {
-          window.location.href = 'login.html';
+          window.location.href = '../login.html';
           return;
         }
         user = JSON.parse(saved);
         if (user.role !== 'ADMINISTRATEUR') {
-          window.location.href = 'login.html';
+          window.location.href = '../login.html';
           return;
         }
         document.getElementById('navName').textContent = user.name;
@@ -586,35 +603,30 @@
         await chargerReferentiels();
         await loadData();
         renderUsers();
-        await renderReinitialisations();
         filterSearch();
         renderNotes();
       }
 
-      /**
-       * Recharge les dossiers, les notes et la liste des comptes.
-       */
+      /** Recharge les dossiers, les notes et la liste des comptes. */
       async function loadData() {
         const r = await API.getRequests();
-        requests = r.status === 'success' ? r.requests : [];
+        requests = garderSiEchec(r, 'requests', requests);
         const n = await API.getNotes();
-        notes = n.status === 'success' ? n.notes : [];
+        notes = garderSiEchec(n, 'notes', notes);
         const u = await API.getUsers();
-        users = u.status === 'success' ? u.users : [];
+        users = garderSiEchec(u, 'users', users);
       }
 
       let roles = [];
       let structures = [];
       const ROLES_OBSOLETES = ['ROLE_SERVICE_ADMINISTRATIF'];
 
-      /**
-       * Construit les options d'un menu déroulant de rôles.
-       * @param {string} selected Code du rôle présélectionné.
-       * @param {boolean} avecTous true pour ajouter l'option « Tous les rôles » (menu de filtre).
-       */
+      /** Construit les options d'un menu déroulant de rôles. */
       function optionsRoles(selected, avecTous) {
         return (
-          (avecTous ? '<option value="">Tous les rôles</option>' : '') +
+          (avecTous
+            ? '<option value="">Tous les rôles</option><option value="SANS_ROLE">Sans rôle (en attente)</option>'
+            : (!selected ? '<option value="" selected>-- Attribuer un rôle --</option>' : '')) +
           roles
             .map(
               (r) =>
@@ -624,11 +636,7 @@
             .join('')
         );
       }
-      /**
-       * Construit les options d'un menu déroulant de structures.
-       * @param {number|string} selected Identifiant de la structure présélectionnée.
-       * @param {string} libelleVide Texte de l'option vide (ex. « Non assignée »).
-       */
+      /** Construit les options d'un menu déroulant de structures. */
       function optionsStructures(selected, libelleVide) {
         return (
           `<option value="">${libelleVide}</option>` +
@@ -641,18 +649,16 @@
             .join('')
         );
       }
-      /**
-       * Génère un mot de passe aléatoire de 10 caractères (sans caractères ambigus) avec le générateur sécurisé du navigateur.
-       */
+      /** Génère un mot de passe aléatoire de 10 caractères (sans caractères ambigus) avec le générateur
+       * sécurisé du navigateur. */
       function genererMotDePasse() {
         const c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
         const t = crypto.getRandomValues(new Uint32Array(10));
         return Array.from(t, (n) => c[n % c.length]).join('');
       }
 
-      /**
-       * Charge la liste des rôles et des structures, puis remplit les menus du formulaire de création et des filtres.
-       */
+      /** Charge la liste des rôles et des structures, puis remplit les menus du formulaire de création et
+       * des filtres. */
       async function chargerReferentiels() {
         const [r, st] = await Promise.all([API.getRoles(), API.getStructures()]);
         roles = (r.roles || []).filter((x) => !ROLES_OBSOLETES.includes(x.code));
@@ -669,9 +675,8 @@
         );
       }
 
-      /**
-       * Dessine le tableau des comptes après application des filtres (recherche, rôle, structure, statut) et met à jour les tuiles de synthèse.
-       */
+      /** Dessine le tableau des comptes après application des filtres (recherche, rôle, structure,
+       * statut) et met à jour les tuiles de synthèse. */
       function renderUsers() {
         const q = (document.getElementById('uQ').value || '').toLowerCase();
         const fr = document.getElementById('uRole').value;
@@ -680,12 +685,13 @@
         const liste = users.filter(
           (u) =>
             (!q || (u.matricule + ' ' + u.nom + ' ' + u.prenom).toLowerCase().includes(q)) &&
-            (!fr || u.role_code === fr) &&
+            (!fr || (fr === 'SANS_ROLE' ? !u.role_code : u.role_code === fr)) &&
             (!fs || String(u.structure_id) === fs) &&
             (!ft || u.statut === ft),
         );
 
         const actifs = users.filter((u) => u.statut === 'ACTIF').length;
+        const sansRole = users.filter((u) => !u.role_code).length;
         const tuile = (titre, valeur, couleur) =>
           `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p
             class="text-xs font-bold text-slate-500 uppercase">${titre}</p><p
@@ -694,18 +700,28 @@
         document.getElementById('usersResume').innerHTML =
           tuile('Comptes', users.length, 'text-slate-800') +
           tuile('Actifs', actifs, 'text-emerald-700') +
+          (sansRole ? tuile('Sans rôle', sansRole, 'text-amber-600') : '') +
           tuile(
             'Suspendus',
             users.length - actifs,
             users.length - actifs ? 'text-red-600' : 'text-slate-700',
           ) +
-          tuile('Jamais connectés', jamais, 'text-amber-600');
+          tuile('Jamais connectés', jamais, 'text-slate-500');
 
         const tbody = document.getElementById('usersTable');
         tbody.innerHTML = '';
-        liste.forEach((u) => {
+
+        const totalItems = liste.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+        if (pageUsers > totalPages) pageUsers = totalPages;
+        if (pageUsers < 1) pageUsers = 1;
+        const startIndex = (pageUsers - 1) * PAGE_SIZE;
+        const displayed = liste.slice(startIndex, startIndex + PAGE_SIZE);
+
+        displayed.forEach((u) => {
           const m = escapeHtml(u.matricule);
           const suspendu = u.statut === 'SUSPENDU';
+          const pasDeRole = !u.role_code;
           const tr = document.createElement('tr');
           tr.innerHTML = `
           <td class="px-3 py-3 font-mono font-bold">${m}</td>
@@ -716,11 +732,16 @@
           <span class="text-slate-500">${escapeHtml(u.telephone)}</span>`
                 : ''
             }</td>
-          <td class="px-3 py-3"><select id="role_${m}"
-            class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold w-44">${optionsRoles(u.role_code, false)}</select>
+          <td class="px-3 py-3">
+            <select id="role_${m}"
+              class="border rounded px-2 py-1 text-xs font-bold w-44 ${pasDeRole ? 'bg-amber-50 border-amber-400 text-amber-900' : 'bg-slate-50 border-slate-300'}">
+              ${optionsRoles(u.role_code, false)}
+            </select>
+            ${pasDeRole ? '<br><span class="text-[10px] font-bold text-amber-700">En attente d\'attribution</span>' : ''}
           </td>
           <td class="px-3 py-3"><select id="struct_${m}"
-            class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-44">${optionsStructures(u.structure_id, 'Non assignée')}</select>
+            class="${u.structure_id ? 'bg-slate-50 border-slate-300' : 'bg-amber-50 border-amber-400 text-amber-900'} border rounded px-2 py-1 text-xs w-44">${optionsStructures(u.structure_id, 'Non assignée')}</select>
+            ${u.structure_id ? '' : '<br><span class="text-[10px] font-bold text-amber-700">En attente d\'affectation</span>'}
           </td>
           <td class="px-3 py-3"><span
             class="px-2 py-0.5 rounded-full border font-bold ${suspendu ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}">${suspendu ? 'Suspendu' : 'Actif'}</span>
@@ -731,12 +752,16 @@
             autocomplete="off"
             class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs w-28 font-mono">
             </td>
-          <td class="px-3 py-3 text-center whitespace-nowrap space-x-1">
-            <button data-mat="${m}" onclick="saveUserChanges(this.dataset.mat)"
-              class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded shadow">Enregistrer</button>
-            <button data-mat="${m}" data-actif="${suspendu ? '1' : '0'}"
+          <td class="px-3 py-3">
+            <div class="flex gap-1">
+            <button type="button" data-mat="${m}" onclick="affecterStructure(this.dataset.mat)" title="Affecter la structure de rattachement"
+              class="px-3 py-1 border font-bold text-xs rounded ${u.structure_id ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow'}">Affecter</button>
+            <button type="button" data-mat="${m}" onclick="saveUserChanges(this.dataset.mat)"
+              class="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs rounded">Enregistrer</button>
+            <button type="button" data-mat="${m}" data-actif="${suspendu ? '1' : '0'}"
               onclick="basculerStatut(this.dataset.mat, this.dataset.actif === '1')"
               class="px-3 py-1 border font-bold text-xs rounded ${suspendu ? 'border-emerald-300 text-emerald-800 hover:bg-emerald-50' : 'border-red-300 text-red-700 hover:bg-red-50'}">${suspendu ? 'Réactiver' : 'Suspendre'}</button>
+            </div>
           </td>`;
           tbody.appendChild(tr);
         });
@@ -745,66 +770,34 @@
             '<tr><td colspan="8" class="px-3 py-6 text-center text-slate-500">Aucun compte ne correspond.</td></tr>';
         document.getElementById('usersCount').textContent =
           liste.length + ' compte(s) affiché(s) sur ' + users.length;
+
+        if (window.renderPagination) {
+          window.renderPagination({
+            container: 'usersPagination',
+            totalItems: totalItems,
+            currentPage: pageUsers,
+            pageSize: PAGE_SIZE,
+            onPageChange: (p) => {
+              pageUsers = p;
+              renderUsers();
+            }
+          });
+        }
       }
 
-      /**
-       * Dessine la liste des demandes de mot de passe oublié en attente, avec les boutons Autoriser et Refuser.
-       */
-      async function renderReinitialisations() {
-        const res = await API.getReinitialisations();
-        const demandes = res.status === 'success' ? res.demandes : [];
-        document.getElementById('reinitCount').textContent = demandes.length + ' en attente';
-        const container = document.getElementById('reinitContainer');
-        container.innerHTML = demandes.length
-          ? ''
-          : '<p class="text-xs text-slate-500 italic">Aucune demande en attente.</p>';
-        demandes.forEach((d) => {
-          const div = document.createElement('div');
-          div.className =
-            'flex flex-wrap justify-between items-center gap-2 border border-slate-200 rounded-lg p-3 text-xs';
-          div.innerHTML = `
-          <div><span
-            class="font-mono font-bold">${escapeHtml(d.matricule)}</span> — ${escapeHtml(d.nom)}
-            <span
-              class="text-slate-500">(${escapeHtml(d.roles)}) · demandé le ${escapeHtml(d.date)}</span>
-              </div>
-          <div class="flex gap-2">
-            <button data-action="refuser"
-              class="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded font-bold">Refuser</button>
-            <button data-action="autoriser"
-              class="px-3 py-1 bg-emerald-700 text-white rounded font-bold">Autoriser</button>
-          </div>`;
-          div.querySelectorAll('button').forEach(
-            (btn) =>
-              (btn.onclick = async () => {
-                const r = await API.traiterReinitialisation(d.id, btn.dataset.action);
-                if (r.status !== 'success')
-                  alert('Action impossible : ' + (r.message || 'erreur inconnue.'));
-                await renderReinitialisations();
-              }),
-          );
-          container.appendChild(div);
-        });
-      }
-
-      /**
-       * Enregistre les modifications d'une ligne du tableau (rôle, structure, nouveau mot de passe). Seuls les champs modifiés sont envoyés.
-       * @param {string} mat Matricule du compte.
-       */
+      /** Enregistre une ligne du tableau (rôle, mot de passe), seulement les champs modifiés. La
+       * structure a son propre bouton : elle déclenche une notification. */
       async function saveUserChanges(mat) {
         const u = users.find((x) => x.matricule === mat);
         if (!u) return;
         const role = document.getElementById('role_' + mat).value;
-        const structure = document.getElementById('struct_' + mat).value;
         const mdp = document.getElementById('pass_' + mat).value.trim();
 
         const payload = { matricule: mat };
         if (role !== u.role_code) payload.role = role;
-        if (structure && String(structure) !== String(u.structure_id))
-          payload.structure_id = structure;
         if (mdp) payload.password = mdp;
         if (Object.keys(payload).length === 1) {
-          alert('Aucune modification à enregistrer.');
+          toast('Aucune modification à enregistrer (rôle inchangé, mot de passe vide).');
           return;
         }
 
@@ -813,42 +806,76 @@
           await loadData();
           renderUsers();
         } else {
-          alert('Erreur : ' + (res.message || 'Mise à jour impossible'));
+          toast('Erreur : ' + (res.message || 'Mise à jour impossible'));
         }
       }
 
-      /**
-       * Suspend ou réactive un compte. Une suspension déconnecte la personne et refuse ses connexions.
-       * @param {string} mat Matricule du compte.
-       * @param {boolean} reactiver true pour réactiver, false pour suspendre.
-       */
+      /** Affecte une Direction ou Sous-Direction au compte, après confirmation : l'agent est débloqué
+       * pour déposer ses dossiers et il est notifié. */
+      async function affecterStructure(mat) {
+        const u = users.find((x) => x.matricule === mat);
+        if (!u) return;
+        const choisi = document.getElementById('struct_' + mat).value;
+        if (!choisi) {
+          toast('Choisissez une Direction ou une Sous-Direction avant d\'affecter.');
+          return;
+        }
+        const structure = structures.find((s) => String(s.id) === String(choisi));
+        const nomAffectation = structure ? structure.nom : 'la structure choisie';
+        const dejaAffectee = String(u.structure_id) === String(choisi);
+        const question = dejaAffectee
+          ? mat + ' est déjà rattaché à ' + nomAffectation + '. Confirmer ?'
+          : 'Rattacher ' +
+            mat +
+            ' à ' +
+            nomAffectation +
+            ' ?\n\n' +
+            "L'agent pourra désormais déposer une demande de permission ou une déclaration d'état civil, " +
+            'et recevra une notification de son rattachement.';
+        if (!(await demanderConfirmation(question, 'Confirmer'))) return;
+
+        const res = await API.updateUser({ matricule: mat, structure_id: choisi });
+        if (res.status === 'success') {
+          document.getElementById('pass_' + mat).value = '';
+          await loadData();
+          renderUsers();
+          toast(
+            'Structure affectée : ' +
+              mat +
+              ' → ' +
+              nomAffectation +
+              ".\nL'agent a été prévenu par notification.",
+          );
+        } else {
+          toast('Erreur : ' + (res.message || 'Affectation impossible'));
+        }
+      }
+
+      /** Suspend ou réactive un compte. Une suspension déconnecte la personne et refuse ses connexions. */
       async function basculerStatut(mat, reactiver) {
         if (
           !reactiver &&
-          !confirm(
+          !(await demanderConfirmation(
             'Suspendre le compte ' +
               mat +
               ' ? La personne sera déconnectée et ne pourra plus se connecter.',
-          )
+            'Suspendre',
+          ))
         )
           return;
         const res = await API.updateUser({ matricule: mat, actif: reactiver });
         if (res.status === 'success') {
           await loadData();
           renderUsers();
-        } else alert('Erreur : ' + (res.message || 'Action impossible'));
+        } else toast('Erreur : ' + (res.message || 'Action impossible'));
       }
 
-      /**
-       * Affiche ou masque le formulaire de création de compte.
-       */
+      /** Affiche ou masque le formulaire de création de compte. */
       function toggleCreateForm() {
         document.getElementById('createForm').classList.toggle('hidden');
       }
 
-      /**
-       * Crée un compte avec les valeurs du formulaire (rôle, structure, mot de passe initial).
-       */
+      /** Crée un compte avec les valeurs du formulaire (rôle, structure, mot de passe initial). */
       async function createUser(e) {
         e.preventDefault();
         const res = await API.createUser({
@@ -862,20 +889,18 @@
           telephone: document.getElementById('newTel').value.trim() || null,
         });
         if (res.status === 'success') {
-          alert('Compte créé. Communiquez le matricule et le mot de passe initial à la personne.');
+          toast('Compte créé. Communiquez le matricule et le mot de passe initial à la personne.');
           e.target.reset();
           toggleCreateForm();
           await loadData();
           renderUsers();
         } else {
           const erreurs = res.errors ? Object.values(res.errors).flat().join(' ') : '';
-          alert('Erreur : ' + (erreurs || res.message || 'Création impossible'));
+          toast('Erreur : ' + (erreurs || res.message || 'Création impossible'));
         }
       }
 
-      /**
-       * Filtre la liste de consultation globale des dossiers (recherche, nature, statut).
-       */
+      /** Filtre la liste de consultation globale des dossiers (recherche, nature, statut). */
       function filterSearch() {
         const q = (document.getElementById('searchQ').value || '').toLowerCase();
         const type = document.getElementById('searchType').value;
@@ -896,10 +921,26 @@
         if (!results.length) {
           tbody.innerHTML = `<tr><td colspan="6"
             class="px-4 py-6 text-center text-slate-500 italic">Aucun résultat.</td></tr>`;
+          if (window.renderPagination) {
+            window.renderPagination({
+              container: 'searchPagination',
+              totalItems: 0,
+              currentPage: 1,
+              pageSize: PAGE_SIZE,
+              onPageChange: (p) => { pageSearch = p; filterSearch(); }
+            });
+          }
           return;
         }
 
-        results.forEach((r) => {
+        const totalItems = results.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+        if (pageSearch > totalPages) pageSearch = totalPages;
+        if (pageSearch < 1) pageSearch = 1;
+        const startIndex = (pageSearch - 1) * PAGE_SIZE;
+        const displayed = results.slice(startIndex, startIndex + PAGE_SIZE);
+
+        displayed.forEach((r) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
           <td class="px-4 py-2 font-mono font-bold">${escapeHtml(r.id)}</td>
@@ -912,15 +953,35 @@
         `;
           tbody.appendChild(tr);
         });
+
+        if (window.renderPagination) {
+          window.renderPagination({
+            container: 'searchPagination',
+            totalItems: totalItems,
+            currentPage: pageSearch,
+            pageSize: PAGE_SIZE,
+            onPageChange: (p) => {
+              pageSearch = p;
+              filterSearch();
+            }
+          });
+        }
       }
 
-      /**
-       * Dessine le tableau des notes de service avec, pour chacune, les agents des structures destinataires.
-       */
+      /** Dessine le tableau des notes de service avec, pour chacune, les agents des structures
+       * destinataires. */
       function renderNotes() {
         const tbody = document.getElementById('notesTable');
         tbody.innerHTML = '';
-        notes.forEach((n) => {
+
+        const totalItems = notes.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE_NOTES) || 1;
+        if (pageAdminNotes > totalPages) pageAdminNotes = totalPages;
+        if (pageAdminNotes < 1) pageAdminNotes = 1;
+        const startIndex = (pageAdminNotes - 1) * PAGE_SIZE_NOTES;
+        const displayed = notes.slice(startIndex, startIndex + PAGE_SIZE_NOTES);
+
+        displayed.forEach((n) => {
           let targetAgents = users;
           if (n.service && !n.service.includes('Tous')) {
             targetAgents = users.filter(
@@ -943,34 +1004,43 @@
           </td>
           <td class="px-4 py-3 text-xs text-slate-700 max-w-xs truncate"
             title="${escapeHtml(agentList)}">${escapeHtml(agentList)}</td>
-          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${escapeHtml(n.date)}</td>
+          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${escapeHtml(dateFr(n.date) || '—')}</td>
         `;
           tbody.appendChild(tr);
         });
+
+        if (window.renderPagination) {
+          window.renderPagination({
+            container: 'adminNotesPagination',
+            totalItems: totalItems,
+            currentPage: pageAdminNotes,
+            pageSize: PAGE_SIZE_NOTES,
+            onPageChange: (p) => {
+              pageAdminNotes = p;
+              renderNotes();
+            }
+          });
+        }
       }
 
-      /**
-       * Publie une note de service pour le service choisi, puis recharge la liste.
-       */
+      /** Publie une note de service pour le service choisi, puis recharge la liste. */
       async function publishNote(e) {
         e.preventDefault();
         const title = document.getElementById('noteTitle').value;
         const service = document.getElementById('noteService').value;
         const res = await API.publishNote(title, service);
         if (res.status === 'success') {
-          alert('Note publiée pour : ' + service);
+          toast('Note publiée pour : ' + service);
           document.getElementById('noteTitle').value = '';
           await loadData();
           renderNotes();
         } else {
-          alert('Publication impossible : ' + (res.message || 'action non autorisée.'));
+          toast('Publication impossible : ' + (res.message || 'action non autorisée.'));
         }
       }
 
-      /**
-       * Affiche l'onglet demandé et masque les autres ; le journal, les statistiques et les structures se chargent à l'ouverture.
-       * @param {string} name users, search, notes, statistiques, journal ou structures.
-       */
+      /** Affiche l'onglet demandé et masque les autres ; le journal, les statistiques et les structures
+       * se chargent à l'ouverture. */
       function showTab(name) {
         [
           'users',
@@ -1013,12 +1083,10 @@
         ['ROLE_SECRETAIRE', 'Secrétaires'],
       ];
 
-      /**
-       * Dessine l'annuaire des responsables : directeurs, sous-directeurs, chefs de service,
-       * DRH, gestionnaires RH et secrétaires, regroupés par fonction avec leur structure,
-       * les structures qu'ils dirigent, leur statut et leur dernière connexion.
-       * Les filtres (recherche et statut) sont relus à chaque appel.
-       */
+      /** Annuaire des responsables (directeurs, sous-directeurs, chefs de service, DRH, gestionnaires RH,
+       * secrétaires) : un tableau paginé avec filtres. */
+      let pageResp = 1;
+
       function renderResponsables() {
         const conteneur = document.getElementById('tab-responsables');
         const q = (document.getElementById('rQ')?.value || '').toLowerCase();
@@ -1039,11 +1107,16 @@
                   class="border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs">
                   Exporter en CSV</button>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input type="text" id="rQ" oninput="renderResponsables()"
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input type="text" id="rQ" oninput="pageResp = 1; renderResponsables()"
                   placeholder="Matricule, nom ou structure..."
                   class="md:col-span-2 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
-                <select id="rStatut" onchange="renderResponsables()"
+                <select id="rFonction" onchange="pageResp = 1; renderResponsables()"
+                  class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                  <option value="">Toutes les fonctions</option>
+                  ${GROUPES_RESPONSABLES.map(([code, titre]) => `<option value="${code}">${escapeHtml(titre)}</option>`).join('')}
+                </select>
+                <select id="rStatut" onchange="pageResp = 1; renderResponsables()"
                   class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
                   <option value="">Tous les statuts</option>
                   <option value="ACTIF">Actifs</option>
@@ -1052,7 +1125,9 @@
               </div>
               <div id="rResume" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
             </div>
-            <div id="rGroupes" class="space-y-6"></div>`;
+            <!-- Un seul tableau paginé (colonne « Fonction ») plutôt qu'un tableau par fonction empilés :
+                 tout tient à l'écran sans défiler. -->
+            <div id="rGroupes" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3"></div>`;
         }
 
         // Une personne apparaît dans chacun des groupes dont elle porte le rôle.
@@ -1087,18 +1162,22 @@
           tuile('Sous-Directeurs', compte('ROLE_SOUS_DIRECTEUR')) +
           tuile('Chefs de service', compte('ROLE_CHEF_DE_SERVICE'));
 
-        document.getElementById('rGroupes').innerHTML = groupes
-          .map(
-            (g) => `
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
-              <h3 class="text-sm font-bold text-slate-900">
-                ${escapeHtml(g.titre)}
-                <span class="text-xs font-bold text-slate-500">(${g.membres.length})</span>
-              </h3>
+        // Une ligne par (fonction, personne) : une personne à double fonction apparaît deux fois.
+        const fonction = document.getElementById('rFonction')?.value || '';
+        const lignes = groupes
+          .filter((g) => !fonction || g.code === fonction)
+          .flatMap((g) => g.membres.map((u) => ({ titre: g.titre, u })));
+        const maxPage = Math.ceil(lignes.length / PAGE_SIZE) || 1;
+        if (pageResp > maxPage) pageResp = maxPage;
+        if (pageResp < 1) pageResp = 1;
+        const pageLignes = lignes.slice((pageResp - 1) * PAGE_SIZE, pageResp * PAGE_SIZE);
+
+        document.getElementById('rGroupes').innerHTML = `
               <div class="overflow-x-auto">
                 <table class="w-full text-xs text-left">
                   <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
                     <tr>
+                      <th class="px-3 py-2">Fonction</th>
                       <th class="px-3 py-2">Matricule</th>
                       <th class="px-3 py-2">Nom et prénom</th>
                       <th class="px-3 py-2">Structure</th>
@@ -1109,10 +1188,11 @@
                   </thead>
                   <tbody class="divide-y divide-slate-200">
                     ${
-                      g.membres
+                      pageLignes
                         .map(
-                          (u) => `
+                          ({ titre, u }) => `
                     <tr>
+                      <td class="px-3 py-2 font-bold text-slate-700">${escapeHtml(titre)}</td>
                       <td class="px-3 py-2 font-mono font-bold">${escapeHtml(u.matricule)}</td>
                       <td
                         class="px-3 py-2 font-medium">${escapeHtml(u.civilite)} ${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}</td>
@@ -1129,20 +1209,26 @@
                     </tr>`,
                         )
                         .join('') ||
-                      '<tr><td colspan="6" class="px-3 py-4 text-center text-slate-500 italic">Aucune personne.</td></tr>'
+                      '<tr><td colspan="7" class="px-3 py-4 text-center text-slate-500 italic">Aucune personne.</td></tr>'
                     }
                   </tbody>
                 </table>
               </div>
-            </div>`,
-          )
-          .join('');
+              <div id="rPagination"></div>`;
+        renderPagination({
+          container: 'rPagination',
+          totalItems: lignes.length,
+          currentPage: pageResp,
+          pageSize: PAGE_SIZE,
+          onPageChange: (p) => {
+            pageResp = p;
+            renderResponsables();
+          },
+        });
       }
 
-      /**
-       * Télécharge la liste des responsables affichée (avec les filtres) au format CSV,
-       * lisible dans Excel : fonction, matricule, nom, structure, structures dirigées, statut.
-       */
+      /** Télécharge la liste des responsables affichée (avec les filtres) au format CSV, lisible dans
+       * Excel : fonction, matricule, nom, structure, structures dirigées, statut. */
       function exporterResponsables() {
         const q = (document.getElementById('rQ')?.value || '').toLowerCase();
         const statut = document.getElementById('rStatut')?.value || '';
@@ -1158,7 +1244,8 @@
             'Dernière connexion',
           ],
         ];
-        GROUPES_RESPONSABLES.forEach(([code, titre]) => {
+        const fonction = document.getElementById('rFonction')?.value || '';
+        GROUPES_RESPONSABLES.filter(([code]) => !fonction || code === fonction).forEach(([code, titre]) => {
           users
             .filter(
               (u) =>
@@ -1220,26 +1307,23 @@
           'bg-emerald-50 text-emerald-800 border-emerald-200',
         ],
       };
-      /**
-       * Lit les filtres saisis au-dessus du journal d'audit.
-       * @returns {Object} q, categorie, reussi, du, au.
-       */
+      /** Lit les filtres saisis au-dessus du journal d'audit. */
       function filtresJournal() {
         return {
           q: document.getElementById('jQ').value.trim(),
           categorie: document.getElementById('jCategorie').value,
           reussi: document.getElementById('jReussi').value,
-          du: document.getElementById('jDu').value,
-          au: document.getElementById('jAu').value,
+          du: dateIso(document.getElementById('jDu').value),
+          au: dateIso(document.getElementById('jAu').value),
         };
       }
-      /**
-       * Charge et dessine une page du journal d'audit : tuiles du jour, lignes filtrées et pagination.
-       * @param {number} page Numéro de page demandé (ignoré s'il sort des limites).
-       */
+      /** Charge et dessine une page du journal d'audit : tuiles du jour, lignes filtrées et pagination. */
+      /** Lignes du journal par page : de quoi tenir à l'écran sans défiler. */
+      const JOURNAL_PAR_PAGE = 8;
+
       async function chargerJournal(page) {
         if (page < 1 || page > journalPages) return;
-        const res = await API.getJournal({ ...filtresJournal(), page });
+        const res = await API.getJournal({ ...filtresJournal(), page, per_page: JOURNAL_PAR_PAGE });
         if (res.status !== 'success') return;
         journalPage = res.page;
         journalPages = res.pages;
@@ -1266,9 +1350,9 @@
                 'bg-slate-50 text-slate-700 border-slate-200',
               ];
               return `<tr>
-          <td class="px-3 py-2 whitespace-nowrap text-slate-500">${escapeHtml(l.date)}</td>
-          <td class="px-3 py-2"><span
-            class="font-bold text-slate-800">${escapeHtml(l.nom || '—')}</span><br><span
+          <td class="px-3 py-2 whitespace-nowrap text-slate-500">${escapeHtml(formatDateSuivi(l.date))}</td>
+          <td class="px-3 py-2 whitespace-nowrap"><span
+            class="font-bold text-slate-800">${escapeHtml(l.nom || '—')}</span> <span
             class="font-mono text-slate-500">${escapeHtml(l.matricule || '')}</span></td>
           <td class="px-3 py-2"><span
             class="px-2 py-0.5 rounded-full border font-bold ${classes}">${escapeHtml(libelle)}</span>
@@ -1285,11 +1369,9 @@
         document.getElementById('jPrev').disabled = res.page <= 1;
         document.getElementById('jNext').disabled = res.page >= res.pages;
       }
-      /**
-       * Télécharge le journal filtré en CSV.
-       */
+      /** Télécharge le journal filtré en CSV. */
       async function exporterJournal() {
-        if (!(await API.exporterJournal(filtresJournal()))) alert('Export impossible.');
+        if (!(await API.exporterJournal(filtresJournal()))) toast('Export impossible.');
       }
 
       window.onload = init;

@@ -3,15 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png" />
-    <title>
-      Espace Agent - Ministère de la Fonction Publique et de la Modernisation de l’Administration
-    </title>
+    <link rel="icon" href="../assets/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <title>Espace Agent - Ministère de la Fonction Publique et de la Modernisation de l'Administration</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      body {
-        position: relative;
-      }
+      body { position: relative; }
       body::before {
         content: '';
         position: fixed;
@@ -25,61 +24,37 @@
         z-index: 0;
         pointer-events: none;
       }
-      header,
-      main,
-      nav,
-      div {
-        position: relative;
-        z-index: 1;
-      }
+      header, main, nav, div { position: relative; z-index: 1; }
     </style>
     <link rel="stylesheet" href="../assets/theme.css" />
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-    <!-- BANDEAU TRICOLORE -->
-    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
-      <div class="h-full w-1/3 bg-orange-500"></div>
-      <div class="h-full w-1/3 bg-white"></div>
-      <div class="h-full w-1/3 bg-emerald-600"></div>
-    </div>
 
     <!-- HEADER -->
     <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-      <div
-        id="gfp-entete"
-        data-sous-titre="Espace Agent Fonctionnaire"
-        data-role="Agent Fonctionnaire"
-        data-base="../"
-      ></div>
+      <div id="gfp-entete" data-sous-titre="Espace Agent Fonctionnaire" data-role="Agent Fonctionnaire" data-base="../"></div>
       <!-- NAVIGATION -->
       <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-          <button
-            onclick="showTab('dashboard')"
-            id="nav-dashboard"
-            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white"
-          >
-            Mon Tableau de Bord
+        <div class="max-w-7xl mx-auto flex space-x-1 overflow-x-auto py-2 flex-wrap gap-y-1">
+          <button onclick="showTab('dashboard')" id="nav-dashboard"
+            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap">
+            Tableau de Bord
           </button>
-          <button
-            onclick="showTab('demande')"
-            id="nav-demande"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
-          >
-            Faire une Permission
+          <!-- data-bloque : onglet verrouillé tant que la structure n'est pas affectée. -->
+          <button onclick="showTab('permissions')" id="nav-permissions" data-bloque="1"
+            class="bloque px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Demande de permission
           </button>
-          <button
-            onclick="showTab('actes')"
-            id="nav-actes"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
-          >
-            Naissance / Décès
+          <button onclick="showTab('naissances')" id="nav-naissances" data-bloque="1"
+            class="bloque px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Déclaration de naissance
           </button>
-          <button
-            onclick="showTab('notes')"
-            id="nav-notes"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
-          >
+          <button onclick="showTab('deces')" id="nav-deces" data-bloque="1"
+            class="bloque px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Déclaration de décès
+          </button>
+          <button onclick="showTab('notes')" id="nav-notes"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
             Notes de Service
           </button>
         </div>
@@ -87,75 +62,125 @@
     </header>
 
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-      <!-- TAB : TABLEAU DE BORD -->
+
+      <!-- ============================================================ -->
+      <!-- BANNIÈRE : structure de rattachement non affectée           -->
+      <!-- Tant que l'administrateur n'a pas rattaché l'agent à une  -->
+      <!-- Direction ou une Sous-Direction, aucun dépôt n'est possible -->
+      <!-- (le circuit de validation a besoin d'un signataire).       -->
+      <!-- ============================================================ -->
+      <div id="gardeStructure"
+        class="hidden rounded-xl border-2 border-amber-400 bg-amber-50 p-5 shadow-sm">
+        <div class="flex items-start gap-3">
+          <span aria-hidden="true" class="text-2xl leading-none">🔒</span>
+          <div class="min-w-0 flex-1">
+            <h2 class="font-bold text-base text-amber-900">En attente d'affectation de votre structure</h2>
+            <p class="text-sm text-amber-900 mt-1">
+              Tant que l'administrateur ne vous a pas rattaché à une structure du Ministère, vous ne pouvez pas
+              déposer de demande de permission ni de déclaration d'état civil : votre dossier doit être déclaré conforme par
+              le responsable de votre structure, qui ne peut pas être identifié sans ce rattachement.
+            </p>
+            <p class="text-xs text-amber-800 mt-2">
+              Structure actuelle : <strong id="gardeStructureNom">—</strong>.
+              Demandez à l'administrateur de vous rattacher à votre Direction ou à votre Sous-Direction ; vous en
+              serez averti par notification, et vos formulaires se déverrouilleront aussitôt.
+            </p>
+          </div>
+          <button type="button" onclick="rafraichirVue()"
+            class="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100">
+            Vérifier mon affectation
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- TAB : TABLEAU DE BORD                                        -->
+      <!-- ============================================================ -->
       <div id="tab-dashboard" class="space-y-6">
+        <!-- Compteurs -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase"
-              >Solde Annuel de Permission</span
-            >
-            <p class="text-3xl font-extrabold text-slate-900 mt-2">
-              24 / 30 <span class="text-xs font-normal text-slate-500">jours</span>
-            </p>
-            <p class="text-xs text-emerald-600 font-semibold mt-1">
-              Conforme aux règles statutaires
-            </p>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase">Demandes d'Absence</span>
+            <span class="text-xs font-bold text-slate-400 uppercase">Demandes de permission</span>
             <p id="countPerm" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
-            <p class="text-xs text-slate-600 font-semibold mt-1">Soumises dans le système</p>
           </div>
           <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-slate-400 uppercase">Actes d'État Civil</span>
-            <p id="countActes" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
-            <p class="text-xs text-slate-600 font-semibold mt-1">Naissance et Décès enregistrés</p>
+            <span class="text-xs font-bold text-slate-400 uppercase">Déclarations de naissance</span>
+            <p id="countNaiss" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Déclarations de décès</span>
+            <p id="countDeces" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
           </div>
         </div>
 
+        <!-- Résumé tous dossiers -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h2 class="font-bold text-base text-slate-900">Mes Demandes et Actes Administratifs</h2>
-            <button
-              onclick="showTab('demande')"
-              class="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold shadow hover:bg-emerald-800"
-            >
-              + Nouvelle Demande
-            </button>
+          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <h2 class="font-bold text-base text-slate-900">Tous mes dossiers</h2>
+            <!-- Filtres dashboard -->
+            <div class="flex flex-wrap gap-2 items-center">
+              <input type="text" id="dashSearch" oninput="renderDashboard()" placeholder="Rechercher..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-40">
+              <select id="dashFiltreNature" onchange="renderDashboard()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+                <option value="">Tous les types</option>
+                <option value="DEMANDE_PERMISSION">Demande de permission</option>
+                <option value="DECLARATION_NAISSANCE">Déclaration de naissance</option>
+                <option value="DECLARATION_DECES">Déclaration de décès</option>
+              </select>
+              <select id="dashFiltreStatut" onchange="renderDashboard()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+                <option value="">Tous statuts</option>
+                <option value="BROUILLON">Brouillon</option>
+                <option value="EN_ATTENTE">En attente</option>
+                <option value="VALIDEE">Validé</option>
+                <option value="REJETEE">Rejeté</option>
+                <option value="RETOUR_CORRECTION">Retour correction</option>
+              </select>
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
               <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
                 <tr>
-                  <th class="px-6 py-3">Réf Dossier</th>
-                  <th class="px-6 py-3">Nature du Service</th>
-                  <th class="px-6 py-3">Motif / Intitulé</th>
-                  <th class="px-6 py-3">Dates</th>
-                  <th class="px-6 py-3">Pièce Jointe</th>
-                  <th class="px-6 py-3">Statut du Traitement</th>
+                  <th class="px-4 py-3">Réf</th>
+                  <th class="px-4 py-3">Type</th>
+                  <th class="px-4 py-3">Détail</th>
+                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Justificatif</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody id="requestsTable" class="divide-y divide-slate-200"></tbody>
+              <tbody id="dashTable" class="divide-y divide-slate-200"></tbody>
             </table>
           </div>
+          <div id="dashPagination" class="px-6 pb-4"></div>
         </div>
       </div>
 
-      <!-- TAB : FORMULAIRE DEMANDE PERMISSION -->
-      <div id="tab-demande" class="hidden">
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-2xl mx-auto">
-          <h2 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3 mb-4">
-            Formulaire de Demande de Permission d'Absence
-          </h2>
-          <form onsubmit="submitPermission(event)" class="space-y-4">
+      <!-- ============================================================ -->
+      <!-- TAB : PERMISSIONS                                            -->
+      <!-- ============================================================ -->
+      <div id="tab-permissions" class="hidden space-y-5">
+        <!-- Barre titre + bouton -->
+        <div id="perm-entete" class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="font-bold text-base text-slate-900">Mes demandes de permission</h2>
+          <button onclick="showForm('perm-form')"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-sm shadow">
+            Nouvelle demande de permission
+          </button>
+        </div>
+
+        <!-- FORMULAIRE PERMISSION -->
+        <div id="perm-form" class="hidden bg-white p-6 rounded-xl border border-emerald-300 shadow-sm max-w-2xl mx-auto w-full">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm text-emerald-800">Formulaire de Demande de Permission d'Absence</h3>
+            <button onclick="hideForm('perm-form')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">x</button>
+          </div>
+          <form id="formPermission" class="space-y-4">
+            <input type="hidden" id="permBrouillonCode" value="">
+            <p id="perm-info-brouillon" class="hidden rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"></p>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Type de Permission *</label
-              >
-              <select
-                id="permType"
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"
-              >
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Type de Permission *</label>
+              <select id="permType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
                 <option value="Événement Familial">Événement Familial</option>
                 <option value="Repos Médical">Repos Médical</option>
                 <option value="Congé Maternité/Paternité">Congé Maternité ou Paternité</option>
@@ -164,243 +189,343 @@
             </div>
             <div class="grid grid-cols-3 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Date Début *</label
-                >
-                <input
-                  type="date"
-                  id="permStart"
-                  required
-                  onchange="majJours('permStart', 'permEnd', 'permJours')"
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"
-                />
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Début *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10"
+                  placeholder="jj/mm/aaaa" id="permStart" oninput="majJours('permStart','permEnd','permJours')"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Date Fin *</label
-                >
-                <input
-                  type="date"
-                  id="permEnd"
-                  required
-                  onchange="majJours('permStart', 'permEnd', 'permJours')"
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"
-                />
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Fin *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10"
+                  placeholder="jj/mm/aaaa" id="permEnd" oninput="majJours('permStart','permEnd','permJours')"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Nombre de jours *</label
-                >
-                <input
-                  type="number"
-                  id="permJours"
-                  min="1"
-                  max="30"
-                  value="1"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-bold"
-                />
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de jours</label>
+                <input type="number" id="permJours" min="1" max="30" readonly
+                  class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-700 cursor-not-allowed" />
+                <p id="permJoursInfo" class="text-[10px] text-slate-500 mt-1">Calculé automatiquement à partir des deux dates.</p>
               </div>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Motif Détaillé *</label
-              >
-              <textarea
-                id="permMotif"
-                rows="3"
-                required
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif Détaillé *</label>
+              <textarea id="permMotif" rows="3"
                 class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"
-                placeholder="Précisez le motif de la demande..."
-              ></textarea>
+                placeholder="Précisez le motif de la demande..."></textarea>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Pièce Jointe Numérisée *</label
-              >
-              <input
-                type="file"
-                id="permFile"
-                required
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
-              />
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Joindre un document (pièce justificative)</label>
+              <input type="file" id="permFile" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
+              <p class="text-[10px] text-slate-500 mt-1">Formats acceptés : PDF, JPG, PNG — max 5 Mo</p>
             </div>
-            <button
-              type="submit"
-              class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow"
-            >
-              Enregistrer et Soumettre la Demande
-            </button>
+            <div class="flex flex-wrap gap-3 pt-2">
+              <button type="button" id="perm-btn-enregistrer" onclick="enregistrerBrouillonPermission()"
+                class="flex-1 min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Enregistrer dans le brouillon
+              </button>
+              <button type="button" id="perm-btn-modifier" onclick="enregistrerBrouillonPermission()"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Modifier le brouillon
+              </button>
+              <button type="button" id="perm-btn-supprimer" onclick="supprimerBrouillon('perm')"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Supprimer le brouillon
+              </button>
+              <button type="button" onclick="soumettrePermission()"
+                class="flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Soumettre
+              </button>
+            </div>
           </form>
         </div>
-      </div>
 
-      <!-- TAB : ACTES D'ETAT CIVIL -->
-      <div id="tab-actes" class="hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h2 class="font-bold text-base text-slate-900 border-b border-slate-200 pb-2">
-              Déclaration de Naissance
-            </h2>
-            <form onsubmit="submitNaissance(event)" class="space-y-3">
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Nom de l'enfant *</label
-                >
-                <input
-                  type="text"
-                  id="naissNom"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Prénom de l'enfant *</label
-                >
-                <input
-                  type="text"
-                  id="naissPrenom"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                />
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                    >Date Naissance *</label
-                  >
-                  <input
-                    type="date"
-                    id="naissDate"
-                    required
-                    class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                    >Lieu *</label
-                  >
-                  <input
-                    type="text"
-                    id="naissLieu"
-                    required
-                    class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Acte de Naissance Scanné *</label
-                >
-                <input
-                  type="file"
-                  id="naissFile"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
-                />
-              </div>
-              <button
-                type="submit"
-                class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-lg text-sm"
-              >
-                Transmettre au Gestionnaire RH
-              </button>
-            </form>
+        <!-- Filtres permissions -->
+        <div id="perm-filtres" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="permSearch" oninput="pagePerm=1;renderPermissions()" placeholder="Référence, motif..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-44">
           </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Statut</label>
+            <select id="permFiltreStatut" onchange="pagePerm=1;renderPermissions()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+              <option value="">Tous</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="VALIDEE">Validé</option>
+              <option value="REJETEE">Rejeté</option>
+              <option value="RETOUR_CORRECTION">Retour correction</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date début (depuis)</label>
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="permFiltreDate" onchange="pagePerm=1;renderPermissions()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+          </div>
+        </div>
 
-          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h2 class="font-bold text-base text-slate-900 border-b border-slate-200 pb-2">
-              Déclaration de Décès
-            </h2>
-            <form onsubmit="submitDeces(event)" class="space-y-3">
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Nom du Défunt *</label
-                >
-                <input
-                  type="text"
-                  id="decesNom"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Prénom du Défunt *</label
-                >
-                <input
-                  type="text"
-                  id="decesPrenom"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Lien de Parenté *</label
-                >
-                <select
-                  id="decesLien"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold"
-                >
-                  <option value="ascendant">Ascendant (Père / Mère)</option>
-                  <option value="descendant">Descendant (Enfant)</option>
-                  <option value="conjoint">Conjoint(e)</option>
-                </select>
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                    >Date Décès *</label
-                  >
-                  <input
-                    type="date"
-                    id="decesDate"
-                    required
-                    class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                    >Lieu *</label
-                  >
-                  <input
-                    type="text"
-                    id="decesLieu"
-                    required
-                    class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                  >Certificat de Décès Scanné *</label
-                >
-                <input
-                  type="file"
-                  id="decesFile"
-                  required
-                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
-                />
-              </div>
-              <button
-                type="submit"
-                class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm"
-              >
-                Transmettre au Gestionnaire RH
-              </button>
-            </form>
+        <!-- Tableau permissions -->
+        <div id="perm-tableau" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Réf</th>
+                  <th class="px-4 py-3">Type</th>
+                  <th class="px-4 py-3">Motif</th>
+                  <th class="px-4 py-3">Période</th>
+                  <th class="px-4 py-3">Jours</th>
+                  <th class="px-4 py-3">Document</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="permTable" class="divide-y divide-slate-200"></tbody>
+            </table>
           </div>
+          <div id="permPagination" class="px-6 pb-4"></div>
         </div>
       </div>
 
-      <!-- TAB : NOTES DE SERVICE -->
-      <div id="tab-notes" class="hidden space-y-4">
-        <h2 class="text-base font-bold text-slate-900">Notes de Service Diffusées</h2>
-        <div id="notesContainer" class="space-y-3"></div>
+      <!-- ============================================================ -->
+      <!-- TAB : NAISSANCES                                             -->
+      <!-- ============================================================ -->
+      <div id="tab-naissances" class="hidden space-y-5">
+        <div id="naiss-entete" class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="font-bold text-base text-slate-900">Mes déclarations de naissance</h2>
+          <button onclick="showForm('naiss-form')"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-sm shadow">
+            Nouvelle déclaration de naissance
+          </button>
+        </div>
+
+        <!-- FORMULAIRE NAISSANCE -->
+        <div id="naiss-form" class="hidden bg-white p-6 rounded-xl border border-sky-300 shadow-sm max-w-xl mx-auto w-full">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm text-sky-800">Déclaration de Naissance</h3>
+            <button onclick="hideForm('naiss-form')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">x</button>
+          </div>
+          <form id="formNaissance" class="space-y-3">
+            <input type="hidden" id="naissBrouillonCode" value="">
+            <p id="naiss-info-brouillon" class="hidden rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"></p>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'enfant *</label>
+              <input type="text" id="naissNom" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom de l'enfant *</label>
+              <input type="text" id="naissPrenom" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date de Naissance *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="naissDate" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lieu *</label>
+                <input type="text" id="naissLieu" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Joindre l'extrait d'acte de naissance *</label>
+              <input type="file" id="naissFile" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
+              <p class="text-[10px] text-slate-500 mt-1">Formats : PDF, JPG, PNG — max 5 Mo — Obligatoire pour la soumission</p>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+              <button type="button" id="naiss-btn-enregistrer" onclick="enregistrerBrouillonNaissance()"
+                class="flex-1 min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Enregistrer dans le brouillon
+              </button>
+              <button type="button" id="naiss-btn-modifier" onclick="enregistrerBrouillonNaissance()"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Modifier le brouillon
+              </button>
+              <button type="button" id="naiss-btn-supprimer" onclick="supprimerBrouillon('naiss')"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Supprimer le brouillon
+              </button>
+              <button type="button" onclick="soumettreNaissance()"
+                class="flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Soumettre
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Filtres naissances -->
+        <div id="naiss-filtres" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="naissSearch" oninput="pageNaiss=1;renderNaissances()" placeholder="Référence, enfant..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-44">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Statut</label>
+            <select id="naissFiltreStatut" onchange="pageNaiss=1;renderNaissances()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+              <option value="">Tous</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="VALIDEE">Validé</option>
+              <option value="REJETEE">Rejeté</option>
+              <option value="RETOUR_CORRECTION">Retour correction</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="naissFiltreDate" onchange="pageNaiss=1;renderNaissances()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+          </div>
+        </div>
+
+        <!-- Tableau naissances -->
+        <div id="naiss-tableau" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Réf</th>
+                  <th class="px-4 py-3">Enfant</th>
+                  <th class="px-4 py-3">Date naiss.</th>
+                  <th class="px-4 py-3">Lieu</th>
+                  <th class="px-4 py-3">Document</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="naissTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+          <div id="naissPagination" class="px-6 pb-4"></div>
+        </div>
       </div>
+
+      <!-- ============================================================ -->
+      <!-- TAB : DECES                                                  -->
+      <!-- ============================================================ -->
+      <div id="tab-deces" class="hidden space-y-5">
+        <div id="deces-entete" class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="font-bold text-base text-slate-900">Mes déclarations de décès</h2>
+          <button onclick="showForm('deces-form')"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-sm shadow">
+            Nouvelle déclaration de décès
+          </button>
+        </div>
+
+        <!-- FORMULAIRE DECES -->
+        <div id="deces-form" class="hidden bg-white p-6 rounded-xl border border-slate-300 shadow-sm max-w-xl mx-auto w-full">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm text-slate-800">Déclaration de Décès</h3>
+            <button onclick="hideForm('deces-form')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">x</button>
+          </div>
+          <form id="formDeces" class="space-y-3">
+            <input type="hidden" id="decesBrouillonCode" value="">
+            <p id="deces-info-brouillon" class="hidden rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"></p>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du Défunt *</label>
+              <input type="text" id="decesNom" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom du Défunt *</label>
+              <input type="text" id="decesPrenom" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lien de Parenté *</label>
+              <select id="decesLien" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+                <option value="ascendant">Ascendant (Père / Mère)</option>
+                <option value="descendant">Descendant (Enfant)</option>
+                <option value="conjoint">Conjoint(e)</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Décès *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="decesDate" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lieu *</label>
+                <input type="text" id="decesLieu" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Joindre le certificat de décès officiel *</label>
+              <input type="file" id="decesFile" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
+              <p class="text-[10px] text-slate-500 mt-1">Formats : PDF, JPG, PNG — max 5 Mo — Obligatoire pour la soumission</p>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+              <button type="button" id="deces-btn-enregistrer" onclick="enregistrerBrouillonDeces()"
+                class="flex-1 min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Enregistrer dans le brouillon
+              </button>
+              <button type="button" id="deces-btn-modifier" onclick="enregistrerBrouillonDeces()"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Modifier le brouillon
+              </button>
+              <button type="button" id="deces-btn-supprimer" onclick="supprimerBrouillon('deces')"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Supprimer le brouillon
+              </button>
+              <button type="button" onclick="soumettreDeces()"
+                class="flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Soumettre
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Filtres décès -->
+        <div id="deces-filtres" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="decesSearch" oninput="pageDeces=1;renderDeces()" placeholder="Référence, défunt..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-44">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Statut</label>
+            <select id="decesFiltreStatut" onchange="pageDeces=1;renderDeces()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+              <option value="">Tous</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="VALIDEE">Validé</option>
+              <option value="REJETEE">Rejeté</option>
+              <option value="RETOUR_CORRECTION">Retour correction</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="decesFiltreDate" onchange="pageDeces=1;renderDeces()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+          </div>
+        </div>
+
+        <!-- Tableau décès -->
+        <div id="deces-tableau" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Réf</th>
+                  <th class="px-4 py-3">Défunt</th>
+                  <th class="px-4 py-3">Lien</th>
+                  <th class="px-4 py-3">Date décès</th>
+                  <th class="px-4 py-3">Lieu</th>
+                  <th class="px-4 py-3">Document</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="decesTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+          <div id="decesPagination" class="px-6 pb-4"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- TAB : NOTES DE SERVICE                                       -->
+      <!-- ============================================================ -->
+      <div id="tab-notes" class="hidden space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-base font-bold text-slate-900">Notes de Service Diffusées</h2>
+          <input type="text" id="notesSearch" oninput="pageNotes=1;renderNotes()" placeholder="Rechercher..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-48">
+        </div>
+        <div id="notesContainer" class="space-y-3"></div>
+        <div id="notesPagination"></div>
+      </div>
+
     </main>
 
     <script src="../js/api.js"></script>
@@ -410,235 +535,902 @@
       let requests = [];
       let notes = [];
 
-      /**
-       * Démarre la page : vérifie la session (retour à la connexion sinon), redirige les autres profils vers leur espace, puis charge les données.
-       */
+      let pageDash = 1;
+      let pagePerm = 1;
+      let pageNaiss = 1;
+      let pageDeces = 1;
+      let pageNotes = 1;
+      let PAGE_SIZE = taillePageMemorisee(3);
+
+      /* INITIALISATION */
       async function init() {
         const saved = sessionStorage.getItem('currentUser');
-        if (!saved) {
-          window.location.href = 'login.html';
-          return;
-        }
+        if (!saved) { window.location.href = '../login.html'; return; }
         user = JSON.parse(saved);
-        if (user.role !== 'AGENT') {
-          window.location.href = API.urlEspace(user.role);
+        if (user.role !== 'AGENT') { window.location.href = API.urlEspace(user.role); return; }
+        loadAvatar();
+        // Aucun brouillon au démarrage : le formulaire propose « Enregistrer ».
+        Object.keys(BROUILLONS).forEach(majBoutonsBrouillon);
+        await rafraichirVue();
+      }
+
+      /** Vrai si l'agent est rattaché à une structure. Sans elle, le serveur refuse tout dépôt (pas de
+       * signataire) : l'interface grise les onglets. */
+      function structureAffectee() {
+        return !!(user && user.structure_id);
+      }
+
+      /** Verrou d'affectation : grise les onglets de dépôt, masque leur contenu et affiche la bannière.
+       * Tableau de bord et notes restent consultables. */
+      function appliquerGardeStructure() {
+        const affectee = structureAffectee();
+        const banniere = document.getElementById('gardeStructure');
+        if (affectee) {
+          banniere.classList.add('hidden');
+        } else {
+          banniere.classList.remove('hidden');
+          document.getElementById('gardeStructureNom').textContent = user.structure || 'aucune';
+        }
+
+        document.querySelectorAll('[data-bloque]').forEach((btn) => {
+          btn.disabled = !affectee;
+          btn.classList.toggle('opacity-40', !affectee);
+          btn.classList.toggle('cursor-not-allowed', !affectee);
+          btn.classList.remove('hover:bg-slate-200');
+          btn.title = affectee ? '' : "Votre Direction ou Sous-Direction n'est pas encore affectée.";
+        });
+
+        ['permissions', 'naissances', 'deces'].forEach((t) => {
+          const onglet = document.getElementById('tab-' + t);
+          if (!onglet || affectee) return;
+          onglet.classList.add('hidden');
+        });
+      }
+
+      async function loadData() {
+        /* L'affectation peut être faite par l'administrateur pendant que l'agent est connecté : la
+           session du navigateur serait alors périmée. */
+        const s = await API.refreshSession();
+        if (s.status === 'success') user = s.user;
+
+        const r = await API.getRequests();
+        requests = garderSiEchec(r, 'requests', requests);
+        const n = await API.getNotes();
+        notes = garderSiEchec(n, 'notes', notes);
+      }
+
+      function renderAll() {
+        document.getElementById('navName').textContent = user.name;
+        document.getElementById('navStructure').textContent = user.structure || 'Structure non assignée';
+        appliquerGardeStructure();
+        /* Tant que la structure manque, les onglets de dépôt restent fermés : l'agent ne garde pas un
+           onglet vide surligné, il revient au tableau de bord. */
+        if (!structureAffectee()) {
+          showTab('dashboard');
+          return;
+        }
+        renderDashboard();
+        renderPermissions();
+        renderNaissances();
+        renderDeces();
+        renderNotes();
+      }
+
+      async function rafraichirVue() {
+        await loadData();
+        renderAll();
+      }
+
+      /* Les décisions des autres acteurs (conformité, contrôle, DRH) arrivent sans recharger la page :
+         le dashboard et les compteurs suivent toutes les 20 s. */
+      /* Pause quand l'onglet est caché, mise à jour dès le retour, et on ne redessine que si les données
+         ont changé : la lecture n'est pas perturbée. */
+      setInterval(rafraichirAuto, 20000);
+      document.addEventListener('visibilitychange', rafraichirAuto);
+      async function rafraichirAuto() {
+        if (document.hidden || typeof loadData !== 'function') return;
+        const avant = JSON.stringify([user, requests, notes]);
+        await loadData();
+        if (JSON.stringify([user, requests, notes]) === avant) return;
+        if (typeof renderAll === 'function') renderAll();
+      }
+
+      /* NAVIGATION */
+      const TABS = ['dashboard','permissions','naissances','deces','notes'];
+
+      /* Blocs d'historique (titre + filtres + tableau) à masquer quand un formulaire est ouvert. */
+      const BLOCS_HISTORIQUE = {
+        'perm-form':  ['perm-entete',  'perm-filtres',  'perm-tableau'],
+        'naiss-form': ['naiss-entete', 'naiss-filtres', 'naiss-tableau'],
+        'deces-form': ['deces-entete', 'deces-filtres', 'deces-tableau']
+      };
+
+      function showTab(name) {
+        /* Onglet verrouillé : le message de la bannière explique déjà pourquoi. */
+        const demande = document.getElementById('nav-'+name);
+        if (demande && demande.disabled) { showTab('dashboard'); return; }
+        TABS.forEach(t => {
+          document.getElementById('tab-'+t).classList.add('hidden');
+          const btn = document.getElementById('nav-'+t);
+          if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
+        });
+        /* Revenir sur un onglet referme le formulaire et reaffiche l'historique. */
+        Object.keys(BLOCS_HISTORIQUE).forEach(id => hideForm(id));
+        document.getElementById('tab-'+name).classList.remove('hidden');
+        const active = document.getElementById('nav-'+name);
+        if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
+      }
+
+      /* Formulaire ouvert : l'historique est masque, l'agent ne voit que le formulaire. */
+      function showForm(id) {
+        const form = document.getElementById(id);
+        if (!form) return;
+        /* Sans structure affectée, aucun formulaire ne s'ouvre (boutons de dépôt désactivés, mais
+           aussi-brouillon du tableau de bord). */
+        if (!structureAffectee()) return;
+        form.classList.remove('hidden');
+        (BLOCS_HISTORIQUE[id] || []).forEach(b => document.getElementById(b).classList.add('hidden'));
+        form.scrollIntoView({behavior:'smooth'});
+      }
+
+      /* Formulaire referme (croix ou enregistrement) : l'historique revient. */
+      function hideForm(id) {
+        const form = document.getElementById(id);
+        if (form) form.classList.add('hidden');
+        (BLOCS_HISTORIQUE[id] || []).forEach(b => document.getElementById(b).classList.remove('hidden'));
+      }
+
+      /* BROUILLON : enregistrer, modifier, soumettre, supprimer */
+      /** Mécanique commune de brouillon des trois formulaires : enregistrer / modifier (même appel),
+       * supprimer (brouillon seulement) et soumettre, identifiants dérivés du préfixe. */
+      const BROUILLONS = {
+        perm:  { prefixe: 'perm',  conteneur: 'perm-form',  formulaire: 'formPermission', libelle: 'la demande de permission' },
+        naiss: { prefixe: 'naiss', conteneur: 'naiss-form', formulaire: 'formNaissance', libelle: 'la déclaration de naissance' },
+        deces: { prefixe: 'deces', conteneur: 'deces-form', formulaire: 'formDeces',     libelle: 'la déclaration de décès' },
+      };
+
+      /** Aligne les boutons du formulaire sur l'état du brouillon. Sans brouillon l'agent enregistre une
+       * nouvelle demande ; avec un brouillon il peut le modifier, le soumettre ou l'effacer. */
+      function majBoutonsBrouillon(cle) {
+        const cfg = BROUILLONS[cle];
+        const code = document.getElementById(cfg.prefixe + 'BrouillonCode').value.trim();
+        document.getElementById(cfg.prefixe + '-btn-enregistrer').classList.toggle('hidden', !!code);
+        document.getElementById(cfg.prefixe + '-btn-modifier').classList.toggle('hidden', !code);
+        document.getElementById(cfg.prefixe + '-btn-supprimer').classList.toggle('hidden', !code);
+        const info = document.getElementById(cfg.prefixe + '-info-brouillon');
+        info.classList.toggle('hidden', !code);
+        if (code) {
+          info.innerHTML = 'Brouillon <strong>' + escapeHtml(code) + '</strong> enregistré. '
+            + 'Vous pouvez le modifier, le soumettre au circuit, ou le supprimer.';
+        }
+      }
+
+      /** Supprime le brouillon chargé, après confirmation, avec ses pièces : l'agent repart d'un
+       * formulaire vierge. Impossible une fois le dossier soumis. */
+      async function supprimerBrouillon(cle) {
+        const cfg = BROUILLONS[cle];
+        const code = document.getElementById(cfg.prefixe + 'BrouillonCode').value.trim();
+        if (!code) { toast('Aucun brouillon à supprimer.'); return; }
+        if (!(await demanderConfirmation('Supprimer définitivement le brouillon ' + code + ' ? Les informations saisies et les pièces jointes seront perdues. Cette action est irréversible.', 'Supprimer'))) return;
+
+        const res = await API.supprimerBrouillon(code);
+        if (res.status !== 'success') {
+          toast('Erreur : ' + (res.message || 'Impossible de supprimer le brouillon.'));
+          return;
+        }
+        document.getElementById(cfg.formulaire).reset();
+        document.getElementById(cfg.prefixe + 'BrouillonCode').value = '';
+        majBoutonsBrouillon(cle);
+        hideForm(cfg.conteneur);
+        await rafraichirVue();
+        toast('Brouillon supprimé : ' + code);
+      }
+
+      /* HELPERS */
+      /** Nombre de jours d'une période, bornes incluses (du 1er au 1er = 1 jour). Fin postérieure ou
+       * égale au début ; au-delà de 30 jours, la limite légale est signalée. */
+      function majJours(idDebut, idFin, idJours) {
+        const jours = document.getElementById(idJours);
+        const info = document.getElementById('permJoursInfo');
+        const d = dateIso(document.getElementById(idDebut).value);
+        const f = dateIso(document.getElementById(idFin).value);
+        if (!d || !f) {
+          jours.value = '';
+          if (info) {
+            const saisie = document.getElementById(idDebut).value || document.getElementById(idFin).value;
+            info.textContent = saisie ? 'Saisissez deux dates au format jj/mm/aaaa.' : 'Renseignez les deux dates.';
+            info.className = 'text-[10px] text-slate-500 mt-1';
+          }
+          return;
+        }
+        const total = Math.round((new Date(f) - new Date(d)) / 86400000) + 1;
+        if (total < 1) {
+          jours.value = '';
+          if (info) { info.textContent = 'La date de fin doit etre posterieure ou egale a la date de debut.'; info.className = 'text-[10px] text-red-600 font-bold mt-1'; }
+          return;
+        }
+        jours.value = total;
+        if (info) {
+          if (total > 30) {
+            info.textContent = 'Maximum 30 jours par permission.';
+            info.className = 'text-[10px] text-red-600 font-bold mt-1';
+          } else {
+            info.textContent = 'Calculé automatiquement à partir des deux dates.';
+            info.className = 'text-[10px] text-slate-500 mt-1';
+          }
+        }
+      }
+
+      /** Vrai si la periode saisie est exploitable (deux dates, fin >= debut, <= 30 jours). */
+      function periodePermValide() {
+        const d = dateIso(document.getElementById('permStart').value);
+        const f = dateIso(document.getElementById('permEnd').value);
+        if (!d || !f) return false;
+        const total = Math.round((new Date(f) - new Date(d)) / 86400000) + 1;
+        return total >= 1 && total <= 30;
+      }
+
+      function matchStatutFiltre(statut, filtre) {
+        if (!filtre) return true;
+        if (filtre === 'EN_ATTENTE') return statut.startsWith('EN_ATTENTE');
+        return statut === filtre;
+      }
+
+      /* DASHBOARD */
+      function renderDashboard() {
+        const mine = triPlusRecent(requests.filter(r => r.matricule === user.matricule));
+        const perms = mine.filter(r => r.nature === 'DEMANDE_PERMISSION');
+        const naiss = mine.filter(r => r.nature === 'DECLARATION_NAISSANCE');
+        const dec = mine.filter(r => r.nature === 'DECLARATION_DECES');
+
+        document.getElementById('countPerm').textContent = perms.length;
+        document.getElementById('countNaiss').textContent = naiss.length;
+        document.getElementById('countDeces').textContent = dec.length;
+
+        const search = (document.getElementById('dashSearch')?.value || '').toLowerCase();
+        const filtreNature = document.getElementById('dashFiltreNature')?.value || '';
+        const filtreStatut = document.getElementById('dashFiltreStatut')?.value || '';
+
+        let filtered = mine;
+        if (filtreNature) filtered = filtered.filter(r => r.nature === filtreNature);
+        if (filtreStatut) filtered = filtered.filter(r => matchStatutFiltre(statutReel(r), filtreStatut));
+        if (search) filtered = filtered.filter(r =>
+          (r.id||'').toLowerCase().includes(search) ||
+          (r.motif||'').toLowerCase().includes(search) ||
+          (r.nomChild||'').toLowerCase().includes(search) ||
+          (r.nomDefunt||'').toLowerCase().includes(search)
+        );
+
+        const tbody = document.getElementById('dashTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucun dossier trouvé.</td></tr>`;
+          renderPagination({ container: 'dashPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE, onPageChange: () => {} });
           return;
         }
 
-        document.getElementById('navName').textContent = user.name;
-        document.getElementById('navStructure').textContent =
-          user.structure || 'Structure non assignée';
-        loadAvatar();
-        await loadData();
-        renderDashboard();
-      }
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (pageDash > maxPage) pageDash = maxPage;
+        if (pageDash < 1) pageDash = 1;
 
-      /**
-       * Recharge depuis le serveur les dossiers de l'agent et les notes de service.
-       */
-      async function loadData() {
-        const r = await API.getRequests();
-        requests = r.status === 'success' ? r.requests : [];
-        const n = await API.getNotes();
-        notes = n.status === 'success' ? n.notes : [];
-      }
+        const pageItems = filtered.slice((pageDash - 1) * PAGE_SIZE, pageDash * PAGE_SIZE);
 
-      /**
-       * Dessine le tableau de bord : compteurs, tableau des demandes de l'agent (avec statut, motif de retour ou de rejet, boutons « Corriger » et « Suivre ») et notes diffusées.
-       */
-      function renderDashboard() {
-        const mine = requests.filter((r) => r.matricule === user.matricule);
-        document.getElementById('countPerm').textContent = mine.filter(
-          (r) => r.nature === 'DEMANDE_PERMISSION',
-        ).length;
-        document.getElementById('countActes').textContent = mine.filter(
-          (r) => r.nature !== 'DEMANDE_PERMISSION',
-        ).length;
-
-        const tbody = document.getElementById('requestsTable');
-        tbody.innerHTML = '';
-        if (!mine.length) {
-          tbody.innerHTML = `<tr><td colspan="6"
-            class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune demande enregistrée.</td>
-            </tr>`;
-        }
-        mine.forEach((r) => {
-          let badge = 'bg-slate-100 text-slate-800 border-slate-300';
-          if (r.statut === 'EN_ATTENTE_RH') badge = 'bg-slate-100 text-slate-800 border-slate-300';
-          if (r.statut === 'VALIDEE') badge = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-          if (r.statut === 'REJETEE') badge = 'bg-red-100 text-red-800 border-red-300';
-
+        pageItems.forEach(r => {
+          const statut = statutReel(r);
+          const detail = r.typePerm || r.motif || r.nomChild || r.nomDefunt || '';
+          const date = r.dateDebut ? dateFr(r.dateDebut) + ' → ' + dateFr(r.dateFin) : dateFr(r.dateEvt);
+          const natureLabel = {DEMANDE_PERMISSION:'Demande de permission', DECLARATION_NAISSANCE:'Déclaration de naissance', DECLARATION_DECES:'Déclaration de décès'}[r.nature] || r.nature;
+          const codeDossier = escapeHtml(r.id);
           const tr = document.createElement('tr');
           tr.innerHTML = `
-          <td class="px-6 py-4 font-mono font-bold text-xs">${escapeHtml(r.id)}</td>
-          <td class="px-6 py-4 text-xs font-medium">${escapeHtml(r.nature)}</td>
-          <td
-            class="px-6 py-4 text-xs">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
-          <td
-            class="px-6 py-4 text-xs">${r.dateDebut ? r.dateDebut + ' au ' + r.dateFin : r.dateEvt || ''}</td>
-          <td class="px-6 py-4 text-xs font-mono text-slate-600">${escapeHtml(r.piece)}</td>
-          <td class="px-6 py-4"><span
-            class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge}">${escapeHtml(r.statut)}</span>
-            ${
-              r.etape === 'RETOUR_CORRECTION'
-                ? `
-              <p
-                class="mt-1 text-[10px] text-red-700 font-bold">Motif du retour : ${escapeHtml(r.motif_retour)}</p>
-              <button data-corriger
-                class="mt-1 px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold">Corriger et renvoyer</button>`
-                : ''
-            }
-            ${r.statut === 'REJETEE' && r.motif_rejet ? `<p
-              class="mt-1 text-[10px] text-red-700">Motif du rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}
-            <div><button data-suivi
-              class="mt-1.5 px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Suivre le dossier</button>
-            </div>
-          </td>
-        `;
-          const btnCorriger = tr.querySelector('[data-corriger]');
-          if (btnCorriger) btnCorriger.onclick = () => ouvrirCorrection(r, rafraichirVue);
-          tr.querySelector('[data-suivi]').onclick = () => ouvrirSuivi(r);
+            <td class="px-4 py-3 font-mono font-bold text-xs text-emerald-800">${codeDossier}</td>
+            <td class="px-4 py-3 text-xs font-medium">${escapeHtml(natureLabel)}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(detail)}</td>
+            <td class="px-4 py-3 text-xs text-slate-500">${date}</td>
+            <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-4 py-3">${statutBadge(statut)}${ancienneteBadge(r)}</td>
+            <td class="px-4 py-3">
+              ${statut === 'BROUILLON' ? `<button type="button" onclick="ouvrirBrouillonDepuisDash('${codeDossier}')"
+                class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold border border-amber-300">Modifier / Soumettre</button>` : ''}
+              ${statut === 'RETOUR_CORRECTION' ? `<button type="button" onclick="ouvrirCorrection('${codeDossier}', rafraichirVue)"
+                class="px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded text-[10px] font-bold border border-orange-300">Corriger</button>` : ''}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')"
+                class="ml-1 px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Suivre</button>
+            </td>`;
           tbody.appendChild(tr);
         });
 
-        const notesContainer = document.getElementById('notesContainer');
-        notesContainer.innerHTML = '';
-        notes
-          .filter((n) => n.statut === 'DIFFUSEE' || n.statut === 'ARCHIVEE')
-          .forEach((n) => {
-            const d = document.createElement('div');
-            d.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm';
-            d.innerHTML = `
-          <span
-            class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${escapeHtml(n.service)}</span>
-          <h3 class="font-bold text-sm text-slate-900 mt-1">${escapeHtml(n.libelle)}</h3>
-          <p
-            class="text-xs text-slate-500 mt-1">Publié le ${escapeHtml(n.date)} par ${escapeHtml(n.emetteur)}</p>
-        `;
-            notesContainer.appendChild(d);
-          });
-      }
-
-      /**
-       * Recharge les données puis redessine le tableau de bord (appelée après une correction).
-       */
-      async function rafraichirVue() {
-        await loadData();
-        renderDashboard();
-      }
-
-      /**
-       * Affiche l'onglet demandé et masque les autres.
-       * @param {string} name dashboard, demande, actes ou notes.
-       */
-      function showTab(name) {
-        ['dashboard', 'demande', 'actes', 'notes'].forEach((t) => {
-          document.getElementById('tab-' + t).classList.add('hidden');
-          const btn = document.getElementById('nav-' + t);
-          if (btn) {
-            btn.classList.remove('bg-emerald-700', 'text-white');
-            btn.classList.add('text-slate-600');
+        renderPagination({
+          container: 'dashPagination',
+          totalItems: filtered.length,
+          currentPage: pageDash,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pageDash = newPage;
+            renderDashboard();
           }
         });
-        document.getElementById('tab-' + name).classList.remove('hidden');
-        const active = document.getElementById('nav-' + name);
-        if (active) {
-          active.classList.add('bg-emerald-700', 'text-white');
-          active.classList.remove('text-slate-600');
+      }
+
+      function ouvrirBrouillonDepuisDash(code) {
+        const r = typeof code === 'object' ? code : requests.find(x => x.id === code);
+        if (!r) return;
+        if (r.nature === 'DEMANDE_PERMISSION') {
+          showTab('permissions'); showForm('perm-form');
+          document.getElementById('permBrouillonCode').value = r.id;
+          document.getElementById('permType').value = r.typePerm || 'Événement Familial';
+          document.getElementById('permMotif').value = r.motif || '';
+          document.getElementById('permStart').value = dateFr(r.dateDebut);
+          document.getElementById('permEnd').value = dateFr(r.dateFin);
+          document.getElementById('permJours').value = r.jours || 1;
+          majBoutonsBrouillon('perm');
+        } else if (r.nature === 'DECLARATION_NAISSANCE') {
+          showTab('naissances'); showForm('naiss-form');
+          document.getElementById('naissBrouillonCode').value = r.id;
+          document.getElementById('naissNom').value = r.nom || '';
+          document.getElementById('naissPrenom').value = r.prenom || '';
+          document.getElementById('naissDate').value = dateFr(r.dateEvt);
+          document.getElementById('naissLieu').value = r.lieu || '';
+          majBoutonsBrouillon('naiss');
+        } else if (r.nature === 'DECLARATION_DECES') {
+          showTab('deces'); showForm('deces-form');
+          document.getElementById('decesBrouillonCode').value = r.id;
+          document.getElementById('decesNom').value = r.nom || '';
+          document.getElementById('decesPrenom').value = r.prenom || '';
+          document.getElementById('decesDate').value = dateFr(r.dateEvt);
+          document.getElementById('decesLieu').value = r.lieu || '';
+          if (r.lien_parente) document.getElementById('decesLien').value = r.lien_parente;
+          majBoutonsBrouillon('deces');
         }
       }
 
-      /**
-       * Calcule le nombre de jours d'une période (dates de début et de fin comprises) et l'écrit dans le champ prévu.
-       * @param {string} idDebut Identifiant du champ date de début.
-       * @param {string} idFin Identifiant du champ date de fin.
-       * @param {string} idJours Identifiant du champ où écrire le résultat.
-       */
-      function majJours(idDebut, idFin, idJours) {
-        const d = document.getElementById(idDebut).value;
-        const f = document.getElementById(idFin).value;
-        if (!d || !f) return;
-        const jours = Math.max(1, Math.round((new Date(f) - new Date(d)) / 86400000) + 1);
-        document.getElementById(idJours).value = jours;
+      /* PERMISSIONS */
+      function renderPermissions() {
+        const mine = requests.filter(r => r.nature === 'DEMANDE_PERMISSION' && r.matricule === user.matricule);
+        const search = (document.getElementById('permSearch')?.value || '').toLowerCase();
+        const filtreStatut = document.getElementById('permFiltreStatut')?.value || '';
+        const filtreDate = dateIso(document.getElementById('permFiltreDate')?.value);
+
+        let filtered = mine;
+        if (filtreStatut) filtered = filtered.filter(r => matchStatutFiltre(statutReel(r), filtreStatut));
+        if (filtreDate) filtered = filtered.filter(r => (r.dateDebut || '') >= filtreDate);
+        if (search) filtered = filtered.filter(r =>
+          (r.id||'').toLowerCase().includes(search) ||
+          (r.motif||'').toLowerCase().includes(search) ||
+          (r.typePerm||'').toLowerCase().includes(search)
+        );
+
+        const tbody = document.getElementById('permTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune demande.</td></tr>`;
+          renderPagination({ container: 'permPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE, onPageChange: () => {} });
+          return;
+        }
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (pagePerm > maxPage) pagePerm = maxPage;
+        if (pagePerm < 1) pagePerm = 1;
+
+        const pageItems = filtered.slice((pagePerm - 1) * PAGE_SIZE, pagePerm * PAGE_SIZE);
+
+        pageItems.forEach(r => {
+          const statut = statutReel(r);
+          const codeDossier = escapeHtml(r.id);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-mono font-bold text-xs text-emerald-800">${codeDossier}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.typePerm || '')}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.motif || '').substring(0,40)}${(r.motif||'').length > 40 ? '...' : ''}</td>
+            <td class="px-4 py-3 text-xs text-slate-500">${r.dateDebut ? dateFr(r.dateDebut) + ' → ' + dateFr(r.dateFin) : '—'}</td>
+            <td class="px-4 py-3 text-xs font-bold">${r.jours ?? '—'}</td>
+            <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-4 py-3">${statutBadge(statut)}${r.motif_rejet ? `<p class="text-[10px] text-red-700 mt-1">Rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}${r.motif_retour ? `<p class="text-[10px] text-orange-700 mt-1">Retour : ${escapeHtml(r.motif_retour)}</p>` : ''}</td>
+            <td class="px-4 py-3 space-y-1">
+              ${statut === 'BROUILLON' ? `<button type="button" onclick="chargerBrouillonPerm('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold border border-amber-300">Modifier</button>
+              <button type="button" onclick="soumettreDepuisListe('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold border border-emerald-300">Soumettre</button>` : ''}
+              ${statut === 'RETOUR_CORRECTION' ? `<button type="button" onclick="ouvrirCorrection('${codeDossier}', rafraichirVue)" class="block w-full text-left px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded text-[10px] font-bold border border-orange-300">Corriger</button>` : ''}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')" class="block w-full text-left px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Historique</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'permPagination',
+          totalItems: filtered.length,
+          currentPage: pagePerm,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pagePerm = newPage;
+            renderPermissions();
+          }
+        });
       }
 
-      /**
-       * Envoie la demande de permission (avec son justificatif) puis rafraîchit le tableau de bord.
-       */
-      async function submitPermission(e) {
-        e.preventDefault();
+      function chargerBrouillonPerm(code) {
+        const r = typeof code === 'object' ? code : requests.find(x => x.id === code);
+        if (!r) return;
+        showForm('perm-form');
+        document.getElementById('permBrouillonCode').value = r.id;
+        document.getElementById('permType').value = r.typePerm || 'Événement Familial';
+        document.getElementById('permMotif').value = r.motif || '';
+        document.getElementById('permStart').value = dateFr(r.dateDebut);
+        document.getElementById('permEnd').value = dateFr(r.dateFin);
+        document.getElementById('permJours').value = r.jours || 1;
+        majBoutonsBrouillon('perm');
+        document.getElementById('perm-form').scrollIntoView({behavior:'smooth'});
+      }
+
+      async function soumettreDepuisListe(codeDossier) {
+        if (!(await demanderConfirmation('Soumettre ce brouillon au circuit de traitement ?', 'Soumettre'))) return;
+        const res = await API.soumettrebrouillonPermission(codeDossier);
+        if (res.status === 'success') {
+          toast('Demande soumise : ' + res.code);
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || 'Impossible de soumettre.'));
+        }
+      }
+
+      async function enregistrerBrouillonPermission() {
         const data = new FormData();
+        const code = document.getElementById('permBrouillonCode').value;
+        if (code) data.append('code_dossier', code);
         data.append('typePerm', document.getElementById('permType').value);
         data.append('motif', document.getElementById('permMotif').value);
-        data.append('dateDebut', document.getElementById('permStart').value);
-        data.append('dateFin', document.getElementById('permEnd').value);
-        data.append('jours', parseInt(document.getElementById('permJours').value, 10) || 1);
+        const debut = dateIso(document.getElementById('permStart').value);
+        const fin = dateIso(document.getElementById('permEnd').value);
+        if (debut) data.append('dateDebut', debut);
+        if (fin) data.append('dateFin', fin);
+        // Sans nombre de jours, le serveur le déduit lui-même des deux dates.
+        if (document.getElementById('permJours').value) {
+          data.append('jours', document.getElementById('permJours').value);
+        }
         const piece = document.getElementById('permFile').files[0];
         if (piece) data.append('piece', piece);
-        const res = await API.submitPermission(data);
+        const res = await API.sauvegarderBrouillonPermission(data);
         if (res.status === 'success') {
-          alert('Demande soumise sous la référence : ' + res.code + ' (' + res.jours + ' jour(s))');
-          await loadData();
-          renderDashboard();
-          showTab('dashboard');
+          document.getElementById('permBrouillonCode').value = res.code;
+          majBoutonsBrouillon('perm');
+          toast('Brouillon enregistré : ' + res.code);
+          await rafraichirVue();
         } else {
-          alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
+          toast('Erreur : ' + (res.message || 'Impossible d\'enregistrer le brouillon.'));
         }
       }
 
-      /**
-       * Envoie la déclaration de naissance (avec l'extrait d'acte) puis rafraîchit le tableau de bord.
-       */
-      async function submitNaissance(e) {
-        e.preventDefault();
+      async function soumettrePermission() {
+        const code = document.getElementById('permBrouillonCode').value;
+        const motif = document.getElementById('permMotif').value;
+        const debut = dateIso(document.getElementById('permStart').value);
+        const fin = dateIso(document.getElementById('permEnd').value);
+
+        if (!motif || !debut || !fin) {
+          toast('Veuillez remplir le motif et les dates au format jj/mm/aaaa avant de soumettre.');
+          return;
+        }
+
+        // Le serveur recalcule la date de fin depuis le nombre de jours : une période incohérente est
+        // bloquée ici, sinon la fin saisie serait remplacée sans prévenir.
+        if (!periodePermValide()) {
+          const total = Math.round((new Date(fin) - new Date(debut)) / 86400000) + 1;
+          toast(total < 1
+            ? 'La date de fin doit être postérieure ou égale à la date de début.'
+            : 'Une permission ne peut pas dépasser 30 jours.');
+          return;
+        }
+
+        if (code) {
+          // Mettre à jour puis soumettre le brouillon
+          const data = new FormData();
+          data.append('code_dossier', code);
+          data.append('typePerm', document.getElementById('permType').value);
+          data.append('motif', motif);
+          data.append('dateDebut', debut);
+          data.append('dateFin', fin);
+          data.append('jours', document.getElementById('permJours').value || 1);
+          const piece = document.getElementById('permFile').files[0];
+          if (piece) data.append('piece', piece);
+          const maj = await API.sauvegarderBrouillonPermission(data);
+          if (maj.status !== 'success') {
+            toast('Erreur : ' + (maj.message || 'Impossible d\'enregistrer les modifications.'));
+            return;
+          }
+          const res = await API.soumettrebrouillonPermission(code);
+          if (res.status === 'success') {
+            toast('Demande soumise : ' + res.code + '. Elle est transmise au Gestionnaire RH.');
+            document.getElementById('permBrouillonCode').value = '';
+            document.getElementById('formPermission').reset();
+            majBoutonsBrouillon('perm');
+            hideForm('perm-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Impossible de soumettre.'));
+          }
+        } else {
+          // Soumission directe (nouveau dossier)
+          const data = new FormData();
+          data.append('typePerm', document.getElementById('permType').value);
+          data.append('motif', motif);
+          data.append('dateDebut', debut);
+          data.append('dateFin', fin);
+          data.append('jours', parseInt(document.getElementById('permJours').value, 10) || 1);
+          const piece = document.getElementById('permFile').files[0];
+          if (piece) data.append('piece', piece);
+          const res = await API.submitPermission(data);
+          if (res.status === 'success') {
+            toast('Demande soumise : ' + res.code + ' (' + res.jours + ' jour(s)).');
+            document.getElementById('formPermission').reset();
+            hideForm('perm-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Vérifiez les champs.'));
+          }
+        }
+      }
+
+      /* NAISSANCES */
+      function renderNaissances() {
+        const mine = requests.filter(r => r.nature === 'DECLARATION_NAISSANCE' && r.matricule === user.matricule);
+        const search = (document.getElementById('naissSearch')?.value || '').toLowerCase();
+        const filtreStatut = document.getElementById('naissFiltreStatut')?.value || '';
+        const filtreDate = dateIso(document.getElementById('naissFiltreDate')?.value);
+
+        let filtered = mine;
+        if (filtreStatut) filtered = filtered.filter(r => matchStatutFiltre(statutReel(r), filtreStatut));
+        if (filtreDate) filtered = filtered.filter(r => (r.dateEvt || '') >= filtreDate);
+        if (search) filtered = filtered.filter(r =>
+          (r.id||'').toLowerCase().includes(search) ||
+          (r.nomChild||'').toLowerCase().includes(search)
+        );
+
+        const tbody = document.getElementById('naissTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune déclaration de naissance.</td></tr>`;
+          renderPagination({ container: 'naissPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE, onPageChange: () => {} });
+          return;
+        }
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (pageNaiss > maxPage) pageNaiss = maxPage;
+        if (pageNaiss < 1) pageNaiss = 1;
+
+        const pageItems = filtered.slice((pageNaiss - 1) * PAGE_SIZE, pageNaiss * PAGE_SIZE);
+
+        pageItems.forEach(r => {
+          const statut = statutReel(r);
+          const codeDossier = escapeHtml(r.id);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-mono font-bold text-xs text-sky-800">${codeDossier}</td>
+            <td class="px-4 py-3 text-xs font-medium">${escapeHtml(r.nomChild || '')}</td>
+            <td class="px-4 py-3 text-xs text-slate-500">${dateFr(r.dateEvt) || '—'}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.lieu || '—')}</td>
+            <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-sky-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-4 py-3">${statutBadge(statut)}${r.motif_rejet ? `<p class="text-[10px] text-red-700 mt-1">Rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}${r.motif_retour ? `<p class="text-[10px] text-orange-700 mt-1">Retour : ${escapeHtml(r.motif_retour)}</p>` : ''}</td>
+            <td class="px-4 py-3 space-y-1">
+              ${statut === 'BROUILLON' ? `<button type="button" onclick="chargerBrouillonNaiss('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold border border-amber-300">Modifier</button>
+              <button type="button" onclick="soumettreDeclarationDepuisListe('NAISSANCE','${codeDossier}')" class="block w-full text-left px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded text-[10px] font-bold border border-sky-300">Soumettre</button>` : ''}
+              ${statut === 'RETOUR_CORRECTION' ? `<button type="button" onclick="ouvrirCorrection('${codeDossier}', rafraichirVue)" class="block w-full text-left px-2 py-1 bg-orange-100 text-orange-900 rounded text-[10px] font-bold border border-orange-300">Corriger</button>` : ''}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')" class="block w-full text-left px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Historique</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'naissPagination',
+          totalItems: filtered.length,
+          currentPage: pageNaiss,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pageNaiss = newPage;
+            renderNaissances();
+          }
+        });
+      }
+
+      function chargerBrouillonNaiss(code) {
+        const r = typeof code === 'object' ? code : requests.find(x => x.id === code);
+        if (!r) return;
+        showForm('naiss-form');
+        document.getElementById('naissBrouillonCode').value = r.id;
+        document.getElementById('naissNom').value = r.nom || '';
+        document.getElementById('naissPrenom').value = r.prenom || '';
+        document.getElementById('naissDate').value = dateFr(r.dateEvt);
+        document.getElementById('naissLieu').value = r.lieu || '';
+        majBoutonsBrouillon('naiss');
+        document.getElementById('naiss-form').scrollIntoView({behavior:'smooth'});
+      }
+
+      async function soumettreDeclarationDepuisListe(nature, codeDossier) {
+        if (!(await demanderConfirmation('Soumettre ce brouillon au circuit de traitement ?', 'Soumettre'))) return;
+        const res = await API.soumettrebrouillonDeclaration(nature, codeDossier);
+        if (res.status === 'success') {
+          toast('Déclaration soumise : ' + res.code);
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || 'Impossible de soumettre. Vérifiez que la pièce justificative est jointe.'));
+        }
+      }
+
+      async function enregistrerBrouillonNaissance() {
         const data = new FormData();
+        const code = document.getElementById('naissBrouillonCode').value;
         data.append('nature', 'NAISSANCE');
+        if (code) data.append('code_dossier', code);
         data.append('nom', document.getElementById('naissNom').value);
         data.append('prenom', document.getElementById('naissPrenom').value);
-        data.append('date', document.getElementById('naissDate').value);
-        data.append('lieu', document.getElementById('naissLieu').value);
-        data.append('extrait', document.getElementById('naissFile').files[0]);
-        const res = await API.submitDeclaration(data);
+        const d = dateIso(document.getElementById('naissDate').value);
+        const l = document.getElementById('naissLieu').value;
+        if (d) data.append('date', d);
+        if (l) data.append('lieu', l);
+        const f = document.getElementById('naissFile').files[0];
+        if (f) data.append('extrait', f);
+        const res = await API.sauvegarderBrouillonDeclaration(data);
         if (res.status === 'success') {
-          alert(
-            'Déclaration de naissance transmise sous la référence ' +
-              res.code +
-              '. Le dossier est transmis au Gestionnaire RH pour vérification.',
-          );
-          await loadData();
-          renderDashboard();
-          showTab('dashboard');
+          document.getElementById('naissBrouillonCode').value = res.code;
+          majBoutonsBrouillon('naiss');
+          toast('Brouillon enregistré : ' + res.code);
+          await rafraichirVue();
         } else {
-          alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
+          toast('Erreur : ' + (res.message || 'Impossible d\'enregistrer.'));
         }
       }
 
-      /**
-       * Envoie la déclaration de décès (avec le certificat) puis rafraîchit le tableau de bord.
-       */
-      async function submitDeces(e) {
-        e.preventDefault();
+      async function soumettreNaissance() {
+        const nom = document.getElementById('naissNom').value;
+        const prenom = document.getElementById('naissPrenom').value;
+        const date = dateIso(document.getElementById('naissDate').value);
+        const lieu = document.getElementById('naissLieu').value;
+        const file = document.getElementById('naissFile').files[0];
+        const code = document.getElementById('naissBrouillonCode').value;
+
+        if (!nom || !prenom || !date || !lieu) {
+          toast('Veuillez remplir tous les champs obligatoires.');
+          return;
+        }
+
+        if (code) {
+          // Mettre à jour le brouillon puis le soumettre
+          const data = new FormData();
+          data.append('nature', 'NAISSANCE');
+          data.append('code_dossier', code);
+          data.append('nom', nom); data.append('prenom', prenom);
+          data.append('date', date); data.append('lieu', lieu);
+          if (file) data.append('extrait', file);
+          const maj = await API.sauvegarderBrouillonDeclaration(data);
+          if (maj.status !== 'success') {
+            toast('Erreur : ' + (maj.message || 'Impossible d\'enregistrer les modifications.'));
+            return;
+          }
+          const res = await API.soumettrebrouillonDeclaration('NAISSANCE', code);
+          if (res.status === 'success') {
+            toast('Déclaration soumise : ' + res.code + '. Transmise au Gestionnaire RH.');
+            document.getElementById('naissBrouillonCode').value = '';
+            document.getElementById('formNaissance').reset();
+            majBoutonsBrouillon('naiss');
+            hideForm('naiss-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Joignez l\'extrait d\'acte de naissance obligatoire.'));
+          }
+        } else {
+          if (!file) { toast('L\'extrait d\'acte de naissance est obligatoire pour soumettre.'); return; }
+          const data = new FormData();
+          data.append('nature', 'NAISSANCE');
+          data.append('nom', nom); data.append('prenom', prenom);
+          data.append('date', date); data.append('lieu', lieu);
+          data.append('extrait', file);
+          const res = await API.submitDeclaration(data);
+          if (res.status === 'success') {
+            toast('Déclaration soumise : ' + res.code + '. Transmise au Gestionnaire RH.');
+            document.getElementById('formNaissance').reset();
+            hideForm('naiss-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Vérifiez les champs.'));
+          }
+        }
+      }
+
+      /* DECES */
+      function renderDeces() {
+        const mine = requests.filter(r => r.nature === 'DECLARATION_DECES' && r.matricule === user.matricule);
+        const search = (document.getElementById('decesSearch')?.value || '').toLowerCase();
+        const filtreStatut = document.getElementById('decesFiltreStatut')?.value || '';
+        const filtreDate = dateIso(document.getElementById('decesFiltreDate')?.value);
+
+        let filtered = mine;
+        if (filtreStatut) filtered = filtered.filter(r => matchStatutFiltre(statutReel(r), filtreStatut));
+        if (filtreDate) filtered = filtered.filter(r => (r.dateEvt || '') >= filtreDate);
+        if (search) filtered = filtered.filter(r =>
+          (r.id||'').toLowerCase().includes(search) ||
+          (r.nomDefunt||'').toLowerCase().includes(search)
+        );
+
+        const tbody = document.getElementById('decesTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune déclaration de décès.</td></tr>`;
+          renderPagination({ container: 'decesPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE, onPageChange: () => {} });
+          return;
+        }
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (pageDeces > maxPage) pageDeces = maxPage;
+        if (pageDeces < 1) pageDeces = 1;
+
+        const pageItems = filtered.slice((pageDeces - 1) * PAGE_SIZE, pageDeces * PAGE_SIZE);
+
+        pageItems.forEach(r => {
+          const statut = statutReel(r);
+          const codeDossier = escapeHtml(r.id);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-mono font-bold text-xs text-slate-800">${codeDossier}</td>
+            <td class="px-4 py-3 text-xs font-medium">${escapeHtml(r.nomDefunt || '')}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.lien_parente || '—')}</td>
+            <td class="px-4 py-3 text-xs text-slate-500">${dateFr(r.dateEvt) || '—'}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.lieu || '—')}</td>
+            <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-slate-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-4 py-3">${statutBadge(statut)}${r.motif_rejet ? `<p class="text-[10px] text-red-700 mt-1">Rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}${r.motif_retour ? `<p class="text-[10px] text-orange-700 mt-1">Retour : ${escapeHtml(r.motif_retour)}</p>` : ''}</td>
+            <td class="px-4 py-3 space-y-1">
+              ${statut === 'BROUILLON' ? `<button type="button" onclick="chargerBrouillonDeces('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold border border-amber-300">Modifier</button>
+              <button type="button" onclick="soumettreDeclarationDepuisListe('DECES','${codeDossier}')" class="block w-full text-left px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded text-[10px] font-bold border border-slate-400">Soumettre</button>` : ''}
+              ${statut === 'RETOUR_CORRECTION' ? `<button type="button" onclick="ouvrirCorrection('${codeDossier}', rafraichirVue)" class="block w-full text-left px-2 py-1 bg-orange-100 text-orange-900 rounded text-[10px] font-bold border border-orange-300">Corriger</button>` : ''}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')" class="block w-full text-left px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Historique</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'decesPagination',
+          totalItems: filtered.length,
+          currentPage: pageDeces,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pageDeces = newPage;
+            renderDeces();
+          }
+        });
+      }
+
+      function chargerBrouillonDeces(code) {
+        const r = typeof code === 'object' ? code : requests.find(x => x.id === code);
+        if (!r) return;
+        showForm('deces-form');
+        document.getElementById('decesBrouillonCode').value = r.id;
+        document.getElementById('decesNom').value = r.nom || '';
+        document.getElementById('decesPrenom').value = r.prenom || '';
+        document.getElementById('decesDate').value = dateFr(r.dateEvt);
+        document.getElementById('decesLieu').value = r.lieu || '';
+        if (r.lien_parente) document.getElementById('decesLien').value = r.lien_parente;
+        majBoutonsBrouillon('deces');
+        document.getElementById('deces-form').scrollIntoView({behavior:'smooth'});
+      }
+
+      async function enregistrerBrouillonDeces() {
         const data = new FormData();
+        const code = document.getElementById('decesBrouillonCode').value;
         data.append('nature', 'DECES');
+        if (code) data.append('code_dossier', code);
         data.append('nom', document.getElementById('decesNom').value);
         data.append('prenom', document.getElementById('decesPrenom').value);
         data.append('lien_parente', document.getElementById('decesLien').value);
-        data.append('date', document.getElementById('decesDate').value);
-        data.append('lieu', document.getElementById('decesLieu').value);
-        data.append('certificat', document.getElementById('decesFile').files[0]);
-        const res = await API.submitDeclaration(data);
+        const d = dateIso(document.getElementById('decesDate').value);
+        const l = document.getElementById('decesLieu').value;
+        if (d) data.append('date', d);
+        if (l) data.append('lieu', l);
+        const f = document.getElementById('decesFile').files[0];
+        if (f) data.append('certificat', f);
+        const res = await API.sauvegarderBrouillonDeclaration(data);
         if (res.status === 'success') {
-          alert(
-            'Déclaration de décès transmise sous la référence ' +
-              res.code +
-              '. Le dossier est transmis au Gestionnaire RH pour vérification.',
-          );
-          await loadData();
-          renderDashboard();
-          showTab('dashboard');
+          document.getElementById('decesBrouillonCode').value = res.code;
+          majBoutonsBrouillon('deces');
+          toast('Brouillon enregistré : ' + res.code);
+          await rafraichirVue();
         } else {
-          alert('Envoi impossible : ' + (res.message || 'vérifiez les champs et le justificatif.'));
+          toast('Erreur : ' + (res.message || 'Impossible d\'enregistrer.'));
         }
+      }
+
+      async function soumettreDeces() {
+        const nom = document.getElementById('decesNom').value;
+        const prenom = document.getElementById('decesPrenom').value;
+        const lien = document.getElementById('decesLien').value;
+        const date = dateIso(document.getElementById('decesDate').value);
+        const lieu = document.getElementById('decesLieu').value;
+        const file = document.getElementById('decesFile').files[0];
+        const code = document.getElementById('decesBrouillonCode').value;
+
+        if (!nom || !prenom || !date || !lieu) {
+          toast('Veuillez remplir tous les champs obligatoires.');
+          return;
+        }
+
+        if (code) {
+          const data = new FormData();
+          data.append('nature', 'DECES');
+          data.append('code_dossier', code);
+          data.append('nom', nom); data.append('prenom', prenom);
+          data.append('lien_parente', lien); data.append('date', date); data.append('lieu', lieu);
+          if (file) data.append('certificat', file);
+          const maj = await API.sauvegarderBrouillonDeclaration(data);
+          if (maj.status !== 'success') {
+            toast('Erreur : ' + (maj.message || 'Impossible d\'enregistrer les modifications.'));
+            return;
+          }
+          const res = await API.soumettrebrouillonDeclaration('DECES', code);
+          if (res.status === 'success') {
+            toast('Déclaration soumise : ' + res.code + '. Transmise au Gestionnaire RH.');
+            document.getElementById('decesBrouillonCode').value = '';
+            document.getElementById('formDeces').reset();
+            majBoutonsBrouillon('deces');
+            hideForm('deces-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Joignez le certificat de décès officiel.'));
+          }
+        } else {
+          if (!file) { toast('Le certificat de décès officiel est obligatoire pour soumettre.'); return; }
+          const data = new FormData();
+          data.append('nature', 'DECES');
+          data.append('nom', nom); data.append('prenom', prenom);
+          data.append('lien_parente', lien); data.append('date', date); data.append('lieu', lieu);
+          data.append('certificat', file);
+          const res = await API.submitDeclaration(data);
+          if (res.status === 'success') {
+            toast('Déclaration soumise : ' + res.code + '. Transmise au Gestionnaire RH.');
+            document.getElementById('formDeces').reset();
+            hideForm('deces-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Vérifiez les champs.'));
+          }
+        }
+      }
+
+      /* NOTES DE SERVICE */
+      function renderNotes() {
+        const search = (document.getElementById('notesSearch')?.value || '').toLowerCase();
+        const container = document.getElementById('notesContainer');
+        container.innerHTML = '';
+        const visibles = notes
+          .filter(n => n.statut === 'DIFFUSEE' || n.statut === 'ARCHIVEE')
+          .filter(n => !search || (n.libelle||'').toLowerCase().includes(search) || (n.service||'').toLowerCase().includes(search));
+        if (!visibles.length) {
+          container.innerHTML = '<p class="text-slate-500 italic text-sm">Aucune note de service disponible.</p>';
+          renderPagination({ container: 'notesPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE_NOTES, onPageChange: () => {} });
+          return;
+        }
+
+        const maxPage = Math.ceil(visibles.length / PAGE_SIZE_NOTES) || 1;
+        if (pageNotes > maxPage) pageNotes = maxPage;
+        if (pageNotes < 1) pageNotes = 1;
+
+        const pageItems = visibles.slice((pageNotes - 1) * PAGE_SIZE_NOTES, pageNotes * PAGE_SIZE_NOTES);
+
+        pageItems.forEach(n => {
+          const d = document.createElement('div');
+          d.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm';
+          d.innerHTML = `
+            <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${escapeHtml(n.service)}</span>
+            <h3 class="font-bold text-sm text-slate-900 mt-1">${escapeHtml(n.libelle)}</h3>
+            <p class="text-xs text-slate-500 mt-1">Publié le ${escapeHtml(dateFr(n.date))} par ${escapeHtml(n.emetteur)}</p>`;
+          container.appendChild(d);
+        });
+
+        renderPagination({
+          container: 'notesPagination',
+          totalItems: visibles.length,
+          currentPage: pageNotes,
+          pageSize: PAGE_SIZE_NOTES,
+          onPageChange: (newPage) => {
+            pageNotes = newPage;
+            renderNotes();
+          }
+        });
       }
 
       window.onload = init;

@@ -208,7 +208,7 @@ class GfpSeeder extends Seeder
                 [
                     'name' => $agent->fullName(),
                     'email' => strtolower($c['matricule']).'@fonctionpublique.gouv.ci',
-                    'password' => Hash::make('test123'),
+                    'password' => 'test123',
                     'agent_id' => $agent->id,
                     'structure_id' => $agent->structure_id,
                 ],

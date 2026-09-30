@@ -9,13 +9,13 @@ use Illuminate\Http\Request;
 /** Journal d'audit (administrateur) : entrées, sorties et actions de tous les utilisateurs. */
 class AuditController extends Controller
 {
-    /**
-     * Administrateur : page du journal d'audit avec les indicateurs du jour (connexions, déconnexions,
-     * échecs, actions, utilisateurs actifs).
-     */
+    /** Administrateur : page du journal d'audit avec les indicateurs du jour (connexions, déconnexions,
+     * échecs, actions, utilisateurs actifs). */
     public function index(Request $request)
     {
-        $lignes = $this->filtrer($request)->latest('id')->paginate(40);
+        // L'écran demande une page courte (sans défilement) ; 40 par défaut sinon.
+        $parPage = min(100, max(5, (int) $request->input('per_page', 40)));
+        $lignes = $this->filtrer($request)->latest('id')->paginate($parPage);
 
         $aujourdhui = now()->startOfDay();
         $connexions = JournalAudit::where('categorie', JournalAudit::CONNEXION);
@@ -110,10 +110,8 @@ class AuditController extends Controller
         );
     }
 
-    /**
-     * Applique les filtres du journal : catégorie, échecs seulement, période et recherche (matricule,
-     * nom, référence, description).
-     */
+    /** Applique les filtres du journal : catégorie, échecs seulement, période et recherche (matricule,
+     * nom, référence, description). */
     private function filtrer(Request $request): Builder
     {
         $q = trim((string) $request->query('q', ''));

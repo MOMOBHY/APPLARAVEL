@@ -7,11 +7,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * « EN_ATTENTE_VALIDATION » (21 caractères) dépasse varchar(20) : rejeté par
-     * MySQL/PostgreSQL en mode strict. Les déclarations encore à l'ancienne étape
-     * « service administratif » passent chez le Gestionnaire RH, qui la remplace.
-     */
+    /** « EN_ATTENTE_VALIDATION » (21 car.) dépasse varchar(20) en mode strict ; les déclarations encore
+     * au « service administratif » passent au gestionnaire RH. */
     public function up(): void
     {
         Schema::table('notes_service', function (Blueprint $table) {

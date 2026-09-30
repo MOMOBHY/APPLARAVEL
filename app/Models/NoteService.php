@@ -22,6 +22,10 @@ class NoteService extends Model
 
     public const VALIDEE = 'VALIDEE';
 
+    /** Note refusée à la validation par le directeur : elle revient au secrétariat, qui la reprend avant
+     * de la soumettre de nouveau au directeur. */
+    public const A_REPRENDRE = 'A_REPRENDRE';
+
     public const REJETEE = 'REJETEE';
 
     public const DIFFUSEE = 'DIFFUSEE';

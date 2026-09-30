@@ -38,7 +38,7 @@ class NoteServiceController extends Controller
         return response()->json(['status' => 'success', 'data' => $note]);
     }
 
-    /** Étape 1 — rédaction (brouillon) par une autorité habilitée. */
+    /** Étape 1 — rédaction (brouillon) par le secrétariat. */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -74,10 +74,10 @@ class NoteServiceController extends Controller
         );
     }
 
-    /** Transmission au secrétariat par l'autorité émettrice. */
-    public function transmettre(NoteService $note)
+    /** Envoi aux directeurs par le secrétariat (brouillon ou note reprise). */
+    public function envoyer(NoteService $note)
     {
-        $note = NoteWorkflowService::transmettreSecretariat($note, request()->user()->agent);
+        $note = NoteWorkflowService::envoyerAuxDirecteurs($note, request()->user()->agent);
 
         return response()->json(['status' => 'success', 'data' => $note]);
     }
@@ -121,7 +121,21 @@ class NoteServiceController extends Controller
         return response()->json(['status' => 'success', 'data' => $note]);
     }
 
-    /** Étape 3 — validation par l'autorité émettrice. */
+    /** Reprise d'une note refusée par le secrétariat (correction sans changer d'étape). */
+    public function reprendre(Request $request, NoteService $note)
+    {
+        $data = $request->validate([
+            'objet' => ['nullable', 'string', 'min:5', 'max:200'],
+            'contenu' => ['nullable', 'string'],
+            'structure_ids' => ['nullable', 'array'],
+            'structure_ids.*' => ['exists:structures,id'],
+        ]);
+        $note = NoteWorkflowService::reprendre($note, $request->user()->agent, $data);
+
+        return response()->json(['status' => 'success', 'data' => $note]);
+    }
+
+    /** Étape 3 — validation par un directeur (la première validation l'emporte). */
     public function valider(NoteService $note)
     {
         $note = NoteWorkflowService::valider($note, request()->user()->agent);
@@ -129,7 +143,7 @@ class NoteServiceController extends Controller
         return response()->json(['status' => 'success', 'data' => $note]);
     }
 
-    /** Refus motivé de validation par l'autorité émettrice. */
+    /** Refus motivé de validation par un directeur (retour au secrétariat). */
     public function refuser(Request $request, NoteService $note)
     {
         $data = $request->validate(['motif' => ['required', 'string', 'min:3']]);
@@ -142,6 +156,14 @@ class NoteServiceController extends Controller
     public function diffuser(NoteService $note)
     {
         $note = NoteWorkflowService::diffuser($note, request()->user()->agent);
+
+        return response()->json(['status' => 'success', 'data' => $note]);
+    }
+
+    /** Diffusion directe d'une note du DRH vers les agents de sa direction. */
+    public function diffuserDirectement(NoteService $note)
+    {
+        $note = NoteWorkflowService::diffuserDirectement($note, request()->user()->agent);
 
         return response()->json(['status' => 'success', 'data' => $note]);
     }

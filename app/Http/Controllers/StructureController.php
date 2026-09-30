@@ -8,10 +8,8 @@ use Illuminate\Support\Str;
 /** Annuaire des structures officielles du ministère, classées de A à Z. */
 class StructureController extends Controller
 {
-    /**
-     * Annuaire des structures officielles du ministère classées de A à Z, avec leur rattachement et le
-     * nombre d'agents.
-     */
+    /** Annuaire des structures officielles du ministère classées de A à Z, avec leur rattachement et le
+     * nombre d'agents. */
     public function index()
     {
         $structures = Structure::with('parent:id,nom,sigle')

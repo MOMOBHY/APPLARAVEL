@@ -1,18 +1,19 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="../assets/logo-republique-cote-ivoire.png" />
+    <link rel="icon" href="../assets/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <title>
-      Espace Gestionnaire RH - Ministère de la Fonction Publique et de la Modernisation de
-      l’Administration
+      Espace Responsable - Ministère de la Fonction Publique et de la Modernisation de
+      l'Administration
     </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      body {
-        position: relative;
-      }
+      body { position: relative; }
       body::before {
         content: '';
         position: fixed;
@@ -26,45 +27,133 @@
         z-index: 0;
         pointer-events: none;
       }
-      header,
-      main,
-      nav,
-      div {
-        position: relative;
-        z-index: 1;
-      }
+      header, main, nav, div { position: relative; z-index: 1; }
     </style>
     <link rel="stylesheet" href="../assets/theme.css" />
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-    <!-- BANDEAU TRICOLORE -->
-    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
-      <div class="h-full w-1/3 bg-orange-500"></div>
-      <div class="h-full w-1/3 bg-white"></div>
-      <div class="h-full w-1/3 bg-emerald-600"></div>
-    </div>
+  <body class="h-full bg-slate-100 text-slate-900">
 
     <!-- HEADER -->
     <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
       <div
         id="gfp-entete"
-        data-sous-titre="Espace Gestionnaire RH, visa hiérarchique"
+        data-sous-titre="Espace Gestionnaire RH, conformité hiérarchique"
         data-role="Gestionnaire RH"
         data-base="../"
       ></div>
       <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-          <button
-            id="tabButton"
-            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white"
-          >
+        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2 flex-wrap gap-y-1">
+          <button onclick="showTab('dashboard')" id="nav-dashboard"
+            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap">
+            Tableau de Bord
+          </button>
+          <button onclick="showTab('controle')" id="tabButton"
+            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
             Vérification Gestionnaire RH
+          </button>
+          <!-- Déclarations d'état civil : onglet détaché, réservé au gestionnaire RH. -->
+          <button onclick="showTab('actes')" id="nav-actes"
+            class="hidden px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Déclaration d'état civil
+          </button>
+          <!-- Onglets de dépôt et de notes : réservés au sous-directeur et au directeur. Masqués pour le
+               gestionnaire RH, dont l'interface reste limitée au contrôle et à la conformité. -->
+          <button onclick="showTab('permissions')" id="nav-permissions"
+            class="hidden px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Demande de permission
+          </button>
+          <button onclick="showTab('naissances')" id="nav-naissances"
+            class="hidden px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Déclaration de naissance
+          </button>
+          <button onclick="showTab('notes')" id="nav-notes"
+            class="hidden px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            Notes de Service
           </button>
         </div>
       </nav>
     </header>
 
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+      <!-- ============================================================ -->
+      <!-- ONGLET : TABLEAU DE BORD                                    -->
+      <!-- ============================================================ -->
+      <div id="tab-dashboard" class="space-y-6">
+        <!-- Compteurs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Demandes et déclarations à traiter</span>
+            <p id="countPending" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Mes demandes de permission</span>
+            <p id="countMyPerm" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+            <p class="text-[10px] text-slate-400">déposées ou traitées par vous</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Mes déclarations de naissance</span>
+            <p id="countMyNaiss" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+            <p class="text-[10px] text-slate-400">déposées ou traitées par vous</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Notes</span>
+            <p id="countNotes" class="text-3xl font-extrabold text-slate-900 mt-2">0</p>
+          </div>
+        </div>
+
+        <!-- Résumé tous dossiers -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <h2 class="font-bold text-base text-slate-900">Tous mes dossiers</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+              <input type="text" id="dashSearch" oninput="renderDashboard()" placeholder="Rechercher..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-40">
+              <select id="dashFiltreNature" onchange="renderDashboard()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+                <option value="">Tous les types</option>
+                <option value="DEMANDE_PERMISSION">Demande de permission</option>
+                <option value="DECLARATION_NAISSANCE">Déclaration de naissance</option>
+                <option value="DECLARATION_DECES">Déclaration de décès</option>
+              </select>
+              <select id="dashFiltreStatut" onchange="renderDashboard()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+                <option value="">Tous statuts</option>
+                <option value="BROUILLON">Brouillon</option>
+                <option value="EN_ATTENTE">En attente</option>
+                <option value="VALIDEE">Validé</option>
+                <option value="REJETEE">Rejeté</option>
+                <option value="RETOUR_CORRECTION">Retour correction</option>
+              </select>
+              <button type="button" onclick="exporterDossiersCsv(dossiersDashResp, 'mes-dossiers')"
+                class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold">
+                Exporter (CSV)
+              </button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Réf</th>
+                  <th class="px-4 py-3">Type</th>
+                  <th class="px-4 py-3">Détail</th>
+                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Agent</th>
+                  <th class="px-4 py-3">Justificatif</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+          <div id="dashPagination" class="px-6 pb-4"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- ONGLET : PERMISSIONS (contrôle du gestionnaire RH          -->
+      <!-- ou conformité hiérarchique du sous-directeur / directeur)  -->
+      <!-- ============================================================ -->
+      <div id="tab-controle" class="hidden space-y-6">
       <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
         <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
           <div>
@@ -83,11 +172,33 @@
           </span>
         </div>
 
+        <!-- FILTRES PERMISSIONS -->
+        <div class="flex flex-wrap gap-3 items-end bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="respPermSearch" oninput="pageRespPerm = 1; renderValidation()" placeholder="Réf, agent, matricule..." class="border border-slate-300 rounded px-2.5 py-1.5 text-xs w-48 bg-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="respPermDate" onchange="pageRespPerm = 1; renderValidation()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+          </div>
+          <button type="button" onclick="document.getElementById('respPermSearch').value='';viderDateFr('respPermDate'); pageRespPerm = 1;renderValidation();"
+            class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
+            Réinitialiser les filtres
+          </button>
+        </div>
+
         <div id="validationContainer" class="space-y-4">
           <!-- JS -->
         </div>
+        <div id="respPermPagination"></div>
       </div>
+      </div><!-- /tab-controle -->
 
+      <!-- ============================================================ -->
+      <!-- ONGLET : DÉCLARATIONS D'ÉTAT CIVIL (gestionnaire RH seul)   -->
+      <!-- ============================================================ -->
+      <div id="tab-actes" class="hidden space-y-6">
       <div
         id="actesSection"
         class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6"
@@ -95,50 +206,325 @@
         <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
           <div>
             <h2 class="text-base font-bold text-slate-900">
-              Déclarations d'État Civil en Attente de Vérification
+              Declarations d'Etat Civil en Attente de Verification
             </h2>
             <p class="text-xs text-slate-500">
-              Vérifiez uniquement la complétude des informations et la présence/validité des
-              justificatifs. Transmettez à la DRH si conforme.
+              Verifiez uniquement la completude des informations et la presence/validite des
+              justificatifs. Transmettez a la DRH si conforme.
             </p>
           </div>
           <span
             id="actesCount"
             class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold"
           >
-            0 déclaration en attente
+            0 declaration en attente
           </span>
+        </div>
+
+        <!-- FILTRES ACTES ETAT CIVIL -->
+        <div class="flex flex-wrap gap-3 items-end bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="respActesSearch" oninput="pageRespActes = 1; renderActes()" placeholder="Ref, agent, nom..." class="border border-slate-300 rounded px-2.5 py-1.5 text-xs w-48 bg-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Type d'acte</label>
+            <select id="respActesType" onchange="pageRespActes = 1; renderActes()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+              <option value="">Tous</option>
+              <option value="DECLARATION_NAISSANCE">Déclarations de naissance</option>
+              <option value="DECLARATION_DECES">Déclarations de décès</option>
+            </select>
+          </div>
+          <button type="button" onclick="document.getElementById('respActesSearch').value='';document.getElementById('respActesType').value='';pageRespActes = 1;renderActes();"
+            class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
+            Réinitialiser les filtres
+          </button>
         </div>
 
         <div id="actesContainer" class="space-y-4">
           <!-- JS -->
         </div>
+        <div id="respActesPagination"></div>
+      </div>
+      </div><!-- /tab-actes -->
+
+      <!-- ============================================================ -->
+      <!-- Le module « Décisions du DRH à notifier » a été supprimé :   -->
+      <!-- dès que le DRH tranche, l'agent est notifié directement.     -->
+      <!-- ============================================================ -->
+
+      <!-- ============================================================ -->
+      <!-- ONGLETS DE DEPOT ET NOTES : reserves au sous-directeur et    -->
+      <!-- au directeur. Le gestionnaire RH n'a pas ces onglets.        -->
+      <!-- ============================================================ -->
+
+      <!-- ================= ONGLET : DEMANDE DE PERMISSION ============ -->
+      <div id="tab-permissions" class="hidden space-y-5">
+        <div id="perm-entete" class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="font-bold text-base text-slate-900">Mes demandes de permission</h2>
+          <button onclick="showFormDepot('perm-form')"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-sm shadow">
+            Nouvelle demande de permission
+          </button>
+        </div>
+
+        <!-- FORMULAIRE PERMISSION -->
+        <div id="perm-form" class="hidden bg-white p-6 rounded-xl border border-emerald-300 shadow-sm max-w-2xl mx-auto w-full">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm text-emerald-800">Formulaire de Demande de Permission d'Absence</h3>
+            <button onclick="hideFormDepot('perm-form')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">x</button>
+          </div>
+          <form id="formPermission" class="space-y-4">
+            <input type="hidden" id="permBrouillonCode" value="">
+            <p id="perm-info-brouillon" class="hidden rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"></p>
+            <!-- Le depot d'un responsable va droit au DRH : pas de gestionnaire RH, pas de conformité
+                 hiérarchique (il ne peut pas se déclarer conforme lui-même). -->
+            <p class="rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+              En tant que responsable de structure, votre demande est transmise directement au DRH :
+              elle ne transite ni par le gestionnaire RH, ni par une conformité intermédiaire.
+            </p>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Type de Permission *</label>
+              <select id="permType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                <option value="Evenement Familial">Evenement Familial</option>
+                <option value="Repos Medical">Repos Medical</option>
+                <option value="Conge Maternite/Paternite">Conge Maternite ou Paternite</option>
+                <option value="Permission Speciale">Permission Speciale d'Absence</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Debut *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10"
+                  placeholder="jj/mm/aaaa" id="permStart" oninput="majJours('permStart','permEnd','permJours')"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Fin *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10"
+                  placeholder="jj/mm/aaaa" id="permEnd" oninput="majJours('permStart','permEnd','permJours')"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de jours</label>
+                <input type="number" id="permJours" min="1" max="30" readonly
+                  class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-700 cursor-not-allowed" />
+                <p id="permJoursInfo" class="text-[10px] text-slate-500 mt-1">Calcule automatiquement a partir des deux dates.</p>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif Detaille *</label>
+              <textarea id="permMotif" rows="3"
+                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"
+                placeholder="Precisez le motif de la demande..."></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Joindre un document (piece justificative)</label>
+              <input type="file" id="permFile" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
+              <p class="text-[10px] text-slate-500 mt-1">Formats acceptes : PDF, JPG, PNG - max 5 Mo</p>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+              <button type="button" id="perm-btn-enregistrer" onclick="enregistrerBrouillonPermission()"
+                class="flex-1 min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Enregistrer dans le brouillon
+              </button>
+              <button type="button" id="perm-btn-modifier" onclick="enregistrerBrouillonPermission()"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Modifier le brouillon
+              </button>
+              <button type="button" id="perm-btn-supprimer" onclick="supprimerBrouillon('perm')"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Supprimer le brouillon
+              </button>
+              <button type="button" onclick="soumettrePermission()"
+                class="flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Soumettre
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div id="perm-filtres" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="permSearch" oninput="pagePerm=1;renderPermDepot()" placeholder="Reference, motif..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-44">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Statut</label>
+            <select id="permFiltreStatut" onchange="pagePerm=1;renderPermDepot()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+              <option value="">Tous</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="VALIDEE">Validé</option>
+              <option value="REJETEE">Rejeté</option>
+              <option value="RETOUR_CORRECTION">Retour correction</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date debut (depuis)</label>
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="permFiltreDate" onchange="pagePerm=1;renderPermDepot()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+          </div>
+        </div>
+
+        <div id="perm-tableau" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Ref</th>
+                  <th class="px-4 py-3">Type</th>
+                  <th class="px-4 py-3">Motif</th>
+                  <th class="px-4 py-3">Période</th>
+                  <th class="px-4 py-3">Jours</th>
+                  <th class="px-4 py-3">Document</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="permTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+          <div id="permPagination" class="px-6 pb-4"></div>
+        </div>
       </div>
 
-      <div
-        id="notifySection"
-        class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6"
-      >
-        <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">
-              Décisions du DRH à Notifier aux Agents
-            </h2>
-            <p class="text-xs text-slate-500">
-              Le DRH a tranché : notifiez l'agent de la décision (acceptation ou rejet motivé).
-            </p>
-          </div>
-          <span
-            id="notifyCount"
-            class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold"
-          >
-            0 à notifier
-          </span>
+      <!-- ================= ONGLET : DECLARATION DE NAISSANCE ======= -->
+      <div id="tab-naissances" class="hidden space-y-5">
+        <div id="naiss-entete" class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="font-bold text-base text-slate-900">Mes declarations de naissance</h2>
+          <button onclick="showFormDepot('naiss-form')"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-sm shadow">
+            Nouvelle declaration de naissance
+          </button>
         </div>
 
-        <div id="notifyContainer" class="space-y-4">
-          <!-- JS -->
+        <!-- FORMULAIRE NAISSANCE -->
+        <div id="naiss-form" class="hidden bg-white p-6 rounded-xl border border-sky-300 shadow-sm max-w-xl mx-auto w-full">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm text-sky-800">Déclaration de Naissance</h3>
+            <button onclick="hideFormDepot('naiss-form')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">x</button>
+          </div>
+          <form id="formNaissance" class="space-y-3">
+            <input type="hidden" id="naissBrouillonCode" value="">
+            <p id="naiss-info-brouillon" class="hidden rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"></p>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'enfant *</label>
+              <input type="text" id="naissNom" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prenom de l'enfant *</label>
+              <input type="text" id="naissPrenom" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date de Naissance *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="naissDate" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lieu *</label>
+                <input type="text" id="naissLieu" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Joindre l'extrait d'acte de naissance *</label>
+              <input type="file" id="naissFile" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
+              <p class="text-[10px] text-slate-500 mt-1">Formats : PDF, JPG, PNG - max 5 Mo - Obligatoire pour la soumission</p>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+              <button type="button" id="naiss-btn-enregistrer" onclick="enregistrerBrouillonNaissance()"
+                class="flex-1 min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Enregistrer dans le brouillon
+              </button>
+              <button type="button" id="naiss-btn-modifier" onclick="enregistrerBrouillonNaissance()"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Modifier le brouillon
+              </button>
+              <button type="button" id="naiss-btn-supprimer" onclick="supprimerBrouillon('naiss')"
+                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Supprimer le brouillon
+              </button>
+              <button type="button" onclick="soumettreNaissance()"
+                class="flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                Soumettre
+              </button>
+            </div>
+          </form>
         </div>
+
+        <div id="naiss-filtres" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+            <input type="text" id="naissSearch" oninput="pageNaiss=1;renderNaissDepot()" placeholder="Reference, enfant..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-44">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Statut</label>
+            <select id="naissFiltreStatut" onchange="pageNaiss=1;renderNaissDepot()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+              <option value="">Tous</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="VALIDEE">Validé</option>
+              <option value="REJETEE">Rejeté</option>
+              <option value="RETOUR_CORRECTION">Retour correction</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="naiss-tableau" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Ref</th>
+                  <th class="px-4 py-3">Enfant</th>
+                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Lieu</th>
+                  <th class="px-4 py-3">Document</th>
+                  <th class="px-4 py-3">Statut</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="naissTable" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+          <div id="naissPagination" class="px-6 pb-4"></div>
+        </div>
+      </div>
+
+      <!-- ================= ONGLET : NOTES DE SERVICE ================ -->
+      <!-- Les directeurs ne rédigent pas : la secrétaire envoie ses notes ici, chaque directeur les reçoit
+           dans son coin « À valider ». -->
+      <div id="tab-notes" class="hidden space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div id="notes-a-valider-bloc" class="hidden bg-white p-6 rounded-xl border border-amber-300 shadow-sm space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="text-base font-bold text-slate-900">Notes à valider</h2>
+            <span id="notesAValiderCount" class="px-3 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-xs font-bold">0 à valider</span>
+          </div>
+          <p class="text-xs text-slate-500">
+            La secrétaire vous a envoyé ces notes : validez pour donner le feu vert à la diffusion,
+            ou refusez (motif obligatoire) pour qu'elle les reprenne.
+          </p>
+          <div id="notesAValiderContainer" class="space-y-3"></div>
+        </div>
+
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-base font-bold text-slate-900">Notes de service</h2>
+          <div class="flex gap-2 flex-wrap items-center">
+            <input type="text" id="notesSearch" oninput="pageNotesDepot=1;renderNotesDepot()" placeholder="Reference, objet..."
+              class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-48">
+            <select id="notesFiltreStatut" onchange="pageNotesDepot=1;renderNotesDepot()"
+              class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+              <option value="">Tous les etats</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_ATTENTE_VALIDATION">En attente de validation</option>
+              <option value="A_REPRENDRE">A reprendre par la secretaire</option>
+              <option value="VALIDEE">Validee</option>
+              <option value="DIFFUSEE">Diffusee</option>
+              <option value="ARCHIVEE">Archivee</option>
+            </select>
+          </div>
+        </div>
+        <div id="notesContainer" class="space-y-3"></div>
+        <div id="notesPagination"></div>
       </div>
     </main>
 
@@ -147,400 +533,1168 @@
     <script>
       let user = null;
       let requests = [];
+      let notesDepot = [];
+      let PAGE_SIZE = taillePageMemorisee(3);
+      /** Dossiers du tableau de bord après filtres : ce que l'export CSV reprend. */
+      let dossiersDashResp = [];
+      let pageRespPerm = 1;
+      let pageRespActes = 1;
+      let pagePerm = 1;
+      let pageNaiss = 1;
+      let pageNotesDepot = 1;
+      let pageDashResp = 1;
+      /** Lignes par page du tableau de bord : 2 à la fois, sans recharger la page. */
+      const PAGE_SIZE_DASH = 2;
 
-      /**
-       * Démarre la page : vérifie la session et le profil (Gestionnaire RH, Sous-Directeur ou Directeur), adapte les titres au profil, puis charge les dossiers.
-       */
+      /** Demarre la page : verifie la session et le profil (Gestionnaire RH, Sous-Directeur ou
+       * Directeur), adapte les titres au profil, puis charge les dossiers. */
       async function init() {
         const saved = sessionStorage.getItem('currentUser');
         if (!saved) {
-          window.location.href = 'login.html';
+          window.location.href = '../login.html';
           return;
         }
         user = JSON.parse(saved);
         if (!['RESPONSABLE', 'SOUS_DIRECTEUR', 'DIRECTEUR'].includes(user.role)) {
-          window.location.href = 'login.html';
+          window.location.href = '../login.html';
           return;
         }
 
         if (user.role === 'DIRECTEUR') {
           document.getElementById('roleLabel').textContent = 'Directeur';
-          definirSousTitre('Espace Direction Centrale · Visa Hiérarchique (≤ 2 jours)');
-          document.getElementById('tabButton').textContent = 'Visa Directeur';
+          definirSousTitre(
+            'Espace Direction Centrale - Conformité hiérarchique, dépôts et notes de service',
+          );
+          document.getElementById('tabButton').textContent = 'Permission en attente directeur';
           document.getElementById('tabButton').className =
-            'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white';
+            'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap';
           document.getElementById('pendingTitle').textContent =
-            'Permissions en Attente de Visa Directeur';
+            'Permissions en Attente de Validation Directeur';
           document.getElementById('pendingSubTitle').textContent =
-            'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
-          document.getElementById('notifySection').classList.add('hidden');
-          document.getElementById('actesSection').classList.add('hidden');
+            'Examinez les permissions de 2 jours ou moins vérifiées par le Gestionnaire RH. Une fois déclarées conformes, elles sont transmises au DRH.';
         } else if (user.role === 'SOUS_DIRECTEUR') {
           document.getElementById('roleLabel').textContent = 'Sous-Directeur';
-          definirSousTitre('Espace Sous-Direction · Visa Hiérarchique (≤ 2 jours)');
-          document.getElementById('tabButton').textContent = 'Visa Sous-Directeur';
+          definirSousTitre(
+            'Espace Sous-Direction - Conformité hiérarchique, dépôts et notes de service',
+          );
+          document.getElementById('tabButton').textContent = 'Permission en attente sous-directeur';
           document.getElementById('tabButton').className =
-            'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white';
+            'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap';
           document.getElementById('pendingTitle').textContent =
-            'Permissions en Attente de Visa Sous-Directeur';
+            'Permissions en Attente de Validation Sous-Directeur';
           document.getElementById('pendingSubTitle').textContent =
-            'Examinez les permissions ≤ 2 jours vérifiées par le Gestionnaire RH. Votre visa transmettra le dossier au DRH.';
-          document.getElementById('notifySection').classList.add('hidden');
-          document.getElementById('actesSection').classList.add('hidden');
+            'Examinez les permissions de 2 jours ou moins vérifiées par le Gestionnaire RH. Une fois déclarées conformes, elles sont transmises au DRH.';
         } else {
           document.getElementById('roleLabel').textContent = 'Gestionnaire RH';
-          definirSousTitre('Espace Gestionnaire RH · Contrôle des dossiers & Notifications');
-          document.getElementById('tabButton').textContent = 'Vérification Gestionnaire RH';
+          definirSousTitre('Espace Gestionnaire RH - Controle des dossiers, actes et notes de service');
+          document.getElementById('tabButton').textContent = 'Demande de permission';
           document.getElementById('tabButton').className =
-            'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white';
+            'px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap';
           document.getElementById('pendingTitle').textContent =
-            'Permissions en Attente de Contrôle RH';
+            'Permissions en Attente de Controle RH';
           document.getElementById('pendingSubTitle').textContent =
-            'Vérifiez la conformité. Pour ≤ 2 jours, transmettez à la Direction (visa). Pour > 2 jours, transmettez directement au DRH.';
-          document.getElementById('notifySection').classList.remove('hidden');
-          document.getElementById('actesSection').classList.remove('hidden');
+            'Vérifiez la conformité. Pour 2 jours ou moins, le dossier est transmis au responsable hiérarchique de l’agent (sous-directeur ou directeur) pour conformité. Au-delà de 2 jours, il va directement au DRH.';
         }
         document.getElementById('navName').textContent = user.name;
         document.getElementById('navStructure').textContent =
           user.structure || 'Structure non assignée';
         loadAvatar();
+        appliquerOngletsDepot();
+        showTab('dashboard');
         await loadData();
+        renderDashboard();
         renderValidation();
         renderActes();
-        renderNotify();
+        renderNotesDepot();
+        if (peutDeposer()) {
+          renderPermDepot();
+          renderNaissDepot();
+        }
       }
 
-      /**
-       * Recharge depuis le serveur les dossiers visibles par ce profil.
-       */
+      /** Recharge depuis le serveur les dossiers visibles par ce profil. Les notes de service sont
+       * consultables par les trois profils. */
       async function loadData() {
         const r = await API.getRequests();
-        requests = r.status === 'success' ? r.requests : [];
+        requests = garderSiEchec(r, 'requests', requests);
+        const n = await API.getNotes();
+        notesDepot = garderSiEchec(n, 'notes', notesDepot);
       }
 
-      setInterval(async () => {
-        if (typeof loadData === 'function') {
-          await loadData();
-          if (typeof renderValidation === 'function') renderValidation();
-          if (typeof renderNotify === 'function') renderNotify();
-          if (typeof renderAll === 'function') renderAll();
-        }
-      }, 20000);
-
-      /**
-       * Dessine la liste des permissions à traiter : à vérifier pour le gestionnaire RH, à viser pour le Sous-Directeur ou le Directeur.
-       */
-      function renderValidation() {
-        // Chaque rôle ne voit que ses propres demandes
-        let pending = [];
-        if (user.role === 'RESPONSABLE') {
-          // Gestionnaire RH : demandes en attente de sa vérification
-          pending = requests.filter(
-            (r) => r.nature === 'DEMANDE_PERMISSION' && r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH',
-          );
-        } else if (user.role === 'DIRECTEUR') {
-          pending = requests.filter((r) => r.etape === 'EN_ATTENTE_VISA_DIRECTEUR');
-        } else if (user.role === 'SOUS_DIRECTEUR') {
-          pending = requests.filter((r) => r.etape === 'EN_ATTENTE_VISA_SOUS_DIRECTEUR');
-        }
-
-        document.getElementById('pendingCount').textContent =
-          pending.length + ' demande' + (pending.length > 1 ? 's' : '') + ' en attente';
-
-        const container = document.getElementById('validationContainer');
-        container.innerHTML = '';
-
-        if (!pending.length) {
-          container.innerHTML = `<div
-            class="text-center py-10 text-slate-500 italic text-sm">Aucune demande en attente pour vous.</div>`;
-          return;
-        }
-
-        pending.forEach((r) => {
-          const div = document.createElement('div');
-          div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
-          const jours = r.jours || 0;
-          const circuitCourt = jours <= 2;
-
-          // Libellé du circuit selon la durée
-          let circuitInfo = '';
-          if (user.role === 'RESPONSABLE') {
-            if (circuitCourt) {
-              circuitInfo = `<span
-                class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2 py-1 rounded font-bold">≤ 2 jours → Visa du Sous-Directeur ou du Directeur (à choisir) avant DRH</span>`;
-            } else {
-              circuitInfo = `<span
-                class="text-xs bg-slate-100 text-slate-800 border border-slate-300 px-2 py-1 rounded font-bold">> 2 jours → Transmission directe au DRH</span>`;
-            }
-          }
-
-          // Boutons selon le rôle
-          let boutons = '';
-          const btnRejet = (label) =>
-            `<button onclick="giveAvis('${escapeHtml(r.id)}', 'REJETEE')"
-              class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">${label}</button>`;
-
-          if (user.role === 'RESPONSABLE') {
-            boutons = boutonsGestionnaire(r);
-          } else if (user.role === 'DIRECTEUR' || user.role === 'SOUS_DIRECTEUR') {
-            boutons =
-              btnRejet('Refuser le visa') +
-              `
-            <button onclick="giveAvis('${escapeHtml(r.id)}', 'EN_ATTENTE_RH')"
-              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-              Accorder mon visa — Transmettre au DRH
-            </button>`;
-          }
-
-          div.innerHTML = `
-          <div class="flex justify-between items-start flex-wrap gap-2">
-            <div class="space-y-1">
-              <span
-                class="font-mono text-xs text-slate-600 font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span
-                class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
-              <p
-                class="text-xs text-slate-600">Type : <strong>${escapeHtml(r.typePerm || r.motif || '')}</strong>
-              </p>
-              <p
-                class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')}</strong> — <strong>${jours} jour(s)</strong>
-              </p>
-              <p
-                class="text-xs text-slate-500">Soumis le : <strong>${r.dateSoumission ? new Date(r.dateSoumission.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</strong>
-              </p>
-              <p class="text-xs text-slate-600">Motif : ${escapeHtml(r.motif)}</p>
-              <p
-                class="text-xs text-slate-600">Justificatif : ${user.role === 'RESPONSABLE' ? pieceHtml(r) : escapeHtml(r.piece)}</p>
-              ${circuitInfo}
-            </div>
-          </div>
-          <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-200">
-            ${boutons}
-          </div>
-        `;
-          container.appendChild(div);
-        });
-      }
-
-      /**
-       * Recharge les données puis redessine les trois listes de la page.
-       */
+      /** Recharge tout et redessine l'onglet courant. */
       async function rafraichirVue() {
         await loadData();
+        renderDashboard();
         renderValidation();
         renderActes();
-        renderNotify();
+        renderNotesDepot();
+        if (peutDeposer()) {
+          renderPermDepot();
+          renderNaissDepot();
+        }
       }
 
-      /**
-       * Donne l'avis du Sous-Directeur ou du Directeur sur une demande (visa favorable ou refus motivé).
-       * @param {string} id Référence du dossier.
-       * @param {string} statut EN_ATTENTE_RH (visa favorable) ou REJETEE (refus).
-       */
-      async function giveAvis(id, statut) {
-        let motif = null;
-        if (statut === 'REJETEE') {
-          motif = prompt('Motif du rejet (obligatoire) :');
-          if (!motif || !motif.trim()) {
-            alert('Le motif est obligatoire pour rejeter un dossier.');
+      /* Pause quand l'onglet est caché, mise à jour dès le retour, et on ne redessine que si les données
+         ont changé : la lecture n'est pas perturbée. */
+      setInterval(rafraichirAuto, 20000);
+      document.addEventListener('visibilitychange', rafraichirAuto);
+      async function rafraichirAuto() {
+        if (document.hidden || typeof loadData !== 'function') return;
+        const avant = JSON.stringify([requests, notesDepot]);
+        await loadData();
+        if (JSON.stringify([requests, notesDepot]) === avant) return;
+        if (typeof renderValidation === 'function') renderValidation();
+        if (typeof renderActes === 'function') renderActes();
+        if (typeof renderNotesDepot === 'function') renderNotesDepot();
+        if (typeof renderPermDepot === 'function') renderPermDepot();
+        if (typeof renderNaissDepot === 'function') renderNaissDepot();
+        if (typeof renderDashboard === 'function') renderDashboard();
+      }
+
+      /* DASHBOARD */
+      /** Boutons d'action d'une ligne du tableau de bord, selon le rôle et l'étape : chacun transmet ou
+       * retourne depuis le tableau de bord, sans passer par l'onglet. */
+      function actionsTableauBord(r, statut) {
+        const id = Number(r.dossier_id);
+        if (user.role === 'RESPONSABLE' && statut === 'EN_ATTENTE_RH') {
+          if (r.nature === 'DEMANDE_PERMISSION') {
+            return `<button type="button" onclick="traiterPermission(${id}, 'conforme')" class="block w-full text-left px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold border border-emerald-300">Transmettre</button>
+              <button type="button" onclick="traiterPermission(${id}, 'corriger')" class="block w-full text-left px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold border border-slate-300">Retourner</button>`;
+          }
+          return `<button type="button" onclick="controlerDeclaration(${id}, '${r.nature}', 'conforme')" class="block w-full text-left px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold border border-emerald-300">Transmettre au DRH</button>
+            <button type="button" onclick="controlerDeclaration(${id}, '${r.nature}', 'retourner')" class="block w-full text-left px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold border border-slate-300">Retourner</button>`;
+        }
+        if (
+          (user.role === 'DIRECTEUR' && statut === 'EN_ATTENTE_VALIDATION_DIRECTEUR') ||
+          (user.role === 'SOUS_DIRECTEUR' && statut === 'EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR')
+        ) {
+          return `<button type="button" onclick="viserPermission(${id})" class="block w-full text-left px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold border border-emerald-300">Transmettre au DRH</button>
+            <button type="button" onclick="viserPermissionCorriger(${id})" class="block w-full text-left px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold border border-slate-300">Retourner</button>`;
+        }
+        return '';
+      }
+
+      /** Statut affiché : pour le directeur et le sous-directeur, un dossier déclaré conforme apparaît «
+       * Validé » tant que le DRH ne l'a pas tranché. */
+      function statutDashboard(r) {
+        const statut = statutReel(r);
+        const direction = user.role === 'DIRECTEUR' || user.role === 'SOUS_DIRECTEUR';
+        return direction && r.traite_par_moi && statut === 'EN_ATTENTE_DRH' ? 'VALIDEE' : statut;
+      }
+
+      function renderDashboard() {
+        // Compteurs : ses propres dépôts et les dossiers qu'il a traités (vérifiés,
+        // déclarés conformes ou retournés). Transmettre un dossier le fait compter.
+        const mine = requests.filter(
+          (r) => r.matricule === user.matricule || r.traite_par_moi,
+        );
+        const perms = mine.filter((r) => r.nature === 'DEMANDE_PERMISSION');
+        const naiss = mine.filter((r) => r.nature === 'DECLARATION_NAISSANCE');
+
+        document.getElementById('countMyPerm').textContent = perms.length;
+        document.getElementById('countMyNaiss').textContent = naiss.length;
+        document.getElementById('countNotes').textContent = notesDepot.length;
+
+        // "A traiter" depend du profil : les dossiers qui necessitent SA decision.
+        // Pour le gestionnaire RH : permissions à contrôler + actes à vérifier.
+        let pendingItems = [];
+        if (user.role === 'RESPONSABLE') {
+          pendingItems = requests.filter(
+            (r) =>
+              (r.nature === 'DEMANDE_PERMISSION' ||
+                r.nature === 'DECLARATION_NAISSANCE' ||
+                r.nature === 'DECLARATION_DECES') &&
+              r.etape === 'EN_ATTENTE_RH',
+          );
+        } else if (user.role === 'DIRECTEUR') {
+          pendingItems = requests.filter((r) => r.etape === 'EN_ATTENTE_VALIDATION_DIRECTEUR');
+        } else if (user.role === 'SOUS_DIRECTEUR') {
+          pendingItems = requests.filter((r) => r.etape === 'EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR');
+        }
+        document.getElementById('countPending').textContent = pendingItems.length;
+
+        // Tableau de bord : dossiers à décider, ses propres demandes et ceux déjà traités (un dossier
+        // transmis reste suivi), le plus récent en premier.
+        const vus = new Set(pendingItems.map((r) => r.id));
+        const source = triPlusRecent(
+          pendingItems.concat(
+            requests.filter((r) => !vus.has(r.id) && (r.matricule === user.matricule || r.traite_par_moi)),
+          ),
+        );
+
+        const search = (document.getElementById('dashSearch')?.value || '').toLowerCase();
+        const filtreNature = document.getElementById('dashFiltreNature')?.value || '';
+        const filtreStatut = document.getElementById('dashFiltreStatut')?.value || '';
+
+        let filtered = source;
+        if (filtreNature) filtered = filtered.filter((r) => r.nature === filtreNature);
+        if (filtreStatut) filtered = filtered.filter((r) => matchStatutFiltre(statutDashboard(r), filtreStatut));
+        if (search)
+          filtered = filtered.filter(
+            (r) =>
+              (r.id || '').toLowerCase().includes(search) ||
+              (r.motif || '').toLowerCase().includes(search) ||
+              (r.typePerm || '').toLowerCase().includes(search) ||
+              (r.nomChild || '').toLowerCase().includes(search) ||
+              (r.nomDefunt || '').toLowerCase().includes(search),
+          );
+
+        dossiersDashResp = filtered;
+        const tbody = document.getElementById('dashTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucun dossier.</td></tr>`;
+          renderPagination({
+            container: 'dashPagination',
+            totalItems: 0,
+            currentPage: 1,
+            pageSize: PAGE_SIZE_DASH,
+            onPageChange: () => {},
+          });
+          return;
+        }
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE_DASH) || 1;
+        if (pageDashResp > maxPage) pageDashResp = maxPage;
+        if (pageDashResp < 1) pageDashResp = 1;
+        const pageItems = filtered.slice((pageDashResp - 1) * PAGE_SIZE_DASH, pageDashResp * PAGE_SIZE_DASH);
+
+        pageItems.forEach((r) => {
+          const statut = statutDashboard(r);
+          const transmisAuDrh = statut !== statutReel(r);
+          const codeDossier = escapeHtml(r.id);
+          const natureLabel = r.nature === 'DEMANDE_PERMISSION' ? 'Demande de permission' : r.nature === 'DECLARATION_NAISSANCE' ? 'Déclaration de naissance' : 'Déclaration de décès';
+          const detail = r.motif || r.nomChild || r.nomDefunt || '';
+          const date = r.dateDebut || r.dateEvt || '';
+          const agent = r.matricule || '';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-mono font-bold text-xs text-emerald-800">${codeDossier}</td>
+            <td class="px-3 py-2 text-xs">${escapeHtml(natureLabel)}</td>
+            <td class="px-3 py-2 text-xs">${escapeHtml(detail.substring(0, 40))}${detail.length > 40 ? '...' : ''}</td>
+            <td class="px-3 py-2 text-xs text-slate-500">${date ? dateFr(date) : '—'}</td>
+            <td class="px-3 py-2 text-xs text-slate-500">${escapeHtml(agent)}</td>
+            <td class="px-3 py-2 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-3 py-2">${statutBadge(statut)}${
+              transmisAuDrh
+                ? '<p class="text-[10px] text-slate-500 mt-0.5">Transmis au DRH</p>'
+                : ancienneteBadge(r)
+            }</td>
+            <td class="px-3 py-2 space-y-1">
+              ${actionsTableauBord(r, statut)}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')" class="block w-full text-left px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Historique</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'dashPagination',
+          totalItems: filtered.length,
+          currentPage: pageDashResp,
+          pageSize: PAGE_SIZE_DASH,
+          onPageChange: (newPage) => {
+            pageDashResp = newPage;
+            renderDashboard();
+          },
+        });
+      }
+
+      /* Dépôts et notes du sous-directeur / directeur : comme l'espace agent, limité aux notes, aux
+         permissions et aux naissances. */
+
+      /** Le sous-directeur et le directeur ont les onglets de depot ; le gestionnaire RH non. */
+      function peutDeposer() {
+        return user && ['SOUS_DIRECTEUR', 'DIRECTEUR'].includes(user.role);
+      }
+
+      /** Onglets selon le profil : gestionnaire RH (contrôle, état civil, notes) ; sous-directeur /
+       * directeur (conformité, dépôts, notes). */
+      function appliquerOngletsDepot() {
+        ['nav-permissions', 'nav-naissances'].forEach((id) => {
+          const btn = document.getElementById(id);
+          if (btn) btn.classList.toggle('hidden', !peutDeposer());
+        });
+        // L'onglet état civil est détaché : gestionnaire RH seul.
+        const btnActes = document.getElementById('nav-actes');
+        if (btnActes) btnActes.classList.toggle('hidden', user?.role !== 'RESPONSABLE');
+        // Les notes de service sont consultables par les trois profils ; seul le directeur valide, dans
+        // son coin « À valider ». Personne ne rédige ici : c'est la secrétaire qui initie les notes.
+        const btnNotes = document.getElementById('nav-notes');
+        if (btnNotes) btnNotes.classList.remove('hidden');
+      }
+
+      /* Blocs d'historique (titre + filtres + tableau) masques quand un formulaire est ouvert. */
+      const BLOCS_HISTORIQUE_DEPOT = {
+        'perm-form': ['perm-entete', 'perm-filtres', 'perm-tableau'],
+        'naiss-form': ['naiss-entete', 'naiss-filtres', 'naiss-tableau'],
+      };
+
+      function showTab(name) {
+        ['dashboard', 'controle', 'actes', 'permissions', 'naissances', 'notes'].forEach((t) => {
+          const pane = document.getElementById('tab-' + t);
+          if (pane) pane.classList.add('hidden');
+          const btn = document.getElementById(t === 'controle' ? 'tabButton' : 'nav-' + t);
+          if (btn) {
+            btn.classList.remove('bg-emerald-700', 'text-white');
+            btn.classList.add('text-slate-600');
+          }
+        });
+        /* Revenir sur un onglet referme le formulaire et reaffiche l'historique. */
+        Object.keys(BLOCS_HISTORIQUE_DEPOT).forEach((id) => hideFormDepot(id));
+        const pane = document.getElementById('tab-' + name);
+        if (!pane) return;
+        pane.classList.remove('hidden');
+        const actif = document.getElementById(name === 'controle' ? 'tabButton' : 'nav-' + name);
+        if (actif) {
+          actif.classList.add('bg-emerald-700', 'text-white');
+          actif.classList.remove('text-slate-600');
+        }
+      }
+
+      /* Formulaire ouvert : l'historique est masque, seul le formulaire reste. */
+      function showFormDepot(id) {
+        const form = document.getElementById(id);
+        if (!form) return;
+        form.classList.remove('hidden');
+        (BLOCS_HISTORIQUE_DEPOT[id] || []).forEach((b) => document.getElementById(b)?.classList.add('hidden'));
+        form.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      /* Formulaire referme (croix ou enregistrement) : l'historique revient. */
+      function hideFormDepot(id) {
+        const form = document.getElementById(id);
+        if (form) form.classList.add('hidden');
+        (BLOCS_HISTORIQUE_DEPOT[id] || []).forEach((b) => document.getElementById(b)?.classList.remove('hidden'));
+      }
+
+      /* BROUILLON : la meme mecanique que l'espace agent */
+      const BROUILLONS_DEPOT = {
+        perm: { prefixe: 'perm', conteneur: 'perm-form', formulaire: 'formPermission' },
+        naiss: { prefixe: 'naiss', conteneur: 'naiss-form', formulaire: 'formNaissance' },
+      };
+
+      /** Aligne les boutons du formulaire sur l'etat du brouillon : sans brouillon l'utilisateur
+       * enregistre, avec un brouillon il le modifie, le soumet ou l'efface. */
+      function majBoutonsBrouillon(cle) {
+        const cfg = BROUILLONS_DEPOT[cle];
+        if (!cfg) return;
+        const code = document.getElementById(cfg.prefixe + 'BrouillonCode').value.trim();
+        document.getElementById(cfg.prefixe + '-btn-enregistrer').classList.toggle('hidden', !!code);
+        document.getElementById(cfg.prefixe + '-btn-modifier').classList.toggle('hidden', !code);
+        document.getElementById(cfg.prefixe + '-btn-supprimer').classList.toggle('hidden', !code);
+        const info = document.getElementById(cfg.prefixe + '-info-brouillon');
+        info.classList.toggle('hidden', !code);
+        if (code) {
+          info.innerHTML =
+            'Brouillon <strong>' +
+            escapeHtml(code) +
+            '</strong> enregistre. Vous pouvez le modifier, le soumettre, ou le supprimer.';
+        }
+      }
+
+      /** Supprime le brouillon charge dans le formulaire, apres confirmation : dossier et pieces jointes
+       * disparaissent, le formulaire repart de zero. */
+      async function supprimerBrouillon(cle) {
+        const cfg = BROUILLONS_DEPOT[cle];
+        const code = document.getElementById(cfg.prefixe + 'BrouillonCode').value.trim();
+        if (!code) {
+          toast('Aucun brouillon a supprimer.');
+          return;
+        }
+        if (
+          !(await demanderConfirmation(
+            'Supprimer definitivement le brouillon ' +
+              code +
+              ' ? Les informations saisies et les pieces jointes seront perdues. Cette action est irreversible.',
+            'Supprimer',
+          ))
+        )
+          return;
+        const res = await API.supprimerBrouillon(code);
+        if (res.status !== 'success') {
+          toast('Erreur : ' + (res.message || 'Impossible de supprimer le brouillon.'));
+          return;
+        }
+        document.getElementById(cfg.formulaire).reset();
+        document.getElementById(cfg.prefixe + 'BrouillonCode').value = '';
+        majBoutonsBrouillon(cle);
+        hideFormDepot(cfg.conteneur);
+        await rafraichirVue();
+        toast('Brouillon supprime : ' + code);
+      }
+
+      /* HELPERS DE SAISIE ET D'AFFICHAGE */
+      /** Nombre de jours d'une période, bornes incluses. Fin postérieure ou égale au début ; au-delà de
+       * 30 jours, la limite légale est signalée. */
+      function majJours(idDebut, idFin, idJours) {
+        const jours = document.getElementById(idJours);
+        const info = document.getElementById('permJoursInfo');
+        const d = dateIso(document.getElementById(idDebut).value);
+        const f = dateIso(document.getElementById(idFin).value);
+        if (!d || !f) {
+          jours.value = '';
+          if (info) {
+            const saisie = document.getElementById(idDebut).value || document.getElementById(idFin).value;
+            info.textContent = saisie
+              ? 'Saisissez deux dates au format jj/mm/aaaa.'
+              : 'Renseignez les deux dates.';
+            info.className = 'text-[10px] text-slate-500 mt-1';
+          }
+          return;
+        }
+        const total = Math.round((new Date(f) - new Date(d)) / 86400000) + 1;
+        if (total < 1) {
+          jours.value = '';
+          if (info) {
+            info.textContent = 'La date de fin doit etre posterieure ou egale a la date de debut.';
+            info.className = 'text-[10px] text-red-600 font-bold mt-1';
+          }
+          return;
+        }
+        jours.value = total;
+        if (info) {
+          if (total > 30) {
+            info.textContent = 'Maximum 30 jours par permission.';
+            info.className = 'text-[10px] text-red-600 font-bold mt-1';
+          } else {
+            info.textContent = 'Calcule automatiquement a partir des deux dates.';
+            info.className = 'text-[10px] text-slate-500 mt-1';
+          }
+        }
+      }
+
+      /** Vrai si la periode saisie est exploitable (deux dates, fin >= debut, <= 30 jours). */
+      function periodePermValide() {
+        const d = dateIso(document.getElementById('permStart').value);
+        const f = dateIso(document.getElementById('permEnd').value);
+        if (!d || !f) return false;
+        const total = Math.round((new Date(f) - new Date(d)) / 86400000) + 1;
+        return total >= 1 && total <= 30;
+      }
+
+      function matchStatutFiltre(statut, filtre) {
+        if (!filtre) return true;
+        if (filtre === 'EN_ATTENTE') return statut.startsWith('EN_ATTENTE');
+        return statut === filtre;
+      }
+
+      /* MES DEMANDES DE PERMISSION */
+      function renderPermDepot() {
+        const mine = requests.filter(
+          (r) => r.nature === 'DEMANDE_PERMISSION' && r.matricule === user.matricule,
+        );
+        const search = (document.getElementById('permSearch')?.value || '').toLowerCase();
+        const filtreStatut = document.getElementById('permFiltreStatut')?.value || '';
+        const filtreDate = dateIso(document.getElementById('permFiltreDate')?.value);
+
+        let filtered = mine;
+        if (filtreStatut) filtered = filtered.filter((r) => matchStatutFiltre(statutReel(r), filtreStatut));
+        if (filtreDate) filtered = filtered.filter((r) => (r.dateDebut || '') >= filtreDate);
+        if (search)
+          filtered = filtered.filter(
+            (r) =>
+              (r.id || '').toLowerCase().includes(search) ||
+              (r.motif || '').toLowerCase().includes(search) ||
+              (r.typePerm || '').toLowerCase().includes(search),
+          );
+
+        const tbody = document.getElementById('permTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune demande.</td></tr>`;
+          renderPagination({
+            container: 'permPagination',
+            totalItems: 0,
+            currentPage: 1,
+            pageSize: PAGE_SIZE,
+            onPageChange: () => {},
+          });
+          return;
+        }
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (pagePerm > maxPage) pagePerm = maxPage;
+        if (pagePerm < 1) pagePerm = 1;
+        const pageItems = filtered.slice((pagePerm - 1) * PAGE_SIZE, pagePerm * PAGE_SIZE);
+
+        pageItems.forEach((r) => {
+          const statut = statutReel(r);
+          const codeDossier = escapeHtml(r.id);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-mono font-bold text-xs text-emerald-800">${codeDossier}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.typePerm || '')}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml((r.motif || '').substring(0, 40))}${(r.motif || '').length > 40 ? '...' : ''}</td>
+            <td class="px-4 py-3 text-xs text-slate-500">${r.dateDebut ? dateFr(r.dateDebut) + ' -> ' + dateFr(r.dateFin) : '—'}</td>
+            <td class="px-4 py-3 text-xs font-bold">${r.jours ?? '—'}</td>
+            <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-4 py-3">${statutBadge(statut)}${r.motif_rejet ? `<p class="text-[10px] text-red-700 mt-1">Rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}</td>
+            <td class="px-4 py-3 space-y-1">
+              ${statut === 'BROUILLON' ? `<button type="button" onclick="chargerBrouillonPerm('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold border border-amber-300">Modifier</button>
+              <button type="button" onclick="soumettreDepuisListe('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold border border-emerald-300">Soumettre</button>` : ''}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')" class="block w-full text-left px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Historique</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'permPagination',
+          totalItems: filtered.length,
+          currentPage: pagePerm,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pagePerm = newPage;
+            renderPermDepot();
+          },
+        });
+      }
+
+      function chargerBrouillonPerm(code) {
+        const r = typeof code === 'object' ? code : requests.find((x) => x.id === code);
+        if (!r) return;
+        showFormDepot('perm-form');
+        document.getElementById('permBrouillonCode').value = r.id;
+        document.getElementById('permType').value = r.typePerm || 'Evenement Familial';
+        document.getElementById('permMotif').value = r.motif || '';
+        document.getElementById('permStart').value = dateFr(r.dateDebut);
+        document.getElementById('permEnd').value = dateFr(r.dateFin);
+        document.getElementById('permJours').value = r.jours || 1;
+        majBoutonsBrouillon('perm');
+        document.getElementById('perm-form').scrollIntoView({ behavior: 'smooth' });
+      }
+
+      async function soumettreDepuisListe(codeDossier) {
+        if (!(await demanderConfirmation('Soumettre ce brouillon au circuit de traitement ?', 'Soumettre'))) return;
+        const res = await API.soumettrebrouillonPermission(codeDossier);
+        if (res.status === 'success') {
+          toast('Demande soumise : ' + res.code + '. ' + circuitLibelle(res));
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || 'Impossible de soumettre.'));
+        }
+      }
+
+      async function enregistrerBrouillonPermission() {
+        const data = new FormData();
+        const code = document.getElementById('permBrouillonCode').value;
+        if (code) data.append('code_dossier', code);
+        data.append('typePerm', document.getElementById('permType').value);
+        data.append('motif', document.getElementById('permMotif').value);
+        const debut = dateIso(document.getElementById('permStart').value);
+        const fin = dateIso(document.getElementById('permEnd').value);
+        if (debut) data.append('dateDebut', debut);
+        if (fin) data.append('dateFin', fin);
+        if (document.getElementById('permJours').value)
+          data.append('jours', document.getElementById('permJours').value);
+        const piece = document.getElementById('permFile').files[0];
+        if (piece) data.append('piece', piece);
+        const res = await API.sauvegarderBrouillonPermission(data);
+        if (res.status === 'success') {
+          document.getElementById('permBrouillonCode').value = res.code;
+          majBoutonsBrouillon('perm');
+          toast('Brouillon enregistré : ' + res.code);
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || "Impossible d'enregistrer le brouillon."));
+        }
+      }
+
+      async function soumettrePermission() {
+        const code = document.getElementById('permBrouillonCode').value;
+        const motif = document.getElementById('permMotif').value;
+        const debut = dateIso(document.getElementById('permStart').value);
+        const fin = dateIso(document.getElementById('permEnd').value);
+
+        if (!motif || !debut || !fin) {
+          toast('Veuillez remplir le motif et les dates au format jj/mm/aaaa avant de soumettre.');
+          return;
+        }
+        if (!periodePermValide()) {
+          const total = Math.round((new Date(fin) - new Date(debut)) / 86400000) + 1;
+          toast(
+            total < 1
+              ? 'La date de fin doit etre posterieure ou egale a la date de debut.'
+              : 'Une permission ne peut pas depasser 30 jours.',
+          );
+          return;
+        }
+
+        if (code) {
+          const data = new FormData();
+          data.append('code_dossier', code);
+          data.append('typePerm', document.getElementById('permType').value);
+          data.append('motif', motif);
+          data.append('dateDebut', debut);
+          data.append('dateFin', fin);
+          data.append('jours', document.getElementById('permJours').value || 1);
+          const piece = document.getElementById('permFile').files[0];
+          if (piece) data.append('piece', piece);
+          await API.sauvegarderBrouillonPermission(data);
+          const res = await API.soumettrebrouillonPermission(code);
+          if (res.status === 'success') {
+            toast('Demande soumise : ' + res.code + '. ' + circuitLibelle(res));
+            document.getElementById('permBrouillonCode').value = '';
+            document.getElementById('formPermission').reset();
+            majBoutonsBrouillon('perm');
+            hideFormDepot('perm-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Impossible de soumettre.'));
+          }
+        } else {
+          const data = new FormData();
+          data.append('typePerm', document.getElementById('permType').value);
+          data.append('motif', motif);
+          data.append('dateDebut', debut);
+          data.append('dateFin', fin);
+          data.append('jours', parseInt(document.getElementById('permJours').value, 10) || 1);
+          const piece = document.getElementById('permFile').files[0];
+          if (piece) data.append('piece', piece);
+          const res = await API.submitPermission(data);
+          if (res.status === 'success') {
+            toast(
+              'Demande soumise : ' + res.code + ' (' + res.jours + ' jour(s)). ' + circuitLibelle(res),
+            );
+            document.getElementById('formPermission').reset();
+            hideFormDepot('perm-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Vérifiez les champs.'));
+          }
+        }
+      }
+
+      /* MES DECLARATIONS DE NAISSANCE */
+      function renderNaissDepot() {
+        const mine = requests.filter(
+          (r) => r.nature === 'DECLARATION_NAISSANCE' && r.matricule === user.matricule,
+        );
+        const search = (document.getElementById('naissSearch')?.value || '').toLowerCase();
+        const filtreStatut = document.getElementById('naissFiltreStatut')?.value || '';
+
+        let filtered = mine;
+        if (filtreStatut) filtered = filtered.filter((r) => matchStatutFiltre(statutReel(r), filtreStatut));
+        if (search)
+          filtered = filtered.filter(
+            (r) =>
+              (r.id || '').toLowerCase().includes(search) ||
+              (r.nomChild || '').toLowerCase().includes(search),
+          );
+
+        const tbody = document.getElementById('naissTable');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune déclaration de naissance.</td></tr>`;
+          renderPagination({
+            container: 'naissPagination',
+            totalItems: 0,
+            currentPage: 1,
+            pageSize: PAGE_SIZE,
+            onPageChange: () => {},
+          });
+          return;
+        }
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (pageNaiss > maxPage) pageNaiss = maxPage;
+        if (pageNaiss < 1) pageNaiss = 1;
+        const pageItems = filtered.slice((pageNaiss - 1) * PAGE_SIZE, pageNaiss * PAGE_SIZE);
+
+        pageItems.forEach((r) => {
+          const statut = statutReel(r);
+          const codeDossier = escapeHtml(r.id);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-mono font-bold text-xs text-sky-800">${codeDossier}</td>
+            <td class="px-4 py-3 text-xs font-medium">${escapeHtml(r.nomChild || '')}</td>
+            <td class="px-4 py-3 text-xs text-slate-500">${dateFr(r.dateEvt) || '—'}</td>
+            <td class="px-4 py-3 text-xs">${escapeHtml(r.lieu || '—')}</td>
+            <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-sky-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
+            <td class="px-4 py-3">${statutBadge(statut)}${r.motif_rejet ? `<p class="text-[10px] text-red-700 mt-1">Rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}</td>
+            <td class="px-4 py-3 space-y-1">
+              ${statut === 'BROUILLON' ? `<button type="button" onclick="chargerBrouillonNaiss('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold border border-amber-300">Modifier</button>
+              <button type="button" onclick="soumettreDeclarationDepuisListe('${codeDossier}')" class="block w-full text-left px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded text-[10px] font-bold border border-sky-300">Soumettre</button>` : ''}
+              <button type="button" onclick="ouvrirSuivi('${codeDossier}')" class="block w-full text-left px-2 py-1 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Historique</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        renderPagination({
+          container: 'naissPagination',
+          totalItems: filtered.length,
+          currentPage: pageNaiss,
+          pageSize: PAGE_SIZE,
+          onPageChange: (newPage) => {
+            pageNaiss = newPage;
+            renderNaissDepot();
+          },
+        });
+      }
+
+      function chargerBrouillonNaiss(code) {
+        const r = typeof code === 'object' ? code : requests.find((x) => x.id === code);
+        if (!r) return;
+        showFormDepot('naiss-form');
+        document.getElementById('naissBrouillonCode').value = r.id;
+        document.getElementById('naissNom').value = r.nom || '';
+        document.getElementById('naissPrenom').value = r.prenom || '';
+        document.getElementById('naissDate').value = dateFr(r.dateEvt);
+        document.getElementById('naissLieu').value = r.lieu || '';
+        majBoutonsBrouillon('naiss');
+        document.getElementById('naiss-form').scrollIntoView({ behavior: 'smooth' });
+      }
+
+      async function soumettreDeclarationDepuisListe(codeDossier) {
+        if (!(await demanderConfirmation('Soumettre ce brouillon au circuit de traitement ?', 'Soumettre'))) return;
+        const res = await API.soumettrebrouillonDeclaration('NAISSANCE', codeDossier);
+        if (res.status === 'success') {
+          toast('Déclaration soumise : ' + res.code + '. ' + circuitLibelle(res));
+          await rafraichirVue();
+        } else {
+          toast(
+            'Erreur : ' +
+              (res.message || 'Impossible de soumettre. Vérifiez que la pièce justificative est jointe.'),
+          );
+        }
+      }
+
+      async function enregistrerBrouillonNaissance() {
+        const data = new FormData();
+        const code = document.getElementById('naissBrouillonCode').value;
+        data.append('nature', 'NAISSANCE');
+        if (code) data.append('code_dossier', code);
+        data.append('nom', document.getElementById('naissNom').value);
+        data.append('prenom', document.getElementById('naissPrenom').value);
+        const d = dateIso(document.getElementById('naissDate').value);
+        const l = document.getElementById('naissLieu').value;
+        if (d) data.append('date', d);
+        if (l) data.append('lieu', l);
+        const f = document.getElementById('naissFile').files[0];
+        if (f) data.append('extrait', f);
+        const res = await API.sauvegarderBrouillonDeclaration(data);
+        if (res.status === 'success') {
+          document.getElementById('naissBrouillonCode').value = res.code;
+          majBoutonsBrouillon('naiss');
+          toast('Brouillon enregistré : ' + res.code);
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || "Impossible d'enregistrer."));
+        }
+      }
+
+      async function soumettreNaissance() {
+        const nom = document.getElementById('naissNom').value;
+        const prenom = document.getElementById('naissPrenom').value;
+        const date = dateIso(document.getElementById('naissDate').value);
+        const lieu = document.getElementById('naissLieu').value;
+        const file = document.getElementById('naissFile').files[0];
+        const code = document.getElementById('naissBrouillonCode').value;
+
+        if (!nom || !prenom || !date || !lieu) {
+          toast('Veuillez remplir tous les champs obligatoires.');
+          return;
+        }
+
+        if (code) {
+          const data = new FormData();
+          data.append('nature', 'NAISSANCE');
+          data.append('code_dossier', code);
+          data.append('nom', nom);
+          data.append('prenom', prenom);
+          data.append('date', date);
+          data.append('lieu', lieu);
+          if (file) data.append('extrait', file);
+          await API.sauvegarderBrouillonDeclaration(data);
+          const res = await API.soumettrebrouillonDeclaration('NAISSANCE', code);
+          if (res.status === 'success') {
+            toast('Déclaration soumise : ' + res.code + '. ' + circuitLibelle(res));
+            document.getElementById('naissBrouillonCode').value = '';
+            document.getElementById('formNaissance').reset();
+            majBoutonsBrouillon('naiss');
+            hideFormDepot('naiss-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || "Joignez l'extrait d'acte de naissance obligatoire."));
+          }
+        } else {
+          if (!file) {
+            toast("L'extrait d'acte de naissance est obligatoire pour soumettre.");
             return;
           }
-          motif = motif.trim();
-        }
-        const res = await API.updateStatus(id, statut, motif);
-        if (res.status === 'success') {
-          const msg =
-            statut === 'EN_ATTENTE_RH'
-              ? 'Avis favorable accordé. Dossier transmis pour visa puis au DRH.'
-              : 'Dossier rejeté.';
-          alert(msg);
-          await loadData();
-          renderValidation();
-          renderNotify();
-        } else {
-          alert('Action impossible : ' + (res.message || 'erreur inconnue.'));
+          const data = new FormData();
+          data.append('nature', 'NAISSANCE');
+          data.append('nom', nom);
+          data.append('prenom', prenom);
+          data.append('date', date);
+          data.append('lieu', lieu);
+          data.append('extrait', file);
+          const res = await API.submitDeclaration(data);
+          if (res.status === 'success') {
+            toast('Déclaration soumise : ' + res.code + '. ' + circuitLibelle(res));
+            document.getElementById('formNaissance').reset();
+            hideFormDepot('naiss-form');
+            await rafraichirVue();
+          } else {
+            toast('Erreur : ' + (res.message || 'Vérifiez les champs.'));
+          }
         }
       }
 
-      /**
-       * Dessine la liste des décisions du DRH que le gestionnaire RH doit encore notifier aux agents.
-       */
-      function renderNotify() {
-        const aNotifier = requests.filter(
-          (r) =>
-            r.nature === 'DEMANDE_PERMISSION' &&
-            (r.statut === 'VALIDEE' || r.statut === 'REJETEE') &&
-            !r.notifie,
-        );
-        document.getElementById('notifyCount').textContent = aNotifier.length + ' à notifier';
+      /* NOTES DE SERVICE */
+      const ETATS_NOTES_DEPOT = {
+        BROUILLON: ['Brouillon', 'text-slate-700'],
+        EN_ATTENTE_VALIDATION: ['En attente de validation', 'text-amber-700'],
+        A_REPRENDRE: ['A reprendre par la secretaire', 'text-orange-700'],
+        VALIDEE: ['Validee - a diffuser', 'text-emerald-700'],
+        DIFFUSEE: ['Diffusee', 'text-emerald-700'],
+        ARCHIVEE: ['Archivee', 'text-slate-500'],
+        REJETEE: ['Rejetee', 'text-red-700'],
+      };
 
-        const container = document.getElementById('notifyContainer');
-        container.innerHTML = '';
-
-        if (!aNotifier.length) {
-          container.innerHTML = `<div
-            class="text-center py-10 text-slate-500 italic text-sm">Aucune décision du DRH en attente de notification.</div>`;
-          return;
-        }
-
-        aNotifier.forEach((r) => {
-          const ok = r.statut === 'VALIDEE';
-          const div = document.createElement('div');
-          div.className =
-            'border rounded-xl p-5 space-y-4 ' +
-            (ok ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50');
-          div.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div class="space-y-1">
-              <span
-                class="font-mono text-xs font-bold">${escapeHtml(r.id)} - ${escapeHtml(r.nature)}</span>
-              <h3 class="font-bold text-sm text-slate-900">Agent : ${escapeHtml(r.agentName)} <span
-                class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
-              <p
-                class="text-xs text-slate-600">Période : <strong>${escapeHtml(r.dateDebut || '')} au ${escapeHtml(r.dateFin || '')} (${escapeHtml(r.jours || '?')} jour(s))</strong>
-              </p>
+      /** Dessine les notes : le coin « À valider » du directeur (notes envoyées par la secrétaire,
+       * validation ou refus), puis la liste de consultation. */
+      function carteNote(n, avecActions) {
+        const [libelle, couleur] = ETATS_NOTES_DEPOT[n.statut] || [n.statut, 'text-slate-700'];
+        const actions = avecActions
+          ? `<div class="flex flex-wrap gap-2 pt-2">
+               <button type="button" onclick="validerNoteDepot(${Number(n.id)})"
+                 class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Valider et donner le feu vert</button>
+               <button type="button" onclick="refuserNoteDepot(${Number(n.id)})"
+                 class="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded font-bold text-xs">Refuser pour reprise</button>
+             </div>`
+          : '';
+        return `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-1">
+            <div class="flex justify-between items-start gap-3 flex-wrap">
+              <div class="min-w-0">
+                <p class="font-mono font-bold text-xs text-slate-500">${escapeHtml(n.numero || '')}</p>
+                <p class="font-bold text-sm text-slate-900">${escapeHtml(n.libelle || '')}</p>
+                <p class="text-xs text-slate-500">Emetteur : ${escapeHtml(n.emetteur || '—')}</p>
+                <p class="text-xs text-slate-500">Destinataires : ${escapeHtml(n.service || '—')}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-300 bg-slate-50 ${couleur}">${escapeHtml(libelle)}</span>
             </div>
-            <span
-              class="text-xs px-3 py-1 rounded-full font-bold ${ok ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}">
-              DRH : ${escapeHtml(r.statut)}
-            </span>
-          </div>
-          <div class="flex justify-end pt-3 border-t border-slate-200">
-            <button onclick="notifierAgent('${escapeHtml(r.id)}')"
-              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-              Notifier l'agent
-            </button>
-          </div>
-        `;
-          container.appendChild(div);
-        });
+            ${actions}
+          </div>`;
       }
 
-      /**
-       * Dessine les déclarations de naissance et de décès à contrôler (gestionnaire RH uniquement).
-       */
-      function renderActes() {
-        if (user.role !== 'RESPONSABLE') return;
-        const pending = requests.filter(
-          (r) =>
-            (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') &&
-            (r.etape === 'EN_ATTENTE_GESTIONNAIRE_RH' || r.statut === 'EN_ATTENTE_SERVICE'),
+      function renderNotesDepot() {
+        const estDirecteur = user?.role === 'DIRECTEUR';
+
+        // Le coin « À valider » : notes envoyées par la secrétaire, directeur seul.
+        const bloc = document.getElementById('notes-a-valider-bloc');
+        const aValider = estDirecteur
+          ? notesDepot.filter((n) => n.statut === 'EN_ATTENTE_VALIDATION')
+          : [];
+        if (bloc) {
+          bloc.classList.toggle('hidden', !estDirecteur || !aValider.length);
+          document.getElementById('notesAValiderCount').textContent =
+            aValider.length + ' à valider';
+          document.getElementById('notesAValiderContainer').innerHTML =
+            aValider.map((n) => carteNote(n, true)).join('');
+        }
+
+        const search = (document.getElementById('notesSearch')?.value || '').toLowerCase();
+        const filtreStatut = document.getElementById('notesFiltreStatut')?.value || '';
+
+        let filtered = notesDepot;
+        if (filtreStatut) filtered = filtered.filter((n) => n.statut === filtreStatut);
+        if (search)
+          filtered = filtered.filter((n) =>
+            [n.numero, n.libelle, n.emetteur, n.service].some((v) => (v || '').toLowerCase().includes(search)),
+          );
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE_NOTES) || 1;
+        if (pageNotesDepot > totalPages) pageNotesDepot = totalPages;
+        if (pageNotesDepot < 1) pageNotesDepot = 1;
+        const pageItems = filtered.slice((pageNotesDepot - 1) * PAGE_SIZE_NOTES, pageNotesDepot * PAGE_SIZE_NOTES);
+
+        const conteneur = document.getElementById('notesContainer');
+        conteneur.innerHTML =
+          pageItems.map((n) => carteNote(n, false)).join('') ||
+          '<p class="text-sm text-slate-500 italic bg-white rounded-xl border border-slate-200 p-6 text-center">Aucune note de service.</p>';
+
+        if (window.renderPagination) {
+          renderPagination({
+            container: 'notesPagination',
+            totalItems,
+            currentPage: pageNotesDepot,
+            pageSize: PAGE_SIZE_NOTES,
+            onPageChange: (p) => {
+              pageNotesDepot = p;
+              renderNotesDepot();
+            },
+          });
+        }
+      }
+
+      /** Directeur : valide la note, la secretaire pourra alors la diffuser. */
+      async function validerNoteDepot(id) {
+        if (!(await demanderConfirmation('Valider cette note ? Votre validation donne le feu vert a la secretaire de la diffuser.', 'Valider'))) return;
+        const res = await API.validerNote(id);
+        if (res.status === 'success') {
+          toast('Note validee : la secretaire peut maintenant la diffuser.');
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || 'Validation impossible.'));
+        }
+      }
+
+      /** Directeur : refuse la note, qui revient a la secretaire pour correction. */
+      async function refuserNoteDepot(id) {
+        const motif = await demanderMotif(
+          'Motif du refus (obligatoire). La note reviendra a la secretaire, qui la reprendra avant de vous la soumettre a nouveau :',
         );
-        const countEl = document.getElementById('actesCount');
-        if (countEl)
-          countEl.textContent =
-            pending.length + ' déclaration' + (pending.length > 1 ? 's' : '') + ' en attente';
-        const container = document.getElementById('actesContainer');
-        if (!container) return;
-        container.innerHTML = '';
-        if (!pending.length) {
-          container.innerHTML = `<div
-            class="text-center py-6 text-slate-500 italic text-sm">Aucune déclaration d'état civil en attente de vérification.</div>`;
+        if (!motif) return;
+        const res = await API.refuserNote(id, motif.trim());
+        if (res.status === 'success') {
+          toast('Note refusee : la secretaire doit la reprendre avant de vous la soumettre a nouveau.');
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || 'Refus impossible.'));
+        }
+      }
+
+      /** Phrase de confirmation d'une soumission : le serveur indique par quel etage le dossier est
+       * parti, l'interface ne l'invente pas. */
+      function circuitLibelle(res) {
+        return res.circuit === 'DRH' || res.statut === 'EN_ATTENTE_DRH'
+          ? 'Elle est transmise directement au DRH.'
+          : 'Elle est transmise au Gestionnaire RH.';
+      }
+
+      /* RENDU ONGLET CONFORMITÉ / VÉRIFICATION */
+
+      function renderValidation() {
+        let pending = [];
+        if (user.role === 'RESPONSABLE') {
+          pending = requests.filter(
+            (r) => r.nature === 'DEMANDE_PERMISSION' && r.etape === 'EN_ATTENTE_RH',
+          );
+        } else if (user.role === 'DIRECTEUR') {
+          pending = requests.filter((r) => r.etape === 'EN_ATTENTE_VALIDATION_DIRECTEUR');
+        } else if (user.role === 'SOUS_DIRECTEUR') {
+          pending = requests.filter((r) => r.etape === 'EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR');
+        }
+
+        const search = (document.getElementById('respPermSearch')?.value || '').toLowerCase();
+        const filtreDate = dateIso(document.getElementById('respPermDate')?.value);
+
+        let filtered = pending;
+        if (filtreDate) filtered = filtered.filter((r) => (r.dateDebut || '') >= filtreDate);
+        if (search)
+          filtered = filtered.filter(
+            (r) =>
+              (r.id || '').toLowerCase().includes(search) ||
+              (r.agent || '').toLowerCase().includes(search) ||
+              (r.matricule || '').toLowerCase().includes(search) ||
+              (r.nomChild || '').toLowerCase().includes(search),
+          );
+
+        const tbody = document.getElementById('validationContainer');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<div class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune permission en attente.</div>`;
+          renderPagination({
+            container: 'respPermPagination',
+            totalItems: 0,
+            currentPage: 1,
+            pageSize: PAGE_SIZE_CARTES,
+            onPageChange: () => {},
+          });
+          document.getElementById('pendingCount').textContent = '0 demande en attente';
           return;
         }
-        pending.forEach((r) => {
-          const isNaissance = r.nature === 'DECLARATION_NAISSANCE';
-          const label = isNaissance ? 'Déclaration de Naissance' : 'Déclaration de Décès';
-          const detail = isNaissance
-            ? 'Enfant : ' + (r.nomChild || '')
-            : 'Défunt : ' + (r.nomDefunt || '');
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE_CARTES) || 1;
+        if (pageRespPerm > maxPage) pageRespPerm = maxPage;
+        if (pageRespPerm < 1) pageRespPerm = 1;
+        const pageItems = filtered.slice((pageRespPerm - 1) * PAGE_SIZE_CARTES, pageRespPerm * PAGE_SIZE_CARTES);
+
+        pageItems.forEach((r) => {
           const div = document.createElement('div');
-          div.className = 'border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4';
+          div.className = 'bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-2';
+          let actionsHtml = '';
+          if (user.role === 'RESPONSABLE') {
+            actionsHtml = `
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button type="button" onclick="traiterPermission(${Number(r.dossier_id)}, 'conforme')"
+                  class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Transmettre</button>
+                <button type="button" onclick="traiterPermission(${Number(r.dossier_id)}, 'corriger')"
+                  class="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded font-bold text-xs">Retourner pour correction</button>
+              </div>`;
+          } else if (user.role === 'DIRECTEUR' || user.role === 'SOUS_DIRECTEUR') {
+            actionsHtml = `
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button type="button" onclick="viserPermission(${Number(r.dossier_id)})"
+                  class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Transmettre au DRH</button>
+                <button type="button" onclick="viserPermissionCorriger(${Number(r.dossier_id)})"
+                  class="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded font-bold text-xs">Retourner pour correction</button>
+              </div>`;
+          }
+          const estNaissance = r.nature === 'DECLARATION_NAISSANCE';
           div.innerHTML = `
-          <div class="flex justify-between items-start flex-wrap gap-2">
-            <div class="space-y-1">
-              <span
-                class="font-mono text-xs text-slate-700 font-bold">${escapeHtml(r.id)} - ${label}</span>
-              <h3
-                class="font-bold text-sm text-slate-900">Agent déclarant : ${escapeHtml(r.agentName)} <span
-                class="font-mono text-slate-500">(${escapeHtml(r.matricule)})</span></h3>
-              <p class="text-xs text-slate-700">${escapeHtml(detail)}</p>
-              <p
-                class="text-xs text-slate-600">Date événement : <strong>${escapeHtml(r.dateEvt || '')}</strong> ${r.lieu ? 'à ' + escapeHtml(r.lieu) : ''}</p>
-              <p class="text-xs text-slate-600">Justificatif scanné : ${pieceHtml(r)}</p>
-              <div class="mt-2">
-                <span
-                  class="inline-block px-2.5 py-1 bg-slate-100 text-slate-800 rounded text-xs font-semibold">
-                  Circuit : Agent → Gestionnaire RH → DRH → Agent
-                </span>
+            <div class="flex justify-between items-start gap-3 flex-wrap">
+              <div class="min-w-0">
+                <p class="font-mono font-bold text-xs text-emerald-800">${escapeHtml(r.id || '')}</p>
+                <p class="text-xs text-slate-600">${escapeHtml(r.typePerm || '')} — ${escapeHtml((r.motif || '').substring(0, 60))}${(r.motif || '').length > 60 ? '...' : ''}</p>
+                <p class="text-xs text-slate-500">Agent : ${escapeHtml(r.agent || '')} (${escapeHtml(r.matricule || '')})</p>
+                <p class="text-xs text-slate-500">Période : ${r.dateDebut ? dateFr(r.dateDebut) + ' → ' + dateFr(r.dateFin) : '—'} — ${r.jours ?? '—'} jour(s)</p>
+                <p class="text-xs text-slate-500">${statutBadge(statutReel(r))}</p>
+                ${r.piece && r.piece_id ? `<p class="text-xs mt-1">Justificatif : <button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline">Voir</button></p>` : ''}
               </div>
             </div>
-            <span class="bg-slate-200 text-slate-900 text-xs px-3 py-1 rounded-full font-bold">
-              En Attente Vérification RH
-            </span>
-          </div>
-          <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
-            <button onclick="retournerActe('${escapeHtml(r.id)}')"
-              class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 text-xs font-bold rounded-lg">
-              Dossier Incomplet (Retourner)
-            </button>
-            <button onclick="transmettreActeDRH('${escapeHtml(r.id)}')"
-              class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow">
-              Vérifié Conforme — Transmettre à la DRH
-            </button>
-          </div>
-        `;
-          container.appendChild(div);
+            ${actionsHtml}
+          `;
+          tbody.appendChild(div);
         });
+
+        renderPagination({
+          container: 'respPermPagination',
+          totalItems: filtered.length,
+          currentPage: pageRespPerm,
+          pageSize: PAGE_SIZE_CARTES,
+          onPageChange: (newPage) => {
+            pageRespPerm = newPage;
+            renderValidation();
+          },
+        });
+        document.getElementById('pendingCount').textContent = filtered.length + ' demande(s) en attente';
       }
 
-      /**
-       * Retourne une déclaration à l'agent pour correction, avec un motif obligatoire.
-       * @param {string} id Référence du dossier.
-       */
-      async function retournerActe(id) {
-        const motif = prompt(
-          'Motif de retour du dossier pour correction (informations ou justificatif manquant) :',
+      function renderActes() {
+        const pending = requests.filter(
+          (r) => (r.nature === 'DECLARATION_NAISSANCE' || r.nature === 'DECLARATION_DECES') && r.etape === 'EN_ATTENTE_RH',
         );
-        if (!motif || !motif.trim()) {
-          alert('Le motif est obligatoire pour retourner un dossier.');
+
+        const search = (document.getElementById('respActesSearch')?.value || '').toLowerCase();
+        const filtreType = document.getElementById('respActesType')?.value || '';
+
+        let filtered = pending;
+        if (filtreType) filtered = filtered.filter((r) => r.nature === filtreType);
+        if (search)
+          filtered = filtered.filter(
+            (r) =>
+              (r.id || '').toLowerCase().includes(search) ||
+              (r.agent || '').toLowerCase().includes(search) ||
+              (r.nomChild || r.nom || '').toLowerCase().includes(search),
+          );
+
+        const tbody = document.getElementById('actesContainer');
+        tbody.innerHTML = '';
+        if (!filtered.length) {
+          tbody.innerHTML = `<div class="px-6 py-6 text-center text-slate-500 italic text-sm">Aucune déclaration en attente de vérification.</div>`;
+          renderPagination({
+            container: 'respActesPagination',
+            totalItems: 0,
+            currentPage: 1,
+            pageSize: PAGE_SIZE_CARTES,
+            onPageChange: () => {},
+          });
+          document.getElementById('actesCount').textContent = '0 déclaration en attente';
           return;
         }
-        const res = await API.updateStatus(id, 'REJETEE', motif.trim());
+
+        const maxPage = Math.ceil(filtered.length / PAGE_SIZE_CARTES) || 1;
+        if (pageRespActes > maxPage) pageRespActes = maxPage;
+        if (pageRespActes < 1) pageRespActes = 1;
+        const pageItems = filtered.slice((pageRespActes - 1) * PAGE_SIZE_CARTES, pageRespActes * PAGE_SIZE_CARTES);
+
+        pageItems.forEach((r) => {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-2';
+          const typeLabel = r.nature === 'DECLARATION_NAISSANCE' ? 'Déclaration de naissance' : 'Déclaration de décès';
+          const nom = r.nomChild || r.nom || '';
+          const prenom = r.prenom || '';
+          const pieceBtn = r.piece && r.piece_id
+            ? `<p class="text-xs mt-1">Justificatif : <button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-sky-700 underline">Voir</button></p>`
+            : '';
+          div.innerHTML = `
+            <div class="flex justify-between items-start gap-3 flex-wrap">
+              <div class="min-w-0">
+                <p class="font-mono font-bold text-xs text-sky-800">${escapeHtml(r.id || '')}</p>
+                <p class="text-xs text-slate-600">${typeLabel} — ${escapeHtml(nom + ' ' + prenom)}</p>
+                <p class="text-xs text-slate-500">Agent : ${escapeHtml(r.agent || '')} (${escapeHtml(r.matricule || '')})</p>
+                <p class="text-xs text-slate-500">${statutBadge(statutReel(r))}</p>
+                ${pieceBtn}
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <button type="button" onclick="controlerDeclaration(${Number(r.dossier_id)}, '${r.nature}', 'conforme')"
+                class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Transmettre au DRH</button>
+              <button type="button" onclick="controlerDeclaration(${Number(r.dossier_id)}, '${r.nature}', 'retourner')"
+                class="px-3 py-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 rounded font-bold text-xs">Retourner pour correction</button>
+            </div>
+          `;
+          tbody.appendChild(div);
+        });
+
+        renderPagination({
+          container: 'respActesPagination',
+          totalItems: filtered.length,
+          currentPage: pageRespActes,
+          pageSize: PAGE_SIZE_CARTES,
+          onPageChange: (newPage) => {
+            pageRespActes = newPage;
+            renderActes();
+          },
+        });
+        document.getElementById('actesCount').textContent = filtered.length + ' déclaration(s) en attente';
+      }
+
+      async function traiterPermission(id, decision) {
+        let motif = null;
+        if (decision === 'corriger' || decision === 'rejeter') {
+          motif = await demanderMotif('Motif obligatoire pour ' + (decision === 'corriger' ? 'un retour en correction' : 'un rejet') + ' :');
+          if (!motif) return;
+        }
+        const res = await API.verifierPermission(id, decision, motif);
         if (res.status === 'success') {
-          alert("Dossier retourné à l'agent avec motif.");
-          await loadData();
-          renderValidation();
-          renderActes();
-          renderNotify();
+          toast(decision === 'conforme' ? 'Dossier validé et transmis.' : 'Dossier retourné pour correction.');
+          await rafraichirVue();
         } else {
-          alert('Erreur : ' + (res.message || 'impossible de retourner le dossier'));
+          toast('Erreur : ' + (res.message || 'Impossible d\'enregistrer la décision.'));
         }
       }
 
-      /**
-       * Déclare le dossier conforme et le transmet au DRH pour décision.
-       * @param {string} id Référence du dossier.
-       */
-      async function transmettreActeDRH(id) {
-        const res = await API.updateStatus(id, 'EN_ATTENTE_RH');
+      async function viserPermission(id) {
+        if (!(await demanderConfirmation('Déclarer cette permission conforme et la transmettre au DRH ?', 'Transmettre'))) return;
+        const res = await API.viserPermission(id, true);
         if (res.status === 'success') {
-          alert('Dossier vérifié conforme et transmis à la DRH.');
-          await loadData();
-          renderValidation();
-          renderActes();
-          renderNotify();
+          toast('Permission déclarée conforme et transmise au DRH.');
+          await rafraichirVue();
         } else {
-          alert('Erreur : ' + (res.message || 'impossible de transmettre'));
+          toast('Erreur : ' + (res.message || 'Impossible de transmettre.'));
         }
       }
 
-      /**
-       * Notifie l'agent de la décision finale du DRH, puis recharge les listes.
-       * @param {string} id Référence du dossier.
-       */
-      async function notifierAgent(id) {
-        const res = await API.notifierAgent(id);
+      async function viserPermissionCorriger(id) {
+        const motif = await demanderMotif('Motif du retour en correction (obligatoire) :');
+        if (!motif) return;
+        const res = await API.viserPermission(id, false, motif);
         if (res.status === 'success') {
-          alert('Agent notifié de la décision du DRH.');
-          await loadData();
-          renderValidation();
-          renderActes();
-          renderNotify();
+          toast('Permission retournée pour correction.');
+          await rafraichirVue();
         } else {
-          alert('Erreur : ' + (res.message || 'notification impossible'));
+          toast('Erreur : ' + (res.message || 'Impossible de retourner.'));
         }
       }
+
+      async function controlerDeclaration(id, nature, decision) {
+        let motif = null;
+        if (decision === 'retourner') {
+          motif = await demanderMotif('Motif du retour en correction (obligatoire) :');
+          if (!motif) return;
+        }
+        const res = await API.controlerDeclaration(nature, id, decision, motif);
+        if (res.status === 'success') {
+          toast(decision === 'conforme' ? 'Déclaration validée et transmise au DRH.' : 'Déclaration retournée pour correction.');
+          await rafraichirVue();
+        } else {
+          toast('Erreur : ' + (res.message || 'Impossible d\'enregistrer la décision.'));
+        }
+      }
+
 
       window.onload = init;
     </script>

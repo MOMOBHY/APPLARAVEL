@@ -5,11 +5,8 @@ namespace Database\Seeders;
 use App\Models\Structure;
 use Illuminate\Database\Seeder;
 
-/**
- * Structures du Ministère de la Fonction Publique et de la Modernisation de l'Administration (Côte d'Ivoire).
- * Source : rubrique « Organisation du ministère » de fonctionpublique.gouv.ci (décret n° 2022-598 du 3 août 2022),
- * complétée pour la DMOA par l'INSP. La liste des sous-directions est partielle : seules celles publiées sont reprises.
- */
+/** Structures du ministère (Côte d'Ivoire), d'après fonctionpublique.gouv.ci (décret n° 2022-598) ; liste
+ * des sous-directions partielle. */
 class StructuresMinistereSeeder extends Seeder
 {
     /** [code, nom, sigle, type, code du parent] */

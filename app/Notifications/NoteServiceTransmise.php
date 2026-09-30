@@ -14,9 +14,7 @@ class NoteServiceTransmise extends Notification
 
     public function __construct(public NoteService $note) {}
 
-    /**
-     * @return array<int, string>
-     */
+    /** @return array<int, string> */
     public function via(object $notifiable): array
     {
         return ['mail'];

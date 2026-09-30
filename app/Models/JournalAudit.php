@@ -43,10 +43,8 @@ class JournalAudit extends Model
         return ['reussi' => 'boolean', 'created_at' => 'datetime'];
     }
 
-    /**
-     * Enregistre un événement. Ne lève jamais d'exception : l'audit ne doit pas bloquer l'application.
-     * Sans utilisateur (connexion refusée), $matricule garde la valeur saisie.
-     */
+    /** Enregistre un événement. Ne lève jamais d'exception : l'audit ne doit pas bloquer l'application.
+     * Sans utilisateur (connexion refusée), $matricule garde la valeur saisie. */
     public static function noter(
         string $categorie,
         string $action,

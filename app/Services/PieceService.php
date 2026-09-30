@@ -7,20 +7,16 @@ use App\Models\PieceJointe;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 
-/**
- * Dépôt des pièces justificatives sur disque privé + fiche en base
- * (nom, MIME, chemin, date, dossier). Accès via route contrôlée uniquement.
- */
+/** Dépôt des pièces justificatives sur disque privé + fiche en base (nom, MIME, chemin, date, dossier).
+ * Accès via route contrôlée uniquement. */
 class PieceService
 {
     public const MIMES = ['pdf', 'jpg', 'jpeg', 'png'];
 
     public const MAX_KO = 5120;
 
-    /**
-     * Enregistre un justificatif sur le disque privé et crée sa fiche (nom, type, chemin, dossier
-     * concerné, auteur).
-     */
+    /** Enregistre un justificatif sur le disque privé et crée sa fiche (nom, type, chemin, dossier
+     * concerné, auteur). */
     public static function deposer(
         UploadedFile $fichier,
         string $dossierType,
@@ -41,10 +37,8 @@ class PieceService
         ]);
     }
 
-    /**
-     * Indique si l'utilisateur a le droit d'ouvrir une pièce : administrateur, auteur de la pièce, ou
-     * rôle habilité selon le type de dossier.
-     */
+    /** Indique si l'utilisateur a le droit d'ouvrir une pièce : administrateur, auteur de la pièce, ou
+     * rôle habilité selon le type de dossier (acteurs du circuit uniquement, modules séparés). */
     public static function autorise(User $user, PieceJointe $piece): bool
     {
         if ($user->hasRole('ROLE_ADMIN_DSI')) {
@@ -55,8 +49,21 @@ class PieceService
         }
 
         return match ($piece->dossier_type) {
-            'permission' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
-            'naissance', 'deces' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
+            // Module permission : gestionnaire, valideurs hiérarchiques (cas ≤ 2 j), DRH.
+            'permission' => $user->hasRole(
+                'ROLE_GESTIONNAIRE_RH',
+                'ROLE_SOUS_DIRECTEUR',
+                'ROLE_DIRECTEUR',
+                'ROLE_DRH',
+            ),
+            // Module naissance : gestionnaire, responsable concerné, DRH.
+            'naissance' => $user->hasRole(
+                'ROLE_GESTIONNAIRE_RH',
+                'ROLE_SOUS_DIRECTEUR',
+                'ROLE_DIRECTEUR',
+                'ROLE_DRH',
+            ),
+            'deces' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
             'note' => $user->hasRole(
                 'ROLE_SECRETAIRE',
                 'ROLE_DRH',

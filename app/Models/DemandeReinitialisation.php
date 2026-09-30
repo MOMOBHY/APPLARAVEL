@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Demande de réinitialisation de mot de passe, soumise à l'autorisation de l'administrateur. */
+/** Demande de réinitialisation de mot de passe : code envoyé par email, à usage unique. */
 class DemandeReinitialisation extends Model
 {
     public const EN_ATTENTE = 'EN_ATTENTE';

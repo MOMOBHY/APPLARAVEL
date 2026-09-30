@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Agent;
 use App\Models\DeclarationDeces;
+use App\Models\DeclarationHistorique;
 use App\Models\DeclarationNaissance;
+use App\Models\DemandeHistorique;
 use App\Models\DemandePermission;
 use App\Models\JournalAudit;
 use App\Models\NoteService;
@@ -20,13 +22,11 @@ use App\Services\PermissionWorkflowService;
 use App\Services\PieceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-/**
- * Couche de compatibilité avec le frontend historique (frontend/, servi tel quel
- * depuis public/gfp). Expose l'ancien contrat /api/* adossé aux nouveaux
- * modèles et au workflow Cas 1 (≤ 2 j) / Cas 2 (> 2 j).
- */
+/** Compatibilité avec le frontend historique (public/gfp) : ancien contrat /api/* adossé aux nouveaux
+ * modèles et au workflow Cas 1 (≤ 2 j) / Cas 2 (> 2 j). */
 class LegacyApiController extends Controller
 {
     /** Profil de connexion demandé -> codes rôles acceptés. */
@@ -51,10 +51,8 @@ class LegacyApiController extends Controller
         'ADMINISTRATEUR' => ['ROLE_ADMIN_DSI'],
     ];
 
-    /**
-     * Traduit le rôle reçu (profil simple, ancien code ou nouveau code) en codes de rôles réels.
-     * Renvoie null si le rôle n'existe pas.
-     */
+    /** Traduit le rôle reçu (profil simple, ancien code ou nouveau code) en codes de rôles réels. Renvoie
+     * null si le rôle n'existe pas. */
     private function resolveRoleCodes(string $input): ?array
     {
         $code = strtoupper(trim($input));
@@ -94,9 +92,7 @@ class LegacyApiController extends Controller
         'ROLE_SERVICE_ADMINISTRATIF' => 'ROLE_SERVICE_ADMINISTRATIF',
     ];
 
-    // ---------------------------------------------------------------
     // Authentification (ancien contrat)
-    // ---------------------------------------------------------------
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -185,10 +181,8 @@ class LegacyApiController extends Controller
         ]);
     }
 
-    /**
-     * Inscription publique : l'agent choisit son rôle (jamais administrateur), la structure est
-     * facultative ; refus si le matricule ou la personne existent déjà.
-     */
+    /** Inscription publique : compte créé sans rôle, attribué ensuite par l'administrateur ; le champ «
+     * role » est accepté mais ignoré. */
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -196,23 +190,27 @@ class LegacyApiController extends Controller
             'nom' => ['required', 'string', 'max:100'],
             'prenom' => ['required', 'string', 'max:150'],
             'matricule' => ['required', 'string', 'max:30'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'unique:users,email',
+                // Adresse du ministère ou Gmail : c'est sur elle que
+                // l'agent reçoit son code en cas de mot de passe oublié.
+                function ($attribut, $valeur, $echec) {
+                    $domaine = strtolower(trim($valeur));
+                    if (! str_ends_with($domaine, '@fonctionpublique.gouv.ci') && ! str_ends_with($domaine, '@gmail.com')) {
+                        $echec("L'adresse email doit finir par @fonctionpublique.gouv.ci ou @gmail.com.");
+                    }
+                },
+            ],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['required', 'string'],
+            'role' => ['nullable', 'string'],   // Ignoré — rôle attribué par l'admin
             'structure_id' => ['nullable', 'exists:structures,id'],
         ]);
 
-        // L'agent choisit son rôle à l'inscription ; l'administration reste attribuée par l'administrateur.
         $matricule = strtoupper(trim($data['matricule']));
-        $roleCodes = $this->resolveRoleCodes($data['role']);
-        if (
-            $roleCodes === null ||
-            array_intersect($roleCodes, ['ROLE_ADMIN_DSI', 'ROLE_SERVICE_ADMINISTRATIF'])
-        ) {
-            return response()->json(
-                ['status' => 'error', 'message' => 'Rôle non disponible à l’inscription.'],
-                422,
-            );
-        }
+
         if (
             Agent::where('matricule', $matricule)->exists() ||
             User::where('matricule', $matricule)->exists()
@@ -243,27 +241,26 @@ class LegacyApiController extends Controller
         ]);
         $user = User::create([
             'name' => $agent->fullName(),
-            'email' => strtolower($matricule).'@fonctionpublique.gouv.ci',
+            'email' => strtolower(trim($data['email'])),
             'matricule' => $matricule,
             'password' => $data['password'],
             'agent_id' => $agent->id,
             'structure_id' => $agent->structure_id,
         ]);
-        $user->roles()->attach(Role::whereIn('code', $roleCodes)->pluck('id')->all());
+        // Aucun rôle n'est attribué à l'inscription — l'admin le fait ensuite.
         JournalAudit::noter(
             JournalAudit::COMPTE,
             'INSCRIPTION',
             $user,
-            'Auto-inscription : '.implode(', ', $roleCodes),
+            'Auto-inscription sans rôle (en attente d\'attribution par l\'administrateur).',
         );
 
         return response()->json(
             [
                 'status' => 'success',
-                'message' => 'Compte créé avec succès. Vous pouvez maintenant vous connecter.',
+                'message' => 'Compte créé avec succès. Un administrateur vous attribuera votre rôle avant votre première connexion.',
                 'user' => [
                     'matricule' => $matricule,
-                    'role' => $data['role'],
                     'nom' => $agent->nom,
                     'prenom' => $agent->prenom,
                     'civilite' => $agent->civilite,
@@ -273,9 +270,7 @@ class LegacyApiController extends Controller
         );
     }
 
-    // ---------------------------------------------------------------
     // Demandes & actes (ancien contrat)
-    // ---------------------------------------------------------------
     public function requests(Request $request)
     {
         $user = $request->user();
@@ -293,6 +288,35 @@ class LegacyApiController extends Controller
         }
         [$perms, $naissances, $deces] = [$perms->get(), $naissances->get(), $deces->get()];
 
+        // Dossiers traités par l'utilisateur connecté : une décision du gestionnaire RH ou du directeur
+        // reste visible dans son tableau de bord après transmission.
+        $moi = $user->agent_id;
+        $traiteesPerms = $moi
+            ? DemandeHistorique::whereIn('demande_id', $perms->pluck('id'))
+                ->where('acteur_agent_id', $moi)
+                // Gestionnaire RH (vérification) et directeur / sous-directeur
+                // (conformité hiérarchique) : chacun garde les dossiers qu'il a traités.
+                ->whereIn('action', ['TRANSMISSION_VISA', 'TRANSMISSION_DRH', 'RETOUR_CORRECTION', 'REJET_RH', 'VISA_FAVORABLE', 'REFUS_VISA'])
+                ->pluck('demande_id')
+                ->all()
+            : [];
+        $traiteesNaiss = $moi
+            ? DeclarationHistorique::where('type_dossier', 'NAISSANCE')
+                ->whereIn('dossier_id', $naissances->pluck('id'))
+                ->where('acteur_agent_id', $moi)
+                ->whereIn('action', ['VERIFICATION_CONFORME', 'RETOUR_CORRECTION'])
+                ->pluck('dossier_id')
+                ->all()
+            : [];
+        $traiteesDeces = $moi
+            ? DeclarationHistorique::where('type_dossier', 'DECES')
+                ->whereIn('dossier_id', $deces->pluck('id'))
+                ->where('acteur_agent_id', $moi)
+                ->whereIn('action', ['VERIFICATION_CONFORME', 'RETOUR_CORRECTION'])
+                ->pluck('dossier_id')
+                ->all()
+            : [];
+
         // Pièces réellement déposées (téléchargement contrôlé via /api/pieces/{id}).
         $pieces = PieceJointe::whereIn(
             'chemin_stockage',
@@ -308,6 +332,7 @@ class LegacyApiController extends Controller
             $reqs[] = [
                 'id' => $p->code_dossier,
                 'dossier_id' => $p->id,
+                'traite_par_moi' => in_array($p->id, $traiteesPerms, true),
                 'nature' => 'DEMANDE_PERMISSION',
                 'agentName' => $p->agent->fullName(),
                 'matricule' => $p->agent->matricule,
@@ -337,6 +362,7 @@ class LegacyApiController extends Controller
             $reqs[] = [
                 'id' => $n->code_dossier,
                 'dossier_id' => $n->id,
+                'traite_par_moi' => in_array($n->id, $traiteesNaiss, true),
                 'nature' => 'DECLARATION_NAISSANCE',
                 'nom' => $n->nom_enfant,
                 'prenom' => $n->prenom_enfant,
@@ -360,6 +386,7 @@ class LegacyApiController extends Controller
             $reqs[] = [
                 'id' => $d->code_dossier,
                 'dossier_id' => $d->id,
+                'traite_par_moi' => in_array($d->id, $traiteesDeces, true),
                 'nature' => 'DECLARATION_DECES',
                 'nom' => $d->nom_defunt,
                 'prenom' => $d->prenom_defunt,
@@ -385,10 +412,24 @@ class LegacyApiController extends Controller
         return response()->json(['status' => 'success', 'requests' => $reqs]);
     }
 
-    /**
-     * Dépôt d'une demande de permission depuis l'interface : justificatif et lieu obligatoires, durée
-     * de 1 à 30 jours.
-     */
+    /** Garde-fou « structure non affectée » : sans rattachement, un agent ne dépose rien (pas de
+     * signataire). Fait autorité sur l'interface ; ne vise que les comptes agents. */
+    private function exigerStructureAffectee(Request $request): void
+    {
+        $user = $request->user();
+        if (! $user->hasRole('ROLE_AGENT')) {
+            return;
+        }
+
+        abort_if(
+            $user->agent?->structure_id === null,
+            403,
+            "Votre structure de rattachement n'est pas encore affectée. Contactez l'administrateur : sans structure, impossible de déposer une demande.",
+        );
+    }
+
+    /** Dépôt d'une demande de permission depuis l'interface : justificatif et lieu obligatoires, durée de
+     * 1 à 30 jours. */
     public function submitPermission(Request $request)
     {
         abort_if(
@@ -397,6 +438,7 @@ class LegacyApiController extends Controller
             403,
             'Le Chef de service ne fait pas de demandes.',
         );
+        $this->exigerStructureAffectee($request);
         $reglePiece = [
             'nullable',
             'file',
@@ -454,16 +496,334 @@ class LegacyApiController extends Controller
                 'status' => 'success',
                 'code' => $demande->code_dossier,
                 'jours' => $demande->nombre_jours,
+                'statut' => $demande->statut,
+                // Où le dossier atterrit : un responsable va droit au DRH, un agent
+                // passe par le gestionnaire RH puis, sur le cas court, par un visa.
+                'circuit' => $demande->statut === DemandePermission::EN_ATTENTE_DRH
+                    ? 'DRH'
+                    : ($demande->nombre_jours <= 2 ? 'DIRECTION' : 'DRH'),
                 'niveau_requis' => $demande->nombre_jours <= 2 ? 'DIRECTION' : 'DRH',
             ],
             201,
         );
     }
 
-    /**
-     * Mêmes exigences que /api/naissances et /api/deces : lieu réel, lien de
-     * parenté restreint et pièce justificative scannée obligatoire.
-     */
+    /** Enregistre une demande de permission en BROUILLON sans la soumettre au circuit. */
+    public function sauvegarderBrouillonPermission(Request $request)
+    {
+        $this->exigerStructureAffectee($request);
+        $reglePiece = [
+            'nullable', 'file',
+            'mimes:'.implode(',', PieceService::MIMES),
+            'max:'.PieceService::MAX_KO,
+        ];
+        $data = $request->validate([
+            'type_permission_id' => ['nullable', 'exists:types_permission,id'],
+            'typePerm' => ['nullable', 'string'],
+            'date_debut' => ['nullable', 'date'],
+            'dateDebut' => ['nullable', 'date'],
+            'date_fin' => ['nullable', 'date'],
+            'dateFin' => ['nullable', 'date'],
+            'motif' => ['nullable', 'string', 'min:3'],
+            'jours' => ['nullable', 'integer', 'min:1'],
+            'piece' => $request->hasFile('piece') ? $reglePiece : ['nullable'],
+            'code_dossier' => ['nullable', 'string'],  // si mise à jour d'un brouillon existant
+        ]);
+
+        $agent = $request->user()->agent;
+        $debut = $data['date_debut'] ?? $data['dateDebut'] ?? null;
+        $fin = $data['date_fin'] ?? $data['dateFin'] ?? null;
+        $typeId = $data['type_permission_id'] ?? $this->resoudreTypePermission($data['typePerm'] ?? null)->id;
+
+        // Mise à jour d'un brouillon existant
+        if (!empty($data['code_dossier'])) {
+            $demande = DemandePermission::where('code_dossier', $data['code_dossier'])
+                ->where('agent_id', $agent->id)
+                ->where('statut', 'BROUILLON')
+                ->first();
+            if (!$demande) {
+                return response()->json(['status' => 'error', 'message' => 'Brouillon introuvable.'], 404);
+            }
+            $demande->update(array_filter([
+                'type_permission_id' => $typeId,
+                'date_debut' => $debut,
+                'date_fin' => $fin,
+                'nombre_jours' => $data['jours'] ?? ($debut && $fin ? max(1, (int)round((strtotime($fin) - strtotime($debut)) / 86400) + 1) : null),
+                'motif' => $data['motif'] ?? null,
+            ], fn($v) => $v !== null));
+        } else {
+            // Création d'un nouveau brouillon
+            $demande = DemandePermission::create([
+                'code_dossier' => 'PERM-'.now()->year.'-'.strtoupper(\Illuminate\Support\Str::random(6)),
+                'agent_id' => $agent->id,
+                'type_permission_id' => $typeId,
+                'date_debut' => $debut,
+                'date_fin' => $fin,
+                'nombre_jours' => $data['jours'] ?? ($debut && $fin ? max(1, (int)round((strtotime($fin) - strtotime($debut)) / 86400) + 1) : 1),
+                'motif' => $data['motif'] ?? '',
+                'statut' => 'BROUILLON',
+            ]);
+        }
+
+        if ($request->hasFile('piece')) {
+            $this->joindrePiecePermission($request, $demande);
+        }
+
+        return response()->json(['status' => 'success', 'code' => $demande->code_dossier, 'dossier_id' => $demande->id], 201);
+    }
+
+    /** Soumet un brouillon de permission existant au circuit de traitement. */
+    public function soumettrebrouillonPermission(Request $request)
+    {
+        $this->exigerStructureAffectee($request);
+        $data = $request->validate(['code_dossier' => ['required', 'string']]);
+        $agent = $request->user()->agent;
+        $demande = DemandePermission::where('code_dossier', $data['code_dossier'])
+            ->where('agent_id', $agent->id)
+            ->where('statut', 'BROUILLON')
+            ->first();
+        if (!$demande) {
+            return response()->json(['status' => 'error', 'message' => 'Brouillon introuvable ou déjà soumis.'], 404);
+        }
+        // Un brouillon peut être enregistré incomplet : on exige ici ce que
+        // submitPermission() exige pour une demande déposée directement.
+        if (mb_strlen(trim((string) $demande->motif)) < 3 || ! $demande->date_debut || ! $demande->date_fin) {
+            return response()->json(['status' => 'error', 'message' => 'Complétez le motif et les dates avant de soumettre.'], 422);
+        }
+        if ($demande->date_fin->lt($demande->date_debut)) {
+            return response()->json(['status' => 'error', 'message' => 'La date de fin doit être postérieure ou égale à la date de début.'], 422);
+        }
+        PermissionWorkflowService::soumettre($agent, [
+            'type_permission_id' => $demande->type_permission_id,
+            'date_debut' => $demande->date_debut,
+            'date_fin' => $demande->date_fin,
+            'motif' => $demande->motif,
+            'nombre_jours' => $demande->nombre_jours,
+            'piece_path' => $demande->piece_path,
+        ], $demande);
+
+        return response()->json([
+            'status' => 'success',
+            'code' => $demande->refresh()->code_dossier,
+            'statut' => $demande->statut,
+        ]);
+    }
+
+    /** Enregistre une déclaration de naissance ou de décès en BROUILLON. */
+    public function sauvegarderBrouillonDeclaration(Request $request)
+    {
+        $this->exigerStructureAffectee($request);
+        $reglePiece = ['nullable', 'file', 'mimes:'.implode(',', PieceService::MIMES), 'max:'.PieceService::MAX_KO];
+        $data = $request->validate([
+            'nature' => ['required', 'in:NAISSANCE,DECES'],
+            'nom' => ['nullable', 'string', 'max:100'],
+            'prenom' => ['nullable', 'string', 'max:150'],
+            'date' => ['nullable', 'date'],
+            'lieu' => ['nullable', 'string', 'max:255'],
+            'lien_parente' => ['nullable', 'in:ascendant,descendant,conjoint'],
+            'extrait' => $request->hasFile('extrait') ? $reglePiece : ['nullable'],
+            'certificat' => $request->hasFile('certificat') ? $reglePiece : ['nullable'],
+            'code_dossier' => ['nullable', 'string'],
+        ]);
+
+        $agent = $request->user()->agent;
+        $type = $data['nature'];
+
+        if (!empty($data['code_dossier'])) {
+            $modele = $type === 'NAISSANCE' ? DeclarationNaissance::class : DeclarationDeces::class;
+            $decl = $modele::where('code_dossier', $data['code_dossier'])
+                ->where('agent_id', $agent->id)
+                ->where('statut', EtatCivilService::BROUILLON)
+                ->first();
+            if (!$decl) {
+                return response()->json(['status' => 'error', 'message' => 'Brouillon introuvable.'], 404);
+            }
+            $maj = array_filter([
+                'nom_enfant' => $type === 'NAISSANCE' ? ($data['nom'] ?? null) : null,
+                'prenom_enfant' => $type === 'NAISSANCE' ? ($data['prenom'] ?? null) : null,
+                'date_naissance_enfant' => $type === 'NAISSANCE' ? ($data['date'] ?? null) : null,
+                'lieu_naissance_enfant' => $type === 'NAISSANCE' ? ($data['lieu'] ?? null) : null,
+                'nom_defunt' => $type === 'DECES' ? ($data['nom'] ?? null) : null,
+                'prenom_defunt' => $type === 'DECES' ? ($data['prenom'] ?? null) : null,
+                'date_deces' => $type === 'DECES' ? ($data['date'] ?? null) : null,
+                'lieu_deces' => $type === 'DECES' ? ($data['lieu'] ?? null) : null,
+                'lien_parente' => $type === 'DECES' ? ($data['lien_parente'] ?? null) : null,
+            ], fn($v) => $v !== null);
+
+            // Justificatif joint en modifiant le brouillon : sans lui, la soumission
+            // qui suit serait refusée faute de pièce alors que l'agent l'a fournie.
+            $champFichier = $type === 'NAISSANCE' ? 'extrait' : 'certificat';
+            if ($request->hasFile($champFichier)) {
+                $piece = PieceService::deposer(
+                    $request->file($champFichier),
+                    strtolower($type),
+                    $decl->id,
+                    $decl->code_dossier,
+                    $agent,
+                );
+                $maj[$type === 'NAISSANCE' ? 'extrait_path' : 'certificat_path'] = $piece->chemin_stockage;
+            }
+
+            $decl->update($maj);
+            $declaration = $decl;
+        } else {
+            $piece = null;
+            if ($type === 'NAISSANCE' && $request->hasFile('extrait')) {
+                $piece = PieceService::deposer($request->file('extrait'), 'naissance', null, null, $agent);
+            } elseif ($type === 'DECES' && $request->hasFile('certificat')) {
+                $piece = PieceService::deposer($request->file('certificat'), 'deces', null, null, $agent);
+            }
+            $declaration = EtatCivilService::declarer($type, $agent,
+                $type === 'NAISSANCE'
+                    ? ['nom_enfant' => $data['nom'] ?? '', 'prenom_enfant' => $data['prenom'] ?? '', 'date_naissance_enfant' => $data['date'] ?? now()->format('Y-m-d'), 'lieu_naissance_enfant' => $data['lieu'] ?? '', 'soumettre' => false]
+                    : ['nom_defunt' => $data['nom'] ?? '', 'prenom_defunt' => $data['prenom'] ?? '', 'lien_parente' => $data['lien_parente'] ?? 'ascendant', 'date_deces' => $data['date'] ?? now()->format('Y-m-d'), 'lieu_deces' => $data['lieu'] ?? '', 'soumettre' => false],
+                $piece?->chemin_stockage
+            );
+            // Le dossier n'existait pas au moment du dépôt : on rattache la pièce,
+            // sinon elle resterait orpheline et ne serait pas supprimée avec le brouillon.
+            $piece?->update([
+                'dossier_id' => $declaration->id,
+                'reference_dossier' => $declaration->code_dossier,
+            ]);
+        }
+
+        return response()->json(['status' => 'success', 'code' => $declaration->code_dossier, 'dossier_id' => $declaration->id], 201);
+    }
+
+    /** Soumet un brouillon de déclaration d'état civil au circuit de traitement. */
+    public function soumettrebrouillonDeclaration(Request $request)
+    {
+        $this->exigerStructureAffectee($request);
+        $data = $request->validate([
+            'nature' => ['required', 'in:NAISSANCE,DECES'],
+            'code_dossier' => ['required', 'string'],
+        ]);
+        $agent = $request->user()->agent;
+        $type = $data['nature'];
+        $modele = $type === 'NAISSANCE' ? DeclarationNaissance::class : DeclarationDeces::class;
+        $decl = $modele::where('code_dossier', $data['code_dossier'])
+            ->where('agent_id', $agent->id)
+            ->where('statut', EtatCivilService::BROUILLON)
+            ->first();
+        if (!$decl) {
+            return response()->json(['status' => 'error', 'message' => 'Brouillon introuvable ou déjà soumis.'], 404);
+        }
+        // Mêmes exigences que submitDeclaration() : le brouillon a pu être enregistré incomplet.
+        [$nom, $prenom, $date, $lieu] = $type === 'NAISSANCE'
+            ? [$decl->nom_enfant, $decl->prenom_enfant, $decl->date_naissance_enfant, $decl->lieu_naissance_enfant]
+            : [$decl->nom_defunt, $decl->prenom_defunt, $decl->date_deces, $decl->lieu_deces];
+        if (blank($nom) || blank($prenom) || blank($lieu) || ! $date) {
+            return response()->json(['status' => 'error', 'message' => 'Complétez le nom, le prénom, la date et le lieu avant de soumettre.'], 422);
+        }
+        if ($date->isFuture()) {
+            return response()->json(['status' => 'error', 'message' => 'La date ne peut pas être postérieure à aujourd\'hui.'], 422);
+        }
+        EtatCivilService::soumettreBrouillon($type, $decl, $agent);
+
+        return response()->json([
+            'status' => 'success',
+            'code' => $decl->refresh()->code_dossier,
+            'statut' => $decl->statut,
+        ]);
+    }
+
+    /** Supprime définitivement un brouillon de l'agent connecté, avec ses fichiers et son historique. Un
+     * dossier déjà soumis est refusé : il fait partie d'une décision tracée. */
+    public function supprimerBrouillon(Request $request)
+    {
+        $data = $request->validate(['code_dossier' => ['required', 'string']]);
+        $agent = $request->user()->agent;
+        $code = strtoupper(trim($data['code_dossier']));
+
+        // Le dossier est cherché dans les trois natures, comme le fait updateStatus().
+        $trouve = DemandePermission::where('code_dossier', $code)
+            ->where('agent_id', $agent->id)
+            ->where('statut', 'BROUILLON')
+            ->first();
+        $nature = 'PERMISSION';
+        if (! $trouve) {
+            foreach (['NAISSANCE' => DeclarationNaissance::class, 'DECES' => DeclarationDeces::class] as $type => $modele) {
+                $trouve = $modele::where('code_dossier', $code)
+                    ->where('agent_id', $agent->id)
+                    ->where('statut', EtatCivilService::BROUILLON)
+                    ->first();
+                if ($trouve) {
+                    $nature = $type;
+                    break;
+                }
+            }
+        }
+
+        if (! $trouve) {
+            // Le code existe peut-être mais chez un autre agent ou déjà sorti du brouillon.
+            $existe = DemandePermission::where('code_dossier', $code)->exists()
+                || DeclarationNaissance::where('code_dossier', $code)->exists()
+                || DeclarationDeces::where('code_dossier', $code)->exists();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $existe
+                    ? 'Ce dossier n\'est pas un brouillon : seuls vos brouillons non soumis peuvent être supprimés.'
+                    : 'Brouillon introuvable.',
+            ], $existe ? 403 : 404);
+        }
+
+        $this->purgerBrouillon($trouve, $nature);
+
+        JournalAudit::noter(
+            JournalAudit::DOSSIER,
+            'suppression_brouillon',
+            $request->user(),
+            'Brouillon '.$nature.' supprimé par son auteur.',
+            $code,
+        );
+
+        return response()->json(['status' => 'success', 'code' => $code]);
+    }
+
+    /** Nettoie ce qui dépend d'un brouillon (historique, pièces jointes, fichiers), faute de clé
+     * étrangère, avant de le supprimer. */
+    private function purgerBrouillon($dossier, string $nature): void
+    {
+        $typeDossier = strtolower($nature);
+
+        $pieces = PieceJointe::where('dossier_type', $typeDossier)
+            ->where(function ($q) use ($dossier) {
+                $q->where('dossier_id', $dossier->id)
+                    // Rattrape les pièces déposées avant que le lien soit fait.
+                    ->orWhere('reference_dossier', $dossier->code_dossier);
+            })
+            ->get();
+        foreach ($pieces as $piece) {
+            Storage::disk('local')->delete($piece->chemin_stockage);
+            $piece->delete();
+        }
+
+        // Colonne du fichier portée par le dossier lui-même (les créations antérieures
+        // à pieces_jointes y écrivent directement le chemin).
+        $colonne = match ($nature) {
+            'NAISSANCE' => 'extrait_path',
+            'DECES' => 'certificat_path',
+            default => 'piece_path',
+        };
+        $chemin = $dossier->getAttribute($colonne);
+        if (is_string($chemin) && $chemin !== '') {
+            Storage::disk('local')->delete($chemin);
+        }
+
+        // demande_historique part en cascade via sa clé étrangère ; celui des
+        // déclarations d'état civil n'en a pas et doit être effacé à la main.
+        if ($nature !== 'PERMISSION') {
+            DeclarationHistorique::where('type_dossier', $nature)
+                ->where('dossier_id', $dossier->id)
+                ->delete();
+        }
+
+        $dossier->delete();
+    }
+
+    /** Mêmes exigences que /api/naissances et /api/deces : lieu réel, lien de parenté restreint et pièce
+     * justificative scannée obligatoire. */
     public function submitDeclaration(Request $request)
     {
         abort_if(
@@ -472,6 +832,7 @@ class LegacyApiController extends Controller
             403,
             'Le Chef de service ne fait pas de demandes.',
         );
+        $this->exigerStructureAffectee($request);
         $reglePiece = [
             'nullable',
             'file',
@@ -542,21 +903,23 @@ class LegacyApiController extends Controller
         ]);
 
         return response()->json(
-            ['status' => 'success', 'code' => $declaration->code_dossier, 'data' => $declaration],
+            [
+                'status' => 'success',
+                'code' => $declaration->code_dossier,
+                'statut' => $declaration->statut,
+                'data' => $declaration,
+            ],
             201,
         );
     }
 
-    /**
-     * Ancien contrat POST /api/status {id, statut, motif?} branché sur le workflow :
-     * EN_ATTENTE_RH (contrat historique) = avis favorable / étape suivante, VALIDEE = décision
-     * finale DRH, REJETEE = refus ou retour, avec le motif saisi (motif générique à défaut).
-     */
+    /** Ancien contrat POST /api/status branché sur le workflow : EN_ATTENTE_RH = étape suivante, VALIDEE
+     * = décision DRH, REJETEE = refus ou retour avec motif. */
     public function updateStatus(Request $request)
     {
         $data = $request->validate([
             'id' => ['required', 'string'],
-            'statut' => ['required', 'in:EN_ATTENTE_RH,VALIDEE,REJETEE'],
+            'statut' => ['required', 'in:EN_ATTENTE_RH,VALIDEE,REJETEE,RETOUR_CORRECTION'],
             'motif' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -576,31 +939,31 @@ class LegacyApiController extends Controller
             }
 
             if ($target === 'EN_ATTENTE_RH') {
-                if ($demande->statut === DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH) {
+                if ($demande->statut === DemandePermission::EN_ATTENTE_RH) {
                     if (! $user->hasRole('ROLE_GESTIONNAIRE_RH')) {
                         return response()->json(
                             ['status' => 'error', 'message' => 'Vérification RH requise.'],
                             403,
                         );
                     }
-                    PermissionWorkflowService::verifierRh($demande, $agent, 'conforme');
+                    PermissionWorkflowService::verifierRh($demande, $agent, 'transmettre');
                 } elseif (
                     in_array(
                         $demande->statut,
                         [
-                            DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR,
-                            DemandePermission::EN_ATTENTE_VISA_DIRECTEUR,
+                            DemandePermission::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR,
+                            DemandePermission::EN_ATTENTE_VALIDATION_DIRECTEUR,
                         ],
                         true,
                     )
                 ) {
                     $role =
-                        $demande->statut === DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR
+                        $demande->statut === DemandePermission::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR
                             ? 'SOUS_DIRECTEUR'
                             : 'DIRECTEUR';
                     if (! $user->hasRole('ROLE_'.strtoupper($role))) {
                         return response()->json(
-                            ['status' => 'error', 'message' => 'Visa '.$role.' requis.'],
+                            ['status' => 'error', 'message' => 'Validation '.$role.' requise.'],
                             403,
                         );
                     }
@@ -619,6 +982,14 @@ class LegacyApiController extends Controller
                     );
                 }
                 PermissionWorkflowService::trancherDrh($demande, $agent, true);
+            } elseif ($target === 'RETOUR_CORRECTION') {
+                if (! $user->hasRole('ROLE_DRH')) {
+                    return response()->json(
+                        ['status' => 'error', 'message' => 'Décision DRH requise.'],
+                        403,
+                    );
+                }
+                PermissionWorkflowService::retournerDrh($demande, $agent, $motif ?? '');
             } else {
                 $this->rejeterPermission($demande, $agent, $user, $motif);
             }
@@ -651,19 +1022,37 @@ class LegacyApiController extends Controller
         return response()->json(['status' => 'error', 'message' => 'Dossier introuvable.'], 404);
     }
 
-    // ---------------------------------------------------------------
     // Notes de service (ancien + nouveau contrat)
-    // ---------------------------------------------------------------
     public function notes(Request $request)
     {
+        // L'historique des étapes ne sert qu'à la secrétaire (onglet « Historique ») :
+        // les autres profils n'en ont pas besoin et ne le chargent pas.
+        $avecHistorique = $request->user()->hasRole('ROLE_SECRETAIRE');
+
         $query = NoteWorkflowService::visiblesPour($request->user())
             ->with(['structures', 'signataire'])
             ->latest('id');
 
         $notes = (clone $query)
+            ->when($avecHistorique, fn ($q) => $q->with('historique'))
             ->get()
             ->map(
-                fn (NoteService $n) => [
+                fn (NoteService $n) => ($avecHistorique ? [
+                    // Du plus ancien au plus récent : l'ordre de lecture d'une frise.
+                    'historique' => $n->historique
+                        ->sortBy('id')
+                        ->values()
+                        ->map(fn ($h) => [
+                            'action' => $h->action,
+                            'acteur' => $h->acteur_nom,
+                            'role' => $h->acteur_role,
+                            'ancien_statut' => $h->ancien_statut,
+                            'nouveau_statut' => $h->nouveau_statut,
+                            'commentaire' => $h->commentaire,
+                            'date' => $h->created_at?->toIso8601String(),
+                        ])
+                        ->all(),
+                ] : []) + [
                     'id' => $n->id,
                     'numero' => $n->numero_reference,
                     'libelle' => $n->objet,
@@ -688,10 +1077,8 @@ class LegacyApiController extends Controller
         ]);
     }
 
-    /**
-     * Création d'une note de service : l'autorité émettrice la rédige, elle est aussitôt transmise à
-     * la secrétaire ; la diffusion est une action séparée.
-     */
+    /** Création d'une note de service : l'autorité émettrice la rédige, elle est aussitôt transmise à la
+     * secrétaire ; la diffusion est une action séparée. */
     public function storeNote(Request $request)
     {
         $action = strtolower((string) $request->input('action', ''));
@@ -742,7 +1129,31 @@ class LegacyApiController extends Controller
             ]);
         }
 
-        // Saisie puis transmission aux destinataires par la secrétaire (ancien contrat).
+        // Envoi aux directeurs par le secrétariat (brouillon ou note reprise).
+        if ($action === 'envoyer') {
+            abort_unless(
+                $request->user()->hasRole('ROLE_SECRETAIRE'),
+                403,
+                'Envoi réservé au secrétariat.',
+            );
+            $note = NoteService::find($request->input('note_id'));
+            if (! $note) {
+                return response()->json(
+                    ['status' => 'error', 'message' => 'Note introuvable.'],
+                    404,
+                );
+            }
+            $note = NoteWorkflowService::envoyerAuxDirecteurs($note, $request->user()->agent);
+
+            return response()->json([
+                'status' => 'success',
+                'ref' => $note->numero_reference,
+                'statut' => $note->statut,
+            ]);
+        }
+
+        // Diffusion aux destinataires par la secrétaire, une fois la note validée
+        // par un directeur (ancien contrat).
         if ($action === 'diffuse') {
             abort_unless(
                 $request->user()->hasRole('ROLE_SECRETAIRE'),
@@ -759,22 +1170,25 @@ class LegacyApiController extends Controller
                     422,
                 );
             }
-            if ($note->statut === NoteService::EN_ATTENTE_SAISIE) {
-                $note = NoteWorkflowService::saisir($note, $request->user()->agent, [
-                    'contenu' => $note->contenu ?? 'Note mise en forme par le secrétariat.',
-                ]);
-            }
+            /* Pas de saisie automatique : le directeur doit d'abord valider, sans quoi la diffusion est
+               refusée. La saisie et la diffusion sont deux étapes distinctes de la secrétaire. */
             $note = NoteWorkflowService::diffuser($note, $request->user()->agent);
 
-            return response()->json(['status' => 'success', 'ref' => $note->numero_reference]);
+            return response()->json([
+                'status' => 'success',
+                'ref' => $note->numero_reference,
+                // Bilan de l'email envoyé à tous les agents du ministère.
+                'emails' => NoteWorkflowService::$dernierBilanEmails,
+            ]);
         }
 
-        // Nouveau contrat (objet) : rédaction + transmission au secrétariat.
+        // Nouveau contrat (objet) : rédaction par le secrétariat (brouillon).
+        // L'envoi aux directeurs est une action séparée.
         if ($request->has('objet')) {
             abort_unless(
                 $request->user()->hasRole(...NoteWorkflowService::ROLES_EMETTEURS),
                 403,
-                'Émission réservée à une autorité habilitée.',
+                'Rédaction réservée au secrétariat.',
             );
             $data = $request->validate([
                 'objet' => ['required', 'string', 'min:5'],
@@ -783,7 +1197,6 @@ class LegacyApiController extends Controller
                 'structure_ids.*' => ['exists:structures,id'],
             ]);
             $note = NoteWorkflowService::rediger($request->user()->agent, $data, null);
-            $note = NoteWorkflowService::transmettreSecretariat($note, $request->user()->agent);
 
             return response()->json(
                 [
@@ -797,11 +1210,11 @@ class LegacyApiController extends Controller
             );
         }
 
-        // Ancien contrat : émission (titre + structures) puis secrétariat.
+        // Ancien contrat : rédaction par le secrétariat (titre + structures).
         abort_unless(
             $request->user()->hasRole(...NoteWorkflowService::ROLES_EMETTEURS),
             403,
-            'Émission réservée à une autorité habilitée.',
+            'Rédaction réservée au secrétariat.',
         );
         $data = $request->validate([
             'title' => ['required', 'string', 'min:5'],
@@ -815,7 +1228,6 @@ class LegacyApiController extends Controller
             ],
             null,
         );
-        $note = NoteWorkflowService::transmettreSecretariat($note, $request->user()->agent);
 
         return response()->json(
             [
@@ -828,10 +1240,8 @@ class LegacyApiController extends Controller
         );
     }
 
-    /**
-     * Renvoie le statut d'une déclaration tel quel : les statuts de l'état civil sont déjà ceux que
-     * l'interface attend.
-     */
+    /** Renvoie le statut d'une déclaration tel quel : les statuts de l'état civil sont déjà ceux que
+     * l'interface attend. */
     private function mapEtatCivilStatus(string $statut): string
     {
         return match ($statut) {
@@ -840,9 +1250,7 @@ class LegacyApiController extends Controller
         };
     }
 
-    // ---------------------------------------------------------------
     // Référentiels & utilisateurs (ancien contrat)
-    // ---------------------------------------------------------------
     public function structures()
     {
         $structures = Structure::orderBy('id')->get()->map(
@@ -863,10 +1271,8 @@ class LegacyApiController extends Controller
         return response()->json(['status' => 'success', 'roles' => Role::orderBy('id')->get()]);
     }
 
-    /**
-     * Administrateur : liste des comptes avec rôle réel, structure, statut (actif ou suspendu) et
-     * dernière connexion.
-     */
+    /** Administrateur : liste des comptes avec rôle réel, structure, statut (actif ou suspendu) et
+     * dernière connexion. */
     public function users()
     {
         // Structures dirigées par chaque agent (responsable de structure, qui donne le visa).
@@ -912,10 +1318,8 @@ class LegacyApiController extends Controller
         return response()->json(['status' => 'success', 'users' => $users]);
     }
 
-    /**
-     * Administrateur : crée un compte (matricule, identité, rôle, structure, mot de passe initial de 6
-     * caractères au moins).
-     */
+    /** Administrateur : crée un compte (matricule, identité, rôle, structure, mot de passe initial de 6
+     * caractères au moins). */
     public function storeUser(Request $request)
     {
         $data = $request->validate([
@@ -928,6 +1332,9 @@ class LegacyApiController extends Controller
             'structure_id' => ['nullable', 'exists:structures,id'],
             'civilite' => ['nullable', 'string', 'max:10'],
             'telephone' => ['nullable', 'string', 'max:30'],
+            // L'administrateur n'est pas tenu de saisir l'email : à défaut,
+            // une adresse générique est générée (l'agent la fera corriger).
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
         ]);
 
         $roleCodes = $this->resolveRoleCodes($data['role']);
@@ -974,7 +1381,9 @@ class LegacyApiController extends Controller
         ]);
         $user = User::create([
             'name' => $agent->fullName(),
-            'email' => strtolower($matricule).'@fonctionpublique.gouv.ci',
+            'email' => isset($data['email'])
+                ? strtolower(trim($data['email']))
+                : strtolower($matricule).'@fonctionpublique.gouv.ci',
             'matricule' => $matricule,
             'password' => $data['password'],
             'agent_id' => $agent->id,
@@ -1022,7 +1431,8 @@ class LegacyApiController extends Controller
         // Garde-fou : l'administrateur ne peut ni se suspendre ni se retirer son propre rôle.
         if (
             $user->id === $request->user()->id &&
-            (($data['actif'] ?? true) === false ||
+            // La règle « boolean » accepte aussi "0" et 0 : on compare la valeur convertie.
+            ((isset($data['actif']) && ! filter_var($data['actif'], FILTER_VALIDATE_BOOLEAN)) ||
                 ($roleCodes !== null && ! in_array('ROLE_ADMIN_DSI', $roleCodes, true)))
         ) {
             return response()->json(
@@ -1047,9 +1457,30 @@ class LegacyApiController extends Controller
             $roleCodes !== null ? 'rôle → '.implode(', ', $roleCodes) : null,
         ]);
         if (! empty($data['structure_id']) && $user->agent) {
+            $nouvelle = Structure::find($data['structure_id']);
+            // Notification seulement si le rattachement change vraiment (pas à chaque enregistrement) ;
+            // comparaison sur l'agent, source du garde-fou de dépôt.
+            $change = (string) $user->agent->structure_id !== (string) $data['structure_id'];
             $user->agent->update(['structure_id' => $data['structure_id']]);
             $user->update(['structure_id' => $data['structure_id']]);
-            $modifs[] = 'structure → '.Structure::find($data['structure_id'])?->nom;
+            $modifs[] = 'structure → '.$nouvelle?->nom;
+
+            if ($change) {
+                $libelleStructure = $nouvelle?->nom
+                    ? "{$nouvelle->nom} ({$nouvelle->type})"
+                    : 'votre structure';
+                // Le signataire annoncé suit la structure : sous-direction → sous-directeur.
+                $signataire = $nouvelle?->type === 'Sous-Direction' ? 'Sous-Directeur' : 'Directeur';
+                Notification::create([
+                    'agent_id' => $user->agent->id,
+                    'titre' => 'Structure de rattachement affectée',
+                    'message' => "Vous avez été rattaché à la {$libelleStructure}. Vous pouvez désormais déposer vos "
+                        .'demandes de permission et vos déclarations d\'état civil. Vos dossiers de 2 jours ou '
+                        ."moins relèvent du {$signataire}.",
+                    'type' => 'STRUCTURE',
+                    'reference_dossier' => null,
+                ]);
+            }
         }
         if (
             array_key_exists('actif', $data) &&
@@ -1076,9 +1507,7 @@ class LegacyApiController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
     // Notifications (ancien contrat)
-    // ---------------------------------------------------------------
     public function notifications(Request $request)
     {
         $agentId = $request->user()->agent_id;
@@ -1117,35 +1546,7 @@ class LegacyApiController extends Controller
         ]);
     }
 
-    /**
-     * Notification explicite de l'agent par le Gestionnaire RH
-     * après décision du DRH (ancien contrat, par code dossier).
-     */
-    public function notifier(Request $request)
-    {
-        $data = $request->validate(['id' => ['required', 'string']]);
-        abort_unless(
-            $request->user()->hasRole('ROLE_GESTIONNAIRE_RH'),
-            403,
-            'Notification réservée au Gestionnaire RH.',
-        );
-
-        $demande = DemandePermission::where('code_dossier', strtoupper(trim($data['id'])))->first();
-        if (! $demande) {
-            return response()->json(
-                ['status' => 'error', 'message' => 'Dossier introuvable.'],
-                404,
-            );
-        }
-
-        PermissionWorkflowService::notifierAgent($demande, $request->user()->agent);
-
-        return response()->json(['status' => 'success']);
-    }
-
-    // ---------------------------------------------------------------
     // Helpers privés
-    // ---------------------------------------------------------------
     private function primaryProfile(array $codes): string
     {
         foreach (
@@ -1169,10 +1570,8 @@ class LegacyApiController extends Controller
         return 'AGENT';
     }
 
-    /**
-     * Construit l'objet utilisateur renvoyé à la connexion : identité, structure, fonction, solde de
-     * permission, profil et rôles.
-     */
+    /** Construit l'objet utilisateur renvoyé à la connexion : identité, structure, fonction, solde de
+     * permission, profil et rôles. */
     private function legacyUser(User $user, string $profile): array
     {
         $agent = $user->agent;
@@ -1187,6 +1586,8 @@ class LegacyApiController extends Controller
             'prenom' => $agent?->prenom,
             'structure' => $agent?->structure?->nom,
             'code_structure' => $agent?->structure?->code,
+            'structure_id' => $agent?->structure_id,
+            'structure_type' => $agent?->structure?->type,
             'fonction' => $agent?->fonction?->libelle,
             'solde_permission' => $agent?->solde_permission_annuel,
             'role' => $profile,
@@ -1203,33 +1604,28 @@ class LegacyApiController extends Controller
         ];
     }
 
-    /**
-     * Traduit le statut d'une demande de permission pour l'interface : les étapes de vérification et
-     * de visa deviennent EN_ATTENTE_N1, l'attente du DRH devient EN_ATTENTE_RH ; les autres statuts
-     * sont inchangés.
-     */
+    /** Statut d'une permission pour l'interface : vérification et conformité hiérarchique →
+     * EN_ATTENTE_N1, attente DRH → EN_ATTENTE_RH ; le reste inchangé. */
     private function mapPermissionStatus(string $statut): string
     {
         return match ($statut) {
-            DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH,
-            DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR,
-            DemandePermission::EN_ATTENTE_VISA_DIRECTEUR => 'EN_ATTENTE_N1',
+            DemandePermission::EN_ATTENTE_RH,
+            DemandePermission::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR,
+            DemandePermission::EN_ATTENTE_VALIDATION_DIRECTEUR => 'EN_ATTENTE_N1',
             DemandePermission::EN_ATTENTE_DRH => 'EN_ATTENTE_RH',
             default => $statut,
         };
     }
 
-    /**
-     * Rejette une demande de permission selon son étape actuelle : rejet du gestionnaire RH
-     * (vérification), refus de visa du responsable, ou rejet du DRH. Le motif est obligatoire.
-     */
+    /** Rejette une permission selon son étape : gestionnaire RH, responsable hiérarchique ou DRH. Le
+     * motif est obligatoire. */
     private function rejeterPermission(
         DemandePermission $demande,
         Agent $agent,
         User $user,
         ?string $motif,
     ): void {
-        if ($demande->statut === DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH) {
+        if ($demande->statut === DemandePermission::EN_ATTENTE_RH) {
             abort_unless($user->hasRole('ROLE_GESTIONNAIRE_RH'), 403, 'Vérification RH requise.');
             PermissionWorkflowService::verifierRh(
                 $demande,
@@ -1241,20 +1637,20 @@ class LegacyApiController extends Controller
             in_array(
                 $demande->statut,
                 [
-                    DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR,
-                    DemandePermission::EN_ATTENTE_VISA_DIRECTEUR,
+                    DemandePermission::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR,
+                    DemandePermission::EN_ATTENTE_VALIDATION_DIRECTEUR,
                 ],
                 true,
             )
         ) {
             $role =
-                $demande->statut === DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR
+                $demande->statut === DemandePermission::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR
                     ? 'SOUS_DIRECTEUR'
                     : 'DIRECTEUR';
             abort_unless(
                 $user->hasRole('ROLE_'.strtoupper($role)),
                 403,
-                'Visa '.$role.' requis.',
+                'Validation '.$role.' requise.',
             );
             PermissionWorkflowService::viser(
                 $demande,
@@ -1274,13 +1670,8 @@ class LegacyApiController extends Controller
         }
     }
 
-    /**
-     * Workflow des actes d'état civil : AGENT -> GESTIONNAIRE RH -> DRH -> AGENT
-     * Étape 1 : Le Gestionnaire RH vérifie complétude et justificatifs
-     *   (EN_ATTENTE_RH = conforme, REJETEE = retour en correction).
-     * Étape 2 : Le DRH contrôle et valide (VALIDEE, mise à jour statutaire) ou rejette (REJETEE, avec motif).
-     * Toute autre combinaison est refusée : un statut inattendu ne doit jamais rejeter un dossier.
-     */
+    /** Décision sur une naissance ou un décès : Agent → Gestionnaire RH (conforme ou retour) → DRH
+     * (valide, rejette ou retourne) → Agent notifié. */
     private function validerActe(
         DeclarationNaissance|DeclarationDeces|null $acte,
         Agent $agent,
@@ -1296,16 +1687,7 @@ class LegacyApiController extends Controller
             );
         }
 
-        if (
-            in_array(
-                $acte->statut,
-                [
-                    EtatCivilService::EN_ATTENTE_GESTIONNAIRE_RH,
-                    EtatCivilService::EN_ATTENTE_SERVICE,
-                ],
-                true,
-            )
-        ) {
+        if ($acte->statut === EtatCivilService::EN_ATTENTE_RH) {
             abort_unless(
                 $user->hasRole('ROLE_GESTIONNAIRE_RH'),
                 403,
@@ -1335,8 +1717,18 @@ class LegacyApiController extends Controller
             return response()->json(['status' => 'success']);
         }
 
-        if ($acte->statut === EtatCivilService::EN_ATTENTE_RH && $target !== 'EN_ATTENTE_RH') {
+        if ($acte->statut === EtatCivilService::EN_ATTENTE_DRH && $target !== 'EN_ATTENTE_RH') {
             abort_unless($user->hasRole('ROLE_DRH'), 403, 'Décision DRH requise.');
+            if ($target === 'RETOUR_CORRECTION') {
+                EtatCivilService::retourner(
+                    $type,
+                    $acte,
+                    $agent,
+                    $motif ?? 'Déclaration retournée par la DRH : pièce ou information à corriger.',
+                );
+
+                return response()->json(['status' => 'success']);
+            }
             EtatCivilService::trancher(
                 $type,
                 $acte,
@@ -1356,10 +1748,8 @@ class LegacyApiController extends Controller
         );
     }
 
-    /**
-     * Type de permission d'après le libellé affiché par le frontend
-     * (ex. « Repos Médical Court » → « Repos Médical »). Libellé vide : premier type.
-     */
+    /** Type de permission d'après le libellé affiché par le frontend (ex. « Repos Médical Court » → «
+     * Repos Médical »). Libellé vide : premier type. */
     private function resoudreTypePermission(?string $libelle): TypePermission
     {
         if (blank($libelle)) {

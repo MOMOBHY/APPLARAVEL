@@ -6,7 +6,10 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <link rel="icon" type="image/png" href="assets/logo-republique-cote-ivoire.png" />
+    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <title>
       Mot de passe oublié - Ministère de la Fonction Publique et de la Modernisation de
       l’Administration
@@ -74,11 +77,6 @@
     <link rel="stylesheet" href="assets/theme.css" />
   </head>
   <body class="bg-slate-100 text-slate-900 antialiased min-h-full flex flex-col font-sans">
-    <div class="h-2 w-full flex" style="position: relative; z-index: 10">
-      <div class="h-full w-1/3 bg-orange-500"></div>
-      <div class="h-full w-1/3 bg-white"></div>
-      <div class="h-full w-1/3 bg-emerald-600"></div>
-    </div>
 
     <main class="flex-1 flex items-center justify-center p-3 sm:p-4">
       <section
@@ -98,9 +96,10 @@
         </div>
 
         <form onsubmit="demander(event)" class="space-y-3">
-          <h2 class="text-sm font-extrabold text-slate-900">1. Faire une demande</h2>
+          <h2 class="text-sm font-extrabold text-slate-900">1. Recevoir le code par email</h2>
           <p class="text-xs text-slate-500">
-            Votre demande est transmise à l'administrateur, qui doit l'autoriser.
+            Saisissez votre matricule : le code est envoyé à votre adresse email du ministère,
+            avec un lien qui vous ramène ici pour choisir votre nouveau mot de passe.
           </p>
           <div>
             <label
@@ -121,14 +120,14 @@
             type="submit"
             class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow transition"
           >
-            Envoyer la demande
+            Envoyer le code par email
           </button>
         </form>
 
         <form onsubmit="reinitialiser(event)" class="space-y-3 border-t border-slate-200 pt-5">
           <h2 class="text-sm font-extrabold text-slate-900">2. Choisir un nouveau mot de passe</h2>
           <p class="text-xs text-slate-500">
-            Après l'autorisation de l'administrateur, saisissez votre code de suivi.
+            Saisissez le code reçu par email, puis votre nouveau mot de passe.
           </p>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -194,7 +193,7 @@
         </form>
 
         <a
-          href="index.html"
+          href="login.html"
           class="block text-center text-xs font-bold text-slate-600 hover:text-slate-900"
           >Retour à la connexion</a
         >
@@ -203,12 +202,7 @@
 
     <script src="js/api.js"></script>
     <script>
-      /**
-       * Affiche un message de succès (vert) ou d'erreur (rouge) dans la zone indiquée.
-       * @param {string} id Identifiant de la zone de message.
-       * @param {string} texte Message à afficher.
-       * @param {boolean} succes true pour un message de succès.
-       */
+      /** Affiche un message de succès (vert) ou d'erreur (rouge) dans la zone indiquée. */
       function afficher(id, texte, succes) {
         const node = document.getElementById(id);
         node.textContent = texte;
@@ -216,30 +210,22 @@
           'text-xs font-bold text-center ' + (succes ? 'text-emerald-700' : 'text-red-600');
       }
 
-      /**
-       * Étape 1 : envoie la demande de réinitialisation puis affiche le code de suivi à conserver.
-       */
+      /** Étape 1 : le code est envoyé à l'adresse email du ministère ; le formulaire de l'étape 2 est
+       * pré-rempli avec le matricule. */
       async function demander(event) {
         event.preventDefault();
         const matricule = document.getElementById('matriculeDemande').value.trim();
         const res = await API.demanderReinitialisation(matricule);
         if (res.status === 'success') {
-          afficher('demandeMessage', res.message + ' Votre code : ' + res.code, true);
+          afficher('demandeMessage', (res.message || 'Code envoyé.') + (res.email_masque ? ' (' + res.email_masque + ')' : ''), true);
           document.getElementById('matricule').value = matricule.toUpperCase();
-          document.getElementById('code').value = res.code;
-          alert(
-            'Notez votre code de suivi : ' +
-              res.code +
-              "\n\nRevenez sur cette page une fois la demande autorisée par l'administrateur.",
-          );
+          document.getElementById('code').focus();
         } else {
-          afficher('demandeMessage', res.message || 'Demande impossible.', false);
+          afficher('demandeMessage', res.message || 'Envoi impossible.', false);
         }
       }
 
-      /**
-       * Étape 3 : envoie le matricule, le code de suivi et le nouveau mot de passe ; explique l'attente si l'administrateur n'a pas encore autorisé.
-       */
+      /** Étape 2 : envoie le matricule, le code reçu par email et le nouveau mot de passe. */
       async function reinitialiser(event) {
         event.preventDefault();
         const password = document.getElementById('password').value;
@@ -254,14 +240,29 @@
           password_confirmation: password,
         });
         if (res.status === 'success') {
-          alert(res.message);
+          toast(res.message);
           window.location.href =
-            'index.html?inscrit=' +
+            'login.html?inscrit=' +
             encodeURIComponent(document.getElementById('matricule').value.trim().toUpperCase());
         } else {
           afficher('reinitMessage', res.message || 'Réinitialisation impossible.', false);
         }
       }
+
+      // Arrivée depuis le lien de l'email : matricule et code pré-remplis.
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const matricule = (params.get('matricule') || '').toUpperCase();
+        const code = (params.get('code') || '').toUpperCase();
+        if (matricule) {
+          document.getElementById('matriculeDemande').value = matricule;
+          document.getElementById('matricule').value = matricule;
+        }
+        if (code) {
+          document.getElementById('code').value = code;
+          document.getElementById('password').focus();
+        }
+      })();
     </script>
   </body>
 </html>

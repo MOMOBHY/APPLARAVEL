@@ -8,10 +8,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    /**
-     * Laisse passer la requête si l'utilisateur possède au moins un des rôles demandés ; sinon répond
-     * 403 (JSON) ou redirige vers la connexion.
-     */
+    /** Laisse passer la requête si l'utilisateur possède au moins un des rôles demandés ; sinon répond
+     * 403 (JSON) ou redirige vers la connexion. */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();

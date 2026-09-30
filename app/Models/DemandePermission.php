@@ -13,19 +13,41 @@ class DemandePermission extends Model
 
     protected $table = 'demandes_permission';
 
-    public const EN_ATTENTE_GESTIONNAIRE_RH = 'EN_ATTENTE_GESTIONNAIRE_RH';
+    /** Module 1 — Demandes de permission : statuts exacts du workflow séparé. */
+    public const BROUILLON = 'BROUILLON';
 
-    public const EN_ATTENTE_VISA_SOUS_DIRECTEUR = 'EN_ATTENTE_VISA_SOUS_DIRECTEUR';
-
-    public const EN_ATTENTE_VISA_DIRECTEUR = 'EN_ATTENTE_VISA_DIRECTEUR';
-
-    public const EN_ATTENTE_DRH = 'EN_ATTENTE_DRH';
+    public const EN_ATTENTE_RH = 'EN_ATTENTE_RH';
 
     public const RETOUR_CORRECTION = 'RETOUR_CORRECTION';
+
+    public const EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR = 'EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR';
+
+    public const EN_ATTENTE_VALIDATION_DIRECTEUR = 'EN_ATTENTE_VALIDATION_DIRECTEUR';
+
+    public const EN_ATTENTE_DRH = 'EN_ATTENTE_DRH';
 
     public const VALIDEE = 'VALIDEE';
 
     public const REJETEE = 'REJETEE';
+
+    /** Alias historiques (ancien contrat) — mêmes valeurs, pour conserver les données existantes. */
+    public const EN_ATTENTE_GESTIONNAIRE_RH = self::EN_ATTENTE_RH;
+
+    public const EN_ATTENTE_VISA_SOUS_DIRECTEUR = self::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR;
+
+    public const EN_ATTENTE_VISA_DIRECTEUR = self::EN_ATTENTE_VALIDATION_DIRECTEUR;
+
+    /** Liste exacte des statuts du module permission (séparé des naissances). */
+    public const STATUTS = [
+        self::BROUILLON,
+        self::EN_ATTENTE_RH,
+        self::RETOUR_CORRECTION,
+        self::EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR,
+        self::EN_ATTENTE_VALIDATION_DIRECTEUR,
+        self::EN_ATTENTE_DRH,
+        self::VALIDEE,
+        self::REJETEE,
+    ];
 
     protected $fillable = [
         'code_dossier',

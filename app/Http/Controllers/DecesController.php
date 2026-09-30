@@ -10,10 +10,8 @@ use Illuminate\Http\Request;
 
 class DecesController extends Controller
 {
-    /**
-     * Liste des déclaration de décèss. L'agent ne voit que les siennes ; le gestionnaire RH, le DRH et
-     * l'administrateur voient toutes.
-     */
+    /** Liste des déclaration de décèss. L'agent ne voit que les siennes ; le gestionnaire RH, le DRH et
+     * l'administrateur voient toutes. */
     public function index(Request $request)
     {
         $query = DeclarationDeces::with('agent')->latest();
@@ -24,10 +22,7 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $query->paginate(20)]);
     }
 
-    /**
-     * Détail d'une déclaration de décès avec son historique. Réservé au déclarant et aux rôles de
-     * suivi.
-     */
+    /** Détail d'une déclaration de décès avec son historique. Réservé au déclarant et aux rôles de suivi. */
     public function show(Request $request, DeclarationDeces $deces)
     {
         $user = $request->user();
@@ -49,10 +44,8 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $deces]);
     }
 
-    /**
-     * Dépose une déclaration de décès. Le fichier (certificat de décès) est obligatoire ; sans demande
-     * de brouillon, le dossier part tout de suite au gestionnaire RH.
-     */
+    /** Dépose une déclaration de décès. Le fichier (certificat de décès) est obligatoire ; sans demande
+     * de brouillon, le dossier part tout de suite au gestionnaire RH. */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -81,10 +74,8 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $declaration->refresh()], 201);
     }
 
-    /**
-     * Soumet au gestionnaire RH une déclaration de décès restée en brouillon. Seul le déclarant peut
-     * le faire.
-     */
+    /** Soumet au gestionnaire RH une déclaration de décès restée en brouillon. Seul le déclarant peut le
+     * faire. */
     public function soumettre(Request $request, DeclarationDeces $deces)
     {
         $declaration = EtatCivilService::soumettreBrouillon(
@@ -96,10 +87,8 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $declaration]);
     }
 
-    /**
-     * Gestionnaire RH : contrôle les pièces d'une déclaration de décès. Décision « conforme »
-     * (transmise au DRH) ou « retourner » (retour à l'agent, motif obligatoire).
-     */
+    /** Gestionnaire RH : contrôle les pièces d'une déclaration de décès. Décision « conforme » (transmise
+     * au DRH) ou « retourner » (retour à l'agent, motif obligatoire). */
     public function controler(Request $request, DeclarationDeces $deces)
     {
         $data = $request->validate([
@@ -118,10 +107,8 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $declaration]);
     }
 
-    /**
-     * Agent : corrige et renvoie une déclaration de décès retournée. La pièce officielle (certificat
-     * de décès) reste obligatoire.
-     */
+    /** Agent : corrige et renvoie une déclaration de décès retournée. La pièce officielle (certificat de
+     * décès) reste obligatoire. */
     public function corriger(Request $request, DeclarationDeces $deces)
     {
         $data = $request->validate([
@@ -163,10 +150,8 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $declaration]);
     }
 
-    /**
-     * DRH : décision finale sur une déclaration de décès. Validation, ou rejet avec un motif
-     * obligatoire.
-     */
+    /** DRH : décision finale sur une déclaration de décès. Validation, ou rejet avec un motif
+     * obligatoire. */
     public function valider(Request $request, DeclarationDeces $deces)
     {
         $data = $request->validate([
@@ -185,10 +170,8 @@ class DecesController extends Controller
         return response()->json(['status' => 'success', 'data' => $declaration]);
     }
 
-    /**
-     * DRH : archive une déclaration de décès clôturée (validée ou rejetée). Le dossier reste
-     * consultable.
-     */
+    /** DRH : archive une déclaration de décès clôturée (validée ou rejetée). Le dossier reste
+     * consultable. */
     public function archiver(Request $request, DeclarationDeces $deces)
     {
         $declaration = EtatCivilService::archiver('DECES', $deces, $request->user()->agent);

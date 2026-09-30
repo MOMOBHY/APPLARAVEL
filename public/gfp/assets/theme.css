@@ -50,3 +50,42 @@ header > nav {
 #notificationsDropdown .bg-white {
   background-color: #ffffff !important;
 }
+
+/* Navigation au clavier : l'élément actif est toujours repérable. */
+:focus-visible {
+  outline: 3px solid #f97316 !important;
+  outline-offset: 2px;
+}
+
+/* Tableaux compacts (tous les espaces) : cellules plus serrées et texte plus petit, pour voir plus de
+   lignes et toutes les colonnes sans défilement. */
+main table {
+  font-size: 12px !important;
+  line-height: 1.35;
+}
+main table th,
+main table td {
+  padding: 6px 10px !important;
+}
+main table thead th {
+  font-size: 10.5px !important;
+  letter-spacing: 0.02em;
+}
+/* Champs et boutons dans les cellules : à la taille des lignes. */
+main table select,
+main table input {
+  padding: 3px 6px !important;
+  font-size: 11px !important;
+  max-width: 12rem;
+}
+main table button {
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+}
+
+/* Zone principale : marges verticales réduites pour que chaque écran tienne sans défilement sur un
+   portable (1366×768). */
+main {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}

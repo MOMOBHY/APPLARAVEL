@@ -17,12 +17,8 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
-/**
- * Workflow strict des permissions :
- * ≤ 2 j : AGENT → GESTIONNAIRE RH → DIRECTEUR/SOUS-DIRECTEUR → DRH → GESTIONNAIRE RH → AGENT.
- * > 2 j : AGENT → GESTIONNAIRE RH → DRH → GESTIONNAIRE RH → AGENT.
- * Le DRH est l'unique validateur final (pas de « Validateur RH »).
- */
+/** Permissions : ≤ 2 j Agent → Gestionnaire RH → Directeur/Sous-Directeur → DRH ; > 2 j Agent →
+ * Gestionnaire RH → DRH. Le DRH décide seul en dernier. */
 class PermissionWorkflowTest extends TestCase
 {
     use RefreshDatabase;
@@ -66,7 +62,8 @@ class PermissionWorkflowTest extends TestCase
             $valide ? null : 'Motif de rejet DRH',
         );
 
-        return PermissionWorkflowService::notifierAgent($demande, $gestionnaire);
+        // Fin de chaîne : le DRH notifie l'agent directement, sans relais.
+        return $demande;
     }
 
     /** Test 1 : permission de 1 jour, circuit complet avec visa. */
@@ -79,7 +76,6 @@ class PermissionWorkflowTest extends TestCase
         $demande = $this->chaineCas1($demande);
 
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
-        $this->assertNotNull($demande->notifie_le);
         $this->assertDatabaseHas('notifications', [
             'agent_id' => $demande->agent_id,
             'reference_dossier' => $demande->code_dossier,
@@ -92,11 +88,11 @@ class PermissionWorkflowTest extends TestCase
                 'TRANSMISSION_VISA',
                 'VISA_FAVORABLE',
                 'VALIDATION_DRH',
-                'NOTIFICATION_AGENT',
             ] as $attendue
         ) {
             $this->assertContains($attendue, $actions);
         }
+        $this->assertNotContains('NOTIFICATION_AGENT', $actions);
     }
 
     /** Test 2 : permission de 2 jours, même circuit avec visa. */
@@ -120,7 +116,6 @@ class PermissionWorkflowTest extends TestCase
         );
 
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
-        $demande = PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
     }
 
@@ -138,7 +133,6 @@ class PermissionWorkflowTest extends TestCase
         $this->assertEquals(DemandePermission::EN_ATTENTE_DRH, $demande->statut);
 
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
-        $demande = PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
     }
 
@@ -156,7 +150,6 @@ class PermissionWorkflowTest extends TestCase
         $this->assertEquals(DemandePermission::EN_ATTENTE_DRH, $demande->statut);
 
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
-        $demande = PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
     }
 
@@ -179,7 +172,7 @@ class PermissionWorkflowTest extends TestCase
         );
         $this->assertEquals('Dossier incomplet', $demande->motif_rejet);
 
-        PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
+        // Le rejet du DRH notifie l'agent directement, sans relais.
         $notif = Notification::where('reference_dossier', $demande->code_dossier)
             ->where('type', 'REJET')
             ->firstOrFail();
@@ -251,8 +244,8 @@ class PermissionWorkflowTest extends TestCase
         $this->assertEquals(DemandePermission::VALIDEE, $demande->statut);
     }
 
-    /** Test 8 : le Gestionnaire RH reçoit la décision et notifie l'agent. */
-    public function test_gestionnaire_recoit_decision_et_notifie(): void
+    /** Test 8 : à la décision du DRH, l'agent est notifié directement, sans relais. */
+    public function test_drh_notifie_l_agent_directement_sans_relais(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-02');
         $demande = PermissionWorkflowService::verifierRh(
@@ -270,16 +263,17 @@ class PermissionWorkflowTest extends TestCase
 
         $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
 
-        // Décision en attente de notification : l'agent n'a rien reçu.
+        // Décision DRH : l'agent est notifié directement, aucun relais.
         $this->assertNull($demande->notifie_le);
-        $this->assertDatabaseMissing('notifications', [
+        $this->assertDatabaseHas('notifications', [
             'agent_id' => $demande->agent_id,
             'reference_dossier' => $demande->code_dossier,
             'type' => 'VALIDATION',
         ]);
-
-        // Le gestionnaire notifie : décision, date, type, période.
-        PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
+        $this->assertDatabaseMissing('notifications', [
+            'reference_dossier' => $demande->code_dossier,
+            'type' => 'A_NOTIFIER',
+        ]);
         $notif = Notification::where('reference_dossier', $demande->code_dossier)
             ->where('type', 'VALIDATION')
             ->firstOrFail();
@@ -329,8 +323,8 @@ class PermissionWorkflowTest extends TestCase
         $this->assertEquals(DemandePermission::EN_ATTENTE_DRH, $demande->statut);
     }
 
-    /** Le DRH tranche sans notifier : le gestionnaire notifie explicitement. */
-    public function test_drh_tranche_gestionnaire_notifie_explicitement(): void
+    /** Le DRH tranche : l'agent est notifié directement, sans relais du gestionnaire. */
+    public function test_drh_tranche_agent_notifie_directement(): void
     {
         $gestionnaire = User::where('matricule', 'RH001')->firstOrFail();
         $drh = User::where('matricule', 'DRH001')->firstOrFail();
@@ -343,29 +337,15 @@ class PermissionWorkflowTest extends TestCase
             ->postJson('/api/status', ['id' => $demande->code_dossier, 'statut' => 'VALIDEE'])
             ->assertOk();
 
-        // L'agent n'est pas encore notifié, mais le gestionnaire est alerté.
-        $this->assertDatabaseMissing('notifications', [
+        // L'agent est notifié directement, sans étape « à notifier » pour le gestionnaire.
+        $this->assertDatabaseHas('notifications', [
             'reference_dossier' => $demande->code_dossier,
             'type' => 'VALIDATION',
         ]);
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseMissing('notifications', [
             'reference_dossier' => $demande->code_dossier,
             'type' => 'A_NOTIFIER',
         ]);
-
-        // Notification explicite par le gestionnaire.
-        $this->actingAs($gestionnaire, 'sanctum')
-            ->postJson('/api/notifier', ['id' => $demande->code_dossier])
-            ->assertOk();
-        $this->assertDatabaseHas('notifications', [
-            'reference_dossier' => $demande->code_dossier,
-            'type' => 'VALIDATION',
-        ]);
-
-        // Double notification interdite.
-        $this->actingAs($gestionnaire, 'sanctum')
-            ->postJson('/api/notifier', ['id' => $demande->code_dossier])
-            ->assertStatus(422);
     }
 
     /** L'agent choisit lui-même le nombre de jours (prime sur les dates). */
@@ -453,8 +433,8 @@ class PermissionWorkflowTest extends TestCase
             ->assertForbidden();
     }
 
-    /** Cas 1 : un refus de visa revient au gestionnaire RH, qui notifie l'agent avec le motif. */
-    public function test_refus_de_visa_notifie_par_le_gestionnaire(): void
+    /** Cas 1 : un rejet du responsable notifie directement l'agent (motif obligatoire), sans relais. */
+    public function test_refus_de_visa_notifie_directement_l_agent(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-02');
         $demande = PermissionWorkflowService::verifierRh(
@@ -471,23 +451,15 @@ class PermissionWorkflowTest extends TestCase
         );
 
         $this->assertEquals(DemandePermission::REJETEE, $demande->statut);
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseMissing('notifications', [
             'agent_id' => $this->agent('RH001')->id,
             'reference_dossier' => $demande->code_dossier,
             'type' => 'A_NOTIFIER',
         ]);
-        $this->assertDatabaseMissing('notifications', [
-            'agent_id' => $demande->agent_id,
-            'reference_dossier' => $demande->code_dossier,
-            'type' => 'REJET',
-        ]);
-
-        PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
         $notif = Notification::where('agent_id', $demande->agent_id)
             ->where('reference_dossier', $demande->code_dossier)
             ->where('type', 'REJET')
             ->firstOrFail();
-        $this->assertStringContainsString('visa refusé', $notif->message);
         $this->assertStringContainsString('Service en sous-effectif', $notif->message);
     }
 
@@ -544,8 +516,29 @@ class PermissionWorkflowTest extends TestCase
         $this->assertEquals(DemandePermission::EN_ATTENTE_DRH, $demande->statut);
     }
 
-    /** Un rejet à la vérification est notifié par le gestionnaire lui-même : pas de seconde notification. */
-    public function test_rejet_du_gestionnaire_deja_notifie(): void
+    /** Le relais du gestionnaire est supprimé : ni la route ni le front ne peuvent plus notifier à la
+     * place du DRH. */
+    public function test_le_relais_de_notification_n_existe_plus(): void
+    {
+        $gestionnaire = User::where('matricule', 'RH001')->firstOrFail();
+        $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-05');
+        $demande = PermissionWorkflowService::verifierRh($demande, $this->agent('RH001'), 'conforme');
+        $demande = PermissionWorkflowService::trancherDrh($demande, $this->agent('DRH001'), true);
+
+        $this->actingAs($gestionnaire, 'sanctum')
+            ->postJson('/api/notifier', ['id' => $demande->code_dossier])
+            ->assertNotFound();
+        $this->actingAs($gestionnaire, 'sanctum')
+            ->postJson("/api/permissions/{$demande->id}/notifier")
+            ->assertNotFound();
+
+        $api = file_get_contents(base_path('public/gfp/js/api.js'));
+        $this->assertIsString($api);
+        $this->assertStringNotContainsString('notifierAgent', $api);
+    }
+
+    /** Un rejet à la vérification notifie l'agent une seule fois, directement. */
+    public function test_rejet_du_gestionnaire_notifie_une_seule_fois(): void
     {
         $demande = $this->soumettre('AGT001', '2026-10-01', '2026-10-05');
         $demande = PermissionWorkflowService::verifierRh(
@@ -556,12 +549,12 @@ class PermissionWorkflowTest extends TestCase
         );
 
         $this->assertNotNull($demande->notifie_le);
-        try {
-            PermissionWorkflowService::notifierAgent($demande, $this->agent('RH001'));
-            $this->fail('Double notification interdite.');
-        } catch (HttpException $e) {
-            $this->assertEquals(422, $e->getStatusCode());
-        }
+        $this->assertSame(
+            1,
+            Notification::where('reference_dossier', $demande->code_dossier)
+                ->where('type', 'REJET')
+                ->count(),
+        );
     }
 
     /** Le gestionnaire choisit le niveau de visa, consulte le justificatif et l'agent corrige après retour. */
@@ -606,15 +599,15 @@ class PermissionWorkflowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.statut', DemandePermission::EN_ATTENTE_GESTIONNAIRE_RH);
 
-        // Structure « Service » : le gestionnaire choisit malgré tout le Sous-Directeur.
+        // Structure « Service » : le niveau vient de la structure ; hors Sous-Direction, le dossier
+        // attend la conformité du Directeur.
         $this->actingAs($gestionnaire, 'sanctum')
             ->postJson("/api/permissions/{$ligne['dossier_id']}/verifier", [
                 'decision' => 'conforme',
-                'visa' => 'SOUS_DIRECTEUR',
             ])
             ->assertOk()
-            ->assertJsonPath('data.statut', DemandePermission::EN_ATTENTE_VISA_SOUS_DIRECTEUR);
-        $this->actingAs(User::where('matricule', 'SD001')->firstOrFail(), 'sanctum')
+            ->assertJsonPath('data.statut', DemandePermission::EN_ATTENTE_VALIDATION_DIRECTEUR);
+        $this->actingAs(User::where('matricule', 'DIR001')->firstOrFail(), 'sanctum')
             ->postJson('/api/status', ['id' => $ligne['id'], 'statut' => 'EN_ATTENTE_RH'])
             ->assertOk();
         $this->assertDatabaseHas('demandes_permission', [

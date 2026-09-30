@@ -8,10 +8,8 @@ use App\Models\DemandePermission;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
-/**
- * Tableau de bord du DRH et de l'administrateur : volumes par mois, par statut,
- * par structure, et délai moyen entre le dépôt et la décision finale.
- */
+/** Tableau de bord du DRH et de l'administrateur : volumes par mois, par statut, par structure, et délai
+ * moyen entre le dépôt et la décision finale. */
 class StatistiquesController extends Controller
 {
     private const NATURES = [
@@ -20,10 +18,8 @@ class StatistiquesController extends Controller
         'deces' => 'Décès',
     ];
 
-    /**
-     * Tableau de bord statistique (DRH et administrateur) : indicateurs, dossiers par mois, par
-     * statut, par structure et délai moyen de traitement.
-     */
+    /** Tableau de bord statistique (DRH et administrateur) : indicateurs, dossiers par mois, par statut,
+     * par structure et délai moyen de traitement. */
     public function index()
     {
         $dossiers = $this->dossiers();
@@ -72,11 +68,7 @@ class StatistiquesController extends Controller
         ]);
     }
 
-    /**
-     * Toutes les demandes ramenées à un format commun.
-     *
-     * @return Collection<int, array{nature: string, depot: CarbonInterface, statut: string, cloture: ?CarbonInterface, structure: string}>
-     */
+    /** Toutes les demandes ramenées à un format commun. */
     private function dossiers(): Collection
     {
         $permissions = DemandePermission::with('agent.structure')->get()->map(
@@ -113,10 +105,8 @@ class StatistiquesController extends Controller
             ->concat($declarations('deces', DeclarationDeces::with('agent.structure')->get()));
     }
 
-    /**
-     * Range un statut de dossier dans l'une des quatre catégories du tableau de bord : validée,
-     * rejetée, à corriger ou en attente.
-     */
+    /** Range un statut de dossier dans l'une des quatre catégories du tableau de bord : validée, rejetée,
+     * à corriger ou en attente. */
     private function categorie(string $statut, ?string $motifRejet): string
     {
         return match ($statut) {

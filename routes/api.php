@@ -29,12 +29,18 @@ Route::post('/mot-de-passe/reinitialiser', [
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/me/profil', [AuthController::class, 'updateProfil']);
     Route::get('/annuaire-structures', [StructureController::class, 'index']);
 
     // Contrat historique.
     Route::get('/requests', [LegacyApiController::class, 'requests']);
     Route::post('/permissions', [LegacyApiController::class, 'submitPermission']);
+    Route::post('/permissions/brouillon', [LegacyApiController::class, 'sauvegarderBrouillonPermission']);
+    Route::post('/permissions/soumettre-brouillon', [LegacyApiController::class, 'soumettrebrouillonPermission']);
     Route::post('/declarations', [LegacyApiController::class, 'submitDeclaration']);
+    Route::post('/declarations/brouillon', [LegacyApiController::class, 'sauvegarderBrouillonDeclaration']);
+    Route::post('/declarations/soumettre-brouillon', [LegacyApiController::class, 'soumettrebrouillonDeclaration']);
+    Route::post('/brouillons/supprimer', [LegacyApiController::class, 'supprimerBrouillon']);
     Route::post('/status', [LegacyApiController::class, 'updateStatus']);
     Route::get('/notes', [LegacyApiController::class, 'notes']);
     Route::post('/notes', [LegacyApiController::class, 'storeNote']);
@@ -48,7 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
     );
     Route::get('/notifications', [LegacyApiController::class, 'notifications']);
     Route::post('/notifications/read', [LegacyApiController::class, 'markNotificationsRead']);
-    Route::post('/notifier', [LegacyApiController::class, 'notifier']);
 
     // Nouveau contrat REST (vues Blade).
     Route::get('/permissions', [PermissionController::class, 'index']);
@@ -66,10 +71,6 @@ Route::middleware('auth:sanctum')->group(function () {
         PermissionController::class,
         'trancher',
     ])->middleware('role:ROLE_DRH');
-    Route::post('/permissions/{permission}/notifier', [
-        PermissionController::class,
-        'notifier',
-    ])->middleware('role:ROLE_GESTIONNAIRE_RH');
 
     Route::get('/naissances', [NaissanceController::class, 'index']);
     Route::post('/naissances', [NaissanceController::class, 'store']);
@@ -105,15 +106,19 @@ Route::middleware('auth:sanctum')->group(function () {
     );
 
     Route::get('/notes/{note}', [NoteServiceController::class, 'show']);
-    Route::post('/notes/{note}/transmettre', [
+    Route::post('/notes/{note}/envoyer', [
         NoteServiceController::class,
-        'transmettre',
-    ])->middleware('role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
+        'envoyer',
+    ])->middleware('role:ROLE_SECRETAIRE');
+    Route::post('/notes/{note}/reprendre', [
+        NoteServiceController::class,
+        'reprendre',
+    ])->middleware('role:ROLE_SECRETAIRE');
     Route::post('/notes/{note}/valider', [NoteServiceController::class, 'valider'])->middleware(
-        'role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR',
+        'role:ROLE_DIRECTEUR',
     );
     Route::post('/notes/{note}/refuser', [NoteServiceController::class, 'refuser'])->middleware(
-        'role:ROLE_DRH,ROLE_DIRECTEUR_CABINET,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR',
+        'role:ROLE_DIRECTEUR',
     );
     Route::post('/notes/{note}/archiver', [NoteServiceController::class, 'archiver'])->middleware(
         'role:ROLE_SECRETAIRE,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR',
@@ -127,6 +132,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notes/{note}/diffuser', [NoteServiceController::class, 'diffuser'])->middleware(
         'role:ROLE_SECRETAIRE',
     );
+    Route::post('/notes/{note}/diffuser-directement', [
+        NoteServiceController::class,
+        'diffuserDirectement',
+    ])->middleware('role:ROLE_DRH');
     Route::get('/notes/{note}/destinataires', [
         NoteServiceController::class,
         'destinataires',
@@ -138,17 +147,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/statistiques', [StatistiquesController::class, 'index'])->middleware(
         'role:ROLE_DRH,ROLE_ADMIN_DSI',
     );
-    Route::get('/admin/reinitialisations', [MotDePasseController::class, 'index'])->middleware(
-        'role:ROLE_ADMIN_DSI',
-    );
-    Route::post('/admin/reinitialisations/{demande}/autoriser', [
-        MotDePasseController::class,
-        'autoriser',
-    ])->middleware('role:ROLE_ADMIN_DSI');
-    Route::post('/admin/reinitialisations/{demande}/refuser', [
-        MotDePasseController::class,
-        'refuser',
-    ])->middleware('role:ROLE_ADMIN_DSI');
     Route::get('/admin/journal', [AuditController::class, 'index'])->middleware(
         'role:ROLE_ADMIN_DSI',
     );

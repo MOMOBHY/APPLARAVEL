@@ -6,10 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * L'historique conserve l'ancien statut « EN_ATTENTE_SERVICE_GESTION_ADMINISTRATIVE »
-     * (41 caractères), refusé par MySQL dans un varchar(40).
-     */
+    /** L'historique conserve l'ancien statut « EN_ATTENTE_SERVICE_GESTION_ADMINISTRATIVE » (41
+     * caractères), refusé par MySQL dans un varchar(40). */
     public function up(): void
     {
         Schema::table('declaration_historique', function (Blueprint $table) {

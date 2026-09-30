@@ -104,4 +104,22 @@ class JournalAuditTest extends TestCase
             'reference' => 'NEW01',
         ]);
     }
+
+    /** L'écran demande une page courte (sans défilement) ; 40 lignes par défaut, bornes 5 à 100. */
+    public function test_le_journal_accepte_un_nombre_de_lignes_par_page(): void
+    {
+        for ($i = 0; $i < 45; $i++) {
+            JournalAudit::noter(JournalAudit::DOSSIER, 'TEST', null, "Événement {$i}");
+        }
+        $admin = User::where('matricule', 'ADM001')->firstOrFail();
+
+        $this->actingAs($admin, 'sanctum')->getJson('/api/admin/journal')
+            ->assertOk()->assertJsonCount(40, 'lignes');
+        $reponse = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/journal?per_page=8')->assertOk();
+        $reponse->assertJsonCount(8, 'lignes');
+        $this->assertSame((int) ceil($reponse->json('total') / 8), $reponse->json('pages'));
+        // Valeurs hors bornes ramenées dans l'intervalle.
+        $this->actingAs($admin, 'sanctum')->getJson('/api/admin/journal?per_page=1')
+            ->assertOk()->assertJsonCount(5, 'lignes');
+    }
 }
