@@ -1071,19 +1071,18 @@
         }
       }
 
-      // ---- Directeurs, chefs de service et autres responsables ----
+      // ---- Directeurs et autres responsables ----
       // Groupes affichés, dans l'ordre hiérarchique : [code du rôle, titre au pluriel].
       const GROUPES_RESPONSABLES = [
         ['ROLE_DRH', 'Direction des Ressources Humaines (DRH)'],
         ['ROLE_DIRECTEUR_CABINET', 'Directeur de Cabinet'],
         ['ROLE_DIRECTEUR', 'Directeurs'],
         ['ROLE_SOUS_DIRECTEUR', 'Sous-Directeurs'],
-        ['ROLE_CHEF_DE_SERVICE', 'Chefs de service'],
         ['ROLE_GESTIONNAIRE_RH', 'Gestionnaires RH'],
         ['ROLE_SECRETAIRE', 'Secrétaires'],
       ];
 
-      /** Annuaire des responsables (directeurs, sous-directeurs, chefs de service, DRH, gestionnaires RH,
+      /** Annuaire des responsables (directeurs, sous-directeurs, DRH, gestionnaires RH,
        * secrétaires) : un tableau paginé avec filtres. */
       let pageResp = 1;
 
@@ -1099,7 +1098,7 @@
               <div class="flex flex-wrap justify-between items-center gap-3">
                 <div>
                   <h2
-                    class="text-base font-bold text-slate-900">Directeurs, chefs de service et responsables</h2>
+                    class="text-base font-bold text-slate-900">Directeurs et responsables</h2>
                   <p
                     class="text-xs text-slate-500">Toutes les personnes qui occupent une fonction de direction, de service ou de gestion.</p>
                 </div>
@@ -1160,7 +1159,7 @@
             compte('ROLE_DIRECTEUR') + compte('ROLE_DIRECTEUR_CABINET') + compte('ROLE_DRH'),
           ) +
           tuile('Sous-Directeurs', compte('ROLE_SOUS_DIRECTEUR')) +
-          tuile('Chefs de service', compte('ROLE_CHEF_DE_SERVICE'));
+          tuile('Gestionnaires RH', compte('ROLE_GESTIONNAIRE_RH'));
 
         // Une ligne par (fonction, personne) : une personne à double fonction apparaît deux fois.
         const fonction = document.getElementById('rFonction')?.value || '';

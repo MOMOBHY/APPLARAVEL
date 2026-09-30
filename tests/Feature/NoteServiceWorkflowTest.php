@@ -60,7 +60,7 @@ class NoteServiceWorkflowTest extends TestCase
     {
         $this->rediger($this->user('SEC001'), 'Note du secrétariat');
 
-        foreach (['CAB001', 'SD001', 'DIR001', 'CHEF001', 'RH001'] as $matricule) {
+        foreach (['CAB001', 'SD001', 'DIR001', 'RH001'] as $matricule) {
             $this->actingAs($this->user($matricule), 'sanctum')
                 ->postJson('/api/notes', ['objet' => 'Note interdite'])
                 ->assertForbidden();

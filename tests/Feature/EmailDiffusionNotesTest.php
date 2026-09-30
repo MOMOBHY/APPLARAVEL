@@ -38,7 +38,7 @@ class EmailDiffusionNotesTest extends TestCase
     public function test_la_diffusion_de_la_secretaire_envoie_l_email_a_tous_les_agents(): void
     {
         $secretaire = $this->user('SEC001');
-        $suspendu = $this->user('CHEF001');
+        $suspendu = $this->user('CAB001');
         $suspendu->update(['actif' => false]);
 
         // Note adressée à une structure sans agent : seul l'envoi « à tous » peut toucher quelqu'un.

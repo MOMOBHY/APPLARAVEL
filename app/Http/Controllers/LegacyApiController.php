@@ -39,7 +39,6 @@ class LegacyApiController extends Controller
         'DIRCAB' => ['ROLE_DIRECTEUR_CABINET'],
         'SECRETAIRE' => ['ROLE_SECRETAIRE'],
         'SERVICE' => ['ROLE_SERVICE_ADMINISTRATIF'],
-        'CHEF_SERVICE' => ['ROLE_CHEF_DE_SERVICE'],
         'ADMINISTRATEUR' => ['ROLE_ADMIN_DSI'],
     ];
 
@@ -88,7 +87,6 @@ class LegacyApiController extends Controller
         'ROLE_SECRETAIRE' => 'ROLE_SECRETAIRE',
         'ROLE_ADMIN_DSI' => 'ROLE_ADMIN_DSI',
         'ROLE_DIRECTEUR_CABINET' => 'ROLE_DIRCAB',
-        'ROLE_CHEF_DE_SERVICE' => 'ROLE_CHEF_DE_SERVICE',
         'ROLE_SERVICE_ADMINISTRATIF' => 'ROLE_SERVICE_ADMINISTRATIF',
     ];
 
@@ -432,12 +430,6 @@ class LegacyApiController extends Controller
      * 1 à 30 jours. */
     public function submitPermission(Request $request)
     {
-        abort_if(
-            $request->user()->hasRole('ROLE_CHEF_DE_SERVICE') &&
-                ! $request->user()->hasRole('ROLE_AGENT'),
-            403,
-            'Le Chef de service ne fait pas de demandes.',
-        );
         $this->exigerStructureAffectee($request);
         $reglePiece = [
             'nullable',
@@ -826,12 +818,6 @@ class LegacyApiController extends Controller
      * justificative scannée obligatoire. */
     public function submitDeclaration(Request $request)
     {
-        abort_if(
-            $request->user()->hasRole('ROLE_CHEF_DE_SERVICE') &&
-                ! $request->user()->hasRole('ROLE_AGENT'),
-            403,
-            'Le Chef de service ne fait pas de demandes.',
-        );
         $this->exigerStructureAffectee($request);
         $reglePiece = [
             'nullable',
@@ -1557,7 +1543,6 @@ class LegacyApiController extends Controller
                 'ROLE_SOUS_DIRECTEUR' => 'SOUS_DIRECTEUR',
                 'ROLE_GESTIONNAIRE_RH' => 'RESPONSABLE',
                 'ROLE_SERVICE_ADMINISTRATIF' => 'SERVICE',
-                'ROLE_CHEF_DE_SERVICE' => 'CHEF_SERVICE',
                 'ROLE_DIRECTEUR_CABINET' => 'DIRCAB',
                 'ROLE_SECRETAIRE' => 'SECRETAIRE',
             ] as $code => $profile

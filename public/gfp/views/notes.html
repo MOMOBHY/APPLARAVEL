@@ -268,13 +268,6 @@
           description:
             'Vous consultez les notes de service. Seul le directeur émet une note vers sa secrétaire.',
         },
-        CHEF_SERVICE: {
-          role: 'Chef de Service',
-          onglet: 'Notes de service reçues',
-          titre: 'Notes de service reçues',
-          description:
-            'Vous recevez les notes transmises par la secrétaire. Le chef de service ne fait pas de demandes.',
-        },
       };
       const vue = VUES[user.role] || {
         role: user.role || '',

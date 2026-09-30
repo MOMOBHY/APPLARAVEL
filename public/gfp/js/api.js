@@ -1036,7 +1036,6 @@ const API = {
       ADMINISTRATEUR: 'admin.html',
       SECRETAIRE: 'notes.html',
       DIRCAB: 'notes.html',
-      CHEF_SERVICE: 'notes.html',
     };
     return espaces[role] || 'agent.html';
   },

@@ -298,7 +298,6 @@ class LegacyAuthenticationTest extends TestCase
             $this->actingAs($admin, 'sanctum')->getJson('/api/users')->assertOk()->json('users'),
         )->keyBy('matricule');
 
-        $this->assertEquals('ROLE_CHEF_DE_SERVICE', $users['CHEF001']['role']);
         $this->assertEquals('ROLE_DIRCAB', $users['CAB001']['role']);
     }
 

@@ -55,7 +55,6 @@ class GfpSeeder extends Seeder
             'ROLE_DRH' => 'Directeur des Ressources Humaines',
             'ROLE_SECRETAIRE' => 'Secrétaire',
             'ROLE_SERVICE_ADMINISTRATIF' => 'Service chargé de la gestion administrative',
-            'ROLE_CHEF_DE_SERVICE' => 'Chef de Service',
             'ROLE_DIRECTEUR_CABINET' => 'Directeur de Cabinet',
             'ROLE_ADMIN_DSI' => 'Administrateur DSI',
         ];
@@ -140,13 +139,6 @@ class GfpSeeder extends Seeder
                 'prenom' => 'Aminata',
                 'role' => 'ROLE_SERVICE_ADMINISTRATIF',
                 'structure' => 'DRH',
-            ],
-            [
-                'matricule' => 'CHEF001',
-                'nom' => 'TRAORE',
-                'prenom' => 'Siaka',
-                'role' => 'ROLE_CHEF_DE_SERVICE',
-                'structure' => 'SERV-ETUDES',
             ],
             [
                 'matricule' => 'CAB001',

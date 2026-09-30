@@ -619,7 +619,6 @@ INSERT INTO `roles` (`id`, `code`, `libelle`, `description`, `created_at`, `upda
 (5,'ROLE_DRH','Directeur des Ressources Humaines',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
 (6,'ROLE_SECRETAIRE','Secrétaire',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
 (7,'ROLE_SERVICE_ADMINISTRATIF','Service chargé de la gestion administrative',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
-(8,'ROLE_CHEF_DE_SERVICE','Chef de Service',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
 (9,'ROLE_DIRECTEUR_CABINET','Directeur de Cabinet',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49'),
 (10,'ROLE_ADMIN_DSI','Administrateur DSI',NULL,'2026-09-23 15:12:49','2026-09-23 15:12:49');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
