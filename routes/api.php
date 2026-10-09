@@ -132,10 +132,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notes/{note}/diffuser', [NoteServiceController::class, 'diffuser'])->middleware(
         'role:ROLE_SECRETAIRE',
     );
+    Route::post('/notes/{note}/valider-directement', [
+        NoteServiceController::class,
+        'validerDirectement',
+    ])->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_DIRECTEUR_CABINET');
     Route::post('/notes/{note}/diffuser-directement', [
         NoteServiceController::class,
         'diffuserDirectement',
-    ])->middleware('role:ROLE_DRH');
+    ])->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_DIRECTEUR_CABINET');
     Route::get('/notes/{note}/destinataires', [
         NoteServiceController::class,
         'destinataires',

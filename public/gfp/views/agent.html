@@ -35,26 +35,26 @@
       <div id="gfp-entete" data-sous-titre="Espace Agent Fonctionnaire" data-role="Agent Fonctionnaire" data-base="../"></div>
       <!-- NAVIGATION -->
       <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto flex space-x-1 overflow-x-auto py-2 flex-wrap gap-y-1">
+      <div class="max-w-7xl mx-auto nav-tabs py-2">
           <button onclick="showTab('dashboard')" id="nav-dashboard"
-            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap">
+            class="nav-tab nav-tab-active">
             Tableau de Bord
           </button>
           <!-- data-bloque : onglet verrouillé tant que la structure n'est pas affectée. -->
           <button onclick="showTab('permissions')" id="nav-permissions" data-bloque="1"
-            class="bloque px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            class="nav-tab nav-tab-locked">
             Demande de permission
           </button>
           <button onclick="showTab('naissances')" id="nav-naissances" data-bloque="1"
-            class="bloque px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            class="nav-tab nav-tab-locked">
             Déclaration de naissance
           </button>
           <button onclick="showTab('deces')" id="nav-deces" data-bloque="1"
-            class="bloque px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            class="nav-tab nav-tab-locked">
             Déclaration de décès
           </button>
           <button onclick="showTab('notes')" id="nav-notes"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            class="nav-tab">
             Notes de Service
           </button>
         </div>
@@ -72,7 +72,6 @@
       <div id="gardeStructure"
         class="hidden rounded-xl border-2 border-amber-400 bg-amber-50 p-5 shadow-sm">
         <div class="flex items-start gap-3">
-          <span aria-hidden="true" class="text-2xl leading-none">🔒</span>
           <div class="min-w-0 flex-1">
             <h2 class="font-bold text-base text-amber-900">En attente d'affectation de votre structure</h2>
             <p class="text-sm text-amber-900 mt-1">
@@ -143,7 +142,7 @@
                   <th class="px-4 py-3">Réf</th>
                   <th class="px-4 py-3">Type</th>
                   <th class="px-4 py-3">Détail</th>
-                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Dates (Début / Fin)</th>
                   <th class="px-4 py-3">Justificatif</th>
                   <th class="px-4 py-3">Statut</th>
                   <th class="px-4 py-3">Actions</th>
@@ -187,25 +186,28 @@
                 <option value="Permission Spéciale">Permission Spéciale d'Absence</option>
               </select>
             </div>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Début *</label>
-                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10"
-                  placeholder="jj/mm/aaaa" id="permStart" oninput="majJours('permStart','permEnd','permJours')"
+                <label for="permStart" class="block text-xs font-bold text-slate-700 mb-1">Date de début *</label>
+                <input type="date" id="permStart" required oninput="majJours('permStart','permEnd','permJours')"
+                  onchange="majJours('permStart','permEnd','permJours')"
+                  aria-describedby="permDateError permJoursInfo"
                   class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date Fin *</label>
-                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10"
-                  placeholder="jj/mm/aaaa" id="permEnd" oninput="majJours('permStart','permEnd','permJours')"
+                <label for="permEnd" class="block text-xs font-bold text-slate-700 mb-1">Date de fin *</label>
+                <input type="date" id="permEnd" required oninput="majJours('permStart','permEnd','permJours')"
+                  onchange="majJours('permStart','permEnd','permJours')"
+                  aria-describedby="permDateError permJoursInfo"
                   class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
+                <p id="permDateError" role="alert" class="hidden text-xs text-red-600 font-semibold mt-1"></p>
               </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de jours</label>
-                <input type="number" id="permJours" min="1" max="30" readonly
-                  class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-700 cursor-not-allowed" />
-                <p id="permJoursInfo" class="text-[10px] text-slate-500 mt-1">Calculé automatiquement à partir des deux dates.</p>
-              </div>
+            </div>
+            <div class="max-w-xs">
+              <label for="permJours" class="block text-xs font-bold text-slate-700 mb-1">Durée (jours)</label>
+              <input type="number" id="permJours" min="1" max="30" readonly
+                class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-700 cursor-not-allowed" />
+              <p id="permJoursInfo" class="text-xs text-slate-500 mt-1">Calculée automatiquement à partir des dates.</p>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif Détaillé *</label>
@@ -218,21 +220,23 @@
               <input type="file" id="permFile" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
               <p class="text-[10px] text-slate-500 mt-1">Formats acceptés : PDF, JPG, PNG — max 5 Mo</p>
             </div>
-            <div class="flex flex-wrap gap-3 pt-2">
+            <div class="gfp-form-actions flex flex-col sm:flex-row sm:justify-between gap-3 pt-2">
+              <div class="flex flex-wrap gap-2">
               <button type="button" id="perm-btn-enregistrer" onclick="enregistrerBrouillonPermission()"
-                class="flex-1 min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                class="min-w-[150px] bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow">
                 Enregistrer dans le brouillon
               </button>
               <button type="button" id="perm-btn-modifier" onclick="enregistrerBrouillonPermission()"
-                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                class="hidden min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow">
                 Modifier le brouillon
               </button>
               <button type="button" id="perm-btn-supprimer" onclick="supprimerBrouillon('perm')"
-                class="hidden flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                class="hidden min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow">
                 Supprimer le brouillon
               </button>
+              </div>
               <button type="button" onclick="soumettrePermission()"
-                class="flex-1 min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow">
+                class="min-w-[150px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-2.5 rounded-lg text-sm shadow sm:ml-auto">
                 Soumettre
               </button>
             </div>
@@ -257,8 +261,8 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Date début (depuis)</label>
-            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="permFiltreDate" onchange="pagePerm=1;renderPermissions()" class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+            <label for="permFiltreDate" class="block text-xs font-bold text-slate-600 mb-1">Date de début (à partir du)</label>
+            <input type="date" id="permFiltreDate" onchange="pagePerm=1;renderPermissions()" class="w-full sm:w-48 border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
           </div>
         </div>
 
@@ -271,7 +275,7 @@
                   <th class="px-4 py-3">Réf</th>
                   <th class="px-4 py-3">Type</th>
                   <th class="px-4 py-3">Motif</th>
-                  <th class="px-4 py-3">Période</th>
+                  <th class="px-4 py-3">Période (Début / Fin)</th>
                   <th class="px-4 py-3">Jours</th>
                   <th class="px-4 py-3">Document</th>
                   <th class="px-4 py-3">Statut</th>
@@ -547,7 +551,9 @@
         const saved = sessionStorage.getItem('currentUser');
         if (!saved) { window.location.href = '../login.html'; return; }
         user = JSON.parse(saved);
-        if (user.role !== 'AGENT') { window.location.href = API.urlEspace(user.role); return; }
+        // Un profil sans espace dédié (ex. SERVICE) reste ici : sinon la page se recharge sans fin.
+        const espace = API.urlEspace(user.role);
+        if (user.role !== 'AGENT' && espace !== 'agent.html') { window.location.href = espace; return; }
         loadAvatar();
         // Aucun brouillon au démarrage : le formulaire propose « Enregistrer ».
         Object.keys(BROUILLONS).forEach(majBoutonsBrouillon);
@@ -573,10 +579,7 @@
         }
 
         document.querySelectorAll('[data-bloque]').forEach((btn) => {
-          btn.disabled = !affectee;
-          btn.classList.toggle('opacity-40', !affectee);
-          btn.classList.toggle('cursor-not-allowed', !affectee);
-          btn.classList.remove('hover:bg-slate-200');
+          btn.classList.toggle('nav-tab-locked', !affectee);
           btn.title = affectee ? '' : "Votre Direction ou Sous-Direction n'est pas encore affectée.";
         });
 
@@ -648,17 +651,16 @@
       function showTab(name) {
         /* Onglet verrouillé : le message de la bannière explique déjà pourquoi. */
         const demande = document.getElementById('nav-'+name);
-        if (demande && demande.disabled) { showTab('dashboard'); return; }
+        if (demande && demande.classList.contains('nav-tab-locked')) { showTab('dashboard'); return; }
         TABS.forEach(t => {
           document.getElementById('tab-'+t).classList.add('hidden');
           const btn = document.getElementById('nav-'+t);
-          if (btn) { btn.classList.remove('bg-emerald-700','text-white'); btn.classList.add('text-slate-600'); }
+          if (btn) { btn.classList.remove('nav-tab-active'); }
         });
         /* Revenir sur un onglet referme le formulaire et reaffiche l'historique. */
         Object.keys(BLOCS_HISTORIQUE).forEach(id => hideForm(id));
         document.getElementById('tab-'+name).classList.remove('hidden');
-        const active = document.getElementById('nav-'+name);
-        if (active) { active.classList.add('bg-emerald-700','text-white'); active.classList.remove('text-slate-600'); }
+        activerOngletGfp('nav-' + name);
       }
 
       /* Formulaire ouvert : l'historique est masque, l'agent ne voit que le formulaire. */
@@ -732,31 +734,47 @@
       function majJours(idDebut, idFin, idJours) {
         const jours = document.getElementById(idJours);
         const info = document.getElementById('permJoursInfo');
-        const d = dateIso(document.getElementById(idDebut).value);
-        const f = dateIso(document.getElementById(idFin).value);
+        const champDebut = document.getElementById(idDebut);
+        const champFin = document.getElementById(idFin);
+        const erreur = document.getElementById('permDateError');
+        const d = dateIso(champDebut.value);
+        const f = dateIso(champFin.value);
+        champFin.min = d;
+        champFin.setAttribute('aria-invalid', 'false');
+        if (erreur) {
+          erreur.textContent = '';
+          erreur.classList.add('hidden');
+        }
+        if (d && f && f < d) {
+          jours.value = '';
+          champFin.setAttribute('aria-invalid', 'true');
+          if (erreur) {
+            erreur.textContent = 'La date de fin doit être postérieure ou égale à la date de début.';
+            erreur.classList.remove('hidden');
+          }
+          if (info) {
+            info.textContent = 'La durée sera calculée après correction des dates.';
+            info.className = 'text-xs text-slate-500 mt-1';
+          }
+          return;
+        }
         if (!d || !f) {
           jours.value = '';
           if (info) {
-            const saisie = document.getElementById(idDebut).value || document.getElementById(idFin).value;
-            info.textContent = saisie ? 'Saisissez deux dates au format jj/mm/aaaa.' : 'Renseignez les deux dates.';
-            info.className = 'text-[10px] text-slate-500 mt-1';
+            info.textContent = 'Renseignez les deux dates pour calculer la durée.';
+            info.className = 'text-xs text-slate-500 mt-1';
           }
           return;
         }
         const total = Math.round((new Date(f) - new Date(d)) / 86400000) + 1;
-        if (total < 1) {
-          jours.value = '';
-          if (info) { info.textContent = 'La date de fin doit etre posterieure ou egale a la date de debut.'; info.className = 'text-[10px] text-red-600 font-bold mt-1'; }
-          return;
-        }
         jours.value = total;
         if (info) {
           if (total > 30) {
             info.textContent = 'Maximum 30 jours par permission.';
-            info.className = 'text-[10px] text-red-600 font-bold mt-1';
+            info.className = 'text-xs text-red-600 font-semibold mt-1';
           } else {
             info.textContent = 'Calculé automatiquement à partir des deux dates.';
-            info.className = 'text-[10px] text-slate-500 mt-1';
+            info.className = 'text-xs text-slate-500 mt-1';
           }
         }
       }
@@ -818,7 +836,9 @@
         pageItems.forEach(r => {
           const statut = statutReel(r);
           const detail = r.typePerm || r.motif || r.nomChild || r.nomDefunt || '';
-          const date = r.dateDebut ? dateFr(r.dateDebut) + ' → ' + dateFr(r.dateFin) : dateFr(r.dateEvt);
+          const dateHtml = r.dateDebut
+            ? afficherPeriode(r.dateDebut, r.dateFin, r.jours)
+            : (r.dateEvt ? `<div><span class="text-slate-500 font-semibold">Le :</span> ${dateFr(r.dateEvt)}</div>` : '<span class="text-slate-400">—</span>');
           const natureLabel = {DEMANDE_PERMISSION:'Demande de permission', DECLARATION_NAISSANCE:'Déclaration de naissance', DECLARATION_DECES:'Déclaration de décès'}[r.nature] || r.nature;
           const codeDossier = escapeHtml(r.id);
           const tr = document.createElement('tr');
@@ -826,7 +846,7 @@
             <td class="px-4 py-3 font-mono font-bold text-xs text-emerald-800">${codeDossier}</td>
             <td class="px-4 py-3 text-xs font-medium">${escapeHtml(natureLabel)}</td>
             <td class="px-4 py-3 text-xs">${escapeHtml(detail)}</td>
-            <td class="px-4 py-3 text-xs text-slate-500">${date}</td>
+            <td class="px-4 py-3 text-xs">${dateHtml}</td>
             <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
             <td class="px-4 py-3">${statutBadge(statut)}${ancienneteBadge(r)}</td>
             <td class="px-4 py-3">
@@ -860,9 +880,10 @@
           document.getElementById('permBrouillonCode').value = r.id;
           document.getElementById('permType').value = r.typePerm || 'Événement Familial';
           document.getElementById('permMotif').value = r.motif || '';
-          document.getElementById('permStart').value = dateFr(r.dateDebut);
-          document.getElementById('permEnd').value = dateFr(r.dateFin);
+          document.getElementById('permStart').value = dateIso(r.dateDebut);
+          document.getElementById('permEnd').value = dateIso(r.dateFin);
           document.getElementById('permJours').value = r.jours || 1;
+          majJours('permStart', 'permEnd', 'permJours');
           majBoutonsBrouillon('perm');
         } else if (r.nature === 'DECLARATION_NAISSANCE') {
           showTab('naissances'); showForm('naiss-form');
@@ -922,7 +943,7 @@
             <td class="px-4 py-3 font-mono font-bold text-xs text-emerald-800">${codeDossier}</td>
             <td class="px-4 py-3 text-xs">${escapeHtml(r.typePerm || '')}</td>
             <td class="px-4 py-3 text-xs">${escapeHtml(r.motif || '').substring(0,40)}${(r.motif||'').length > 40 ? '...' : ''}</td>
-            <td class="px-4 py-3 text-xs text-slate-500">${r.dateDebut ? dateFr(r.dateDebut) + ' → ' + dateFr(r.dateFin) : '—'}</td>
+            <td class="px-4 py-3 text-xs">${afficherPeriode(r.dateDebut, r.dateFin, r.jours, false)}</td>
             <td class="px-4 py-3 text-xs font-bold">${r.jours ?? '—'}</td>
             <td class="px-4 py-3 text-xs">${r.piece && r.piece_id ? `<button type="button" onclick="API.ouvrirPiece(${r.piece_id})" class="text-emerald-700 underline text-xs">Voir</button>` : '<span class="text-slate-400">—</span>'}</td>
             <td class="px-4 py-3">${statutBadge(statut)}${r.motif_rejet ? `<p class="text-[10px] text-red-700 mt-1">Rejet : ${escapeHtml(r.motif_rejet)}</p>` : ''}${r.motif_retour ? `<p class="text-[10px] text-orange-700 mt-1">Retour : ${escapeHtml(r.motif_retour)}</p>` : ''}</td>
@@ -954,9 +975,10 @@
         document.getElementById('permBrouillonCode').value = r.id;
         document.getElementById('permType').value = r.typePerm || 'Événement Familial';
         document.getElementById('permMotif').value = r.motif || '';
-        document.getElementById('permStart').value = dateFr(r.dateDebut);
-        document.getElementById('permEnd').value = dateFr(r.dateFin);
+        document.getElementById('permStart').value = dateIso(r.dateDebut);
+        document.getElementById('permEnd').value = dateIso(r.dateFin);
         document.getElementById('permJours').value = r.jours || 1;
+        majJours('permStart', 'permEnd', 'permJours');
         majBoutonsBrouillon('perm');
         document.getElementById('perm-form').scrollIntoView({behavior:'smooth'});
       }

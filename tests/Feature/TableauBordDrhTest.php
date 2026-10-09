@@ -22,9 +22,9 @@ class TableauBordDrhTest extends TestCase
 
         $this->assertStringContainsString('id="nav-dashboard"', $html);
         $this->assertStringContainsString('id="tab-dashboard"', $html);
-        // Le vert est sur le tableau de bord, pas sur les permissions.
+        // Le seul onglet actif au chargement est le tableau de bord.
         $this->assertMatchesRegularExpression(
-            '/id="nav-dashboard"\s*\n?\s*class="[^"]*bg-emerald-700[^"]*"/',
+            '/id="nav-dashboard"\s*\n?\s*class="[^"]*nav-tab-active[^"]*"/',
             $html,
         );
         $this->assertMatchesRegularExpression(
@@ -159,6 +159,15 @@ class TableauBordDrhTest extends TestCase
         $this->assertStringContainsString('id="notesDrhContainer"', $html);
         $this->assertStringContainsString('function renderNotesDrh()', $html);
         $this->assertStringContainsString('API.diffuserNoteDirecte(', $html);
+        // Deux menus : notes reçues et notes envoyées.
+        $this->assertStringContainsString('id="nav-notes-recues"', $html);
+        $this->assertStringContainsString('id="tab-notes-recues"', $html);
+        $this->assertStringContainsString('function renderNotesRecuesDrh()', $html);
+        $this->assertStringContainsString('Notes de service envoyées', $html);
+        // Il valide lui-même son brouillon avant de le diffuser.
+        $this->assertStringContainsString('onclick="enregistrerNoteDrh(true)"', $html);
+        $this->assertStringContainsString('async function validerNoteDrh(id)', $html);
+        $this->assertStringContainsString('API.validerNoteDirecte(', $html);
         // Aucun circuit de validation pour ses notes.
         $this->assertStringNotContainsString('Circuit de Validation', $html);
     }

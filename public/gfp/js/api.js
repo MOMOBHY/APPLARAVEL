@@ -44,7 +44,7 @@ function toast(message, ton = null) {
         : 'succes';
   }
   const styles = {
-    succes: { cercle: 'bg-emerald-600', barre: 'border-emerald-500', icone: '✓' },
+    succes: { cercle: 'bg-emerald-600', barre: 'border-emerald-500', icone: 'OK' },
     erreur: { cercle: 'bg-red-600', barre: 'border-red-500', icone: '!' },
     info: { cercle: 'bg-slate-700', barre: 'border-slate-400', icone: 'i' },
   };
@@ -247,7 +247,7 @@ function exporterDossiersCsv(dossiers, prefixe) {
     toast('Aucun dossier à exporter avec les filtres actuels.', 'info');
     return;
   }
-  const entetes = ['Référence', 'Nature', 'Matricule', 'Agent', 'Détail', 'Date début / événement', 'Date fin', 'Jours', 'Déposé le', 'Statut'];
+  const entetes = ['Référence', 'Nature', 'Matricule', 'Agent', 'Détail', 'Date début / événement', 'Date fin', 'Durée (jours)', 'Déposé le', 'Statut'];
   const lignes = dossiers.map((r) => [
     r.id,
     LIBELLES_NATURE[r.nature] || r.nature,
@@ -261,6 +261,27 @@ function exporterDossiersCsv(dossiers, prefixe) {
     statutReel(r),
   ]);
   telechargerCsv(entetes, lignes, prefixe);
+}
+
+/** Présente une période dans l'ordre début, fin, durée ; les dates sont toujours rendues en JJ/MM/AAAA. */
+function afficherPeriode(dateDebut, dateFin, jours = null, inclureDuree = true) {
+  if (!dateDebut && !dateFin) return '<span class="text-slate-400">—</span>';
+  const debut = escapeHtml(dateFr(dateDebut) || '—');
+  const fin = escapeHtml(dateFr(dateFin) || '—');
+  const duree = jours === null || jours === undefined || jours === ''
+    ? '—'
+    : `${escapeHtml(jours)} ${Number(jours) === 1 ? 'jour' : 'jours'}`;
+  return `<div class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs leading-tight">
+    <div class="min-w-0 border-l-2 border-emerald-200 pl-2">
+      <span class="block text-[9px] font-bold uppercase tracking-wide text-slate-500">Début</span>
+      <span class="block whitespace-nowrap font-semibold text-slate-800">${debut}</span>
+    </div>
+    <div class="min-w-0 border-l-2 border-slate-200 pl-2">
+      <span class="block text-[9px] font-bold uppercase tracking-wide text-slate-500">Fin</span>
+      <span class="block whitespace-nowrap font-semibold text-slate-800">${fin}</span>
+    </div>
+    ${inclureDuree ? `<div class="col-span-2 pt-0.5"><span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600"><span class="font-semibold">Durée</span><span class="font-bold text-slate-800">${duree}</span></span></div>` : ''}
+  </div>`;
 }
 
 /** Télécharge un tableau au format CSV (séparateur « ; », UTF-8 avec BOM pour Excel). */
@@ -908,7 +929,23 @@ const API = {
     }
   },
 
-  /** DRH : diffuse directement sa note vers les agents de sa direction, sans circuit de validation. */
+  /** DRH, directeur ou sous-directeur : valide lui-même son brouillon, sans circuit de validation. La
+   * note validée n'est plus modifiable et peut être diffusée. */
+  async validerNoteDirecte(noteId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notes/${noteId}/valider-directement`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      return await response.json();
+    } catch (e) {
+      console.error('Erreur API validerNoteDirecte', e);
+      return { status: 'error' };
+    }
+  },
+
+  /** DRH, directeur ou sous-directeur : diffuse directement sa note validée vers les agents des
+   * structures destinataires. */
   async diffuserNoteDirecte(noteId) {
     try {
       const response = await fetch(`${API_BASE_URL}/notes/${noteId}/diffuser-directement`, {
@@ -1407,8 +1444,22 @@ function ouvrirCorrection(r, onDone) {
       ${
         estPermission
           ? `
-        <div
-          class="grid grid-cols-2 gap-2">${champ('corrDebut', 'Date début', 'date')}${champ('corrFin', 'Date fin', 'date')}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label for="corrDebut" class="block text-xs font-bold text-slate-700">Date de début *
+            <input id="corrDebut" type="date" required
+              class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal">
+          </label>
+          <label for="corrFin" class="block text-xs font-bold text-slate-700">Date de fin *
+            <input id="corrFin" type="date" required
+              class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal">
+            <span id="corrDateErreur" role="alert" class="hidden text-xs text-red-600 font-semibold mt-1"></span>
+          </label>
+        </div>
+        <label for="corrJours" class="block max-w-xs text-xs font-bold text-slate-700">Durée (jours)
+          <input id="corrJours" type="number" readonly
+            class="mt-1 w-full bg-slate-100 border border-slate-300 rounded-lg p-2 text-sm font-bold">
+          <span id="corrJoursInfo" class="text-xs text-slate-500 font-normal">Calculée automatiquement à partir des dates.</span>
+        </label>
         <label class="block text-xs font-bold text-slate-700 uppercase">Motif
           <textarea id="corrMotif" rows="3"
             class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal normal-case">
@@ -1446,8 +1497,45 @@ function ouvrirCorrection(r, onDone) {
   $('[data-ref]').textContent = r.id;
   $('[data-motif]').textContent = r.motif_retour || 'non précisé';
   if (estPermission) {
-    $('#corrDebut').value = r.dateDebut || '';
-    $('#corrFin').value = r.dateFin || '';
+    $('#corrDebut').value = dateIso(r.dateDebut || '');
+    $('#corrFin').value = dateIso(r.dateFin || '');
+    const majPeriodeCorrection = () => {
+      const debut = $('#corrDebut').value;
+      const fin = $('#corrFin').value;
+      const erreurDate = $('#corrDateErreur');
+      const infoJours = $('#corrJoursInfo');
+      $('#corrFin').min = debut;
+      erreurDate.textContent = '';
+      erreurDate.classList.add('hidden');
+      $('#corrFin').setAttribute('aria-invalid', 'false');
+      if (debut && fin && fin < debut) {
+        $('#corrJours').value = '';
+        $('#corrFin').setAttribute('aria-invalid', 'true');
+        erreurDate.textContent = 'La date de fin doit être postérieure ou égale à la date de début.';
+        erreurDate.classList.remove('hidden');
+        infoJours.textContent = 'La durée sera calculée après correction des dates.';
+        infoJours.className = 'text-xs text-slate-500 font-normal';
+        return;
+      }
+      if (!debut || !fin) {
+        $('#corrJours').value = '';
+        infoJours.textContent = 'Renseignez les deux dates pour calculer la durée.';
+        return;
+      }
+      const duree = Math.round((new Date(fin) - new Date(debut)) / 86400000) + 1;
+      $('#corrJours').value = duree;
+      infoJours.textContent = duree > 30
+        ? 'Une permission ne peut pas dépasser 30 jours.'
+        : 'Calculée automatiquement à partir des dates.';
+      infoJours.className = duree > 30
+        ? 'text-xs text-red-600 font-semibold'
+        : 'text-xs text-slate-500 font-normal';
+    };
+    $('#corrDebut').addEventListener('input', majPeriodeCorrection);
+    $('#corrDebut').addEventListener('change', majPeriodeCorrection);
+    $('#corrFin').addEventListener('input', majPeriodeCorrection);
+    $('#corrFin').addEventListener('change', majPeriodeCorrection);
+    majPeriodeCorrection();
     $('#corrMotif').value = r.motif || '';
   } else {
     $('#corrNom').value = r.nom || '';
@@ -1462,6 +1550,18 @@ function ouvrirCorrection(r, onDone) {
     const data = new FormData();
     const fichier = $('#corrFichier').files[0];
     if (estPermission) {
+      const debut = $('#corrDebut').value;
+      const fin = $('#corrFin').value;
+      const duree = Number($('#corrJours').value);
+      if (!debut || !fin || fin < debut || duree < 1 || duree > 30) {
+        const erreur = $('#corrDateErreur');
+        erreur.textContent = fin && fin < debut
+          ? 'La date de fin doit être postérieure ou égale à la date de début.'
+          : 'Les dates doivent définir une durée comprise entre 1 et 30 jours.';
+        erreur.classList.remove('hidden');
+        $('#corrFin').focus();
+        return;
+      }
       data.append('date_debut', $('#corrDebut').value);
       data.append('date_fin', $('#corrFin').value);
       data.append('motif', $('#corrMotif').value);

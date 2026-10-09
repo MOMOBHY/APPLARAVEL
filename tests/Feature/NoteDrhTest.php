@@ -10,8 +10,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
-/** Le DRH fait ses notes vers les agents de sa direction, sans circuit de validation : il rédige puis
- * diffuse directement. Ni les directeurs ni la secrétaire n'interviennent sur ses notes. */
+/** Le DRH fait ses notes vers les agents de sa direction, sans circuit de validation : il rédige, valide
+ * lui-même, puis diffuse directement. Ni les directeurs ni la secrétaire n'interviennent sur ses notes. */
 class NoteDrhTest extends TestCase
 {
     use RefreshDatabase;
@@ -27,7 +27,7 @@ class NoteDrhTest extends TestCase
         return User::where('matricule', $matricule)->firstOrFail();
     }
 
-    public function test_le_drh_redige_puis_diffuse_directement(): void
+    public function test_le_drh_redige_valide_puis_diffuse_directement(): void
     {
         $drh = $this->user('DRH001');
         $structureId = $drh->agent->structure_id;
@@ -43,6 +43,15 @@ class NoteDrhTest extends TestCase
             ->json();
         $this->assertEquals(NoteService::BROUILLON, $created['statut']);
         $noteId = $created['note_id'];
+
+        // Un brouillon ne part pas : le DRH le valide d'abord.
+        $this->actingAs($drh, 'sanctum')
+            ->postJson("/api/notes/{$noteId}/diffuser-directement")
+            ->assertStatus(422);
+        $this->actingAs($drh, 'sanctum')
+            ->postJson("/api/notes/{$noteId}/valider-directement")
+            ->assertOk()
+            ->assertJsonPath('data.statut', NoteService::VALIDEE);
 
         Notification::fake();
         $this->actingAs($drh, 'sanctum')
@@ -60,7 +69,7 @@ class NoteDrhTest extends TestCase
         Notification::assertSentTo($agent->user, NoteServiceTransmise::class);
     }
 
-    public function test_la_diffusion_directe_exige_un_brouillon_du_drh(): void
+    public function test_la_diffusion_directe_exige_une_note_validee_du_drh(): void
     {
         $drh = $this->user('DRH001');
         $secretaire = $this->user('SEC001');
@@ -74,7 +83,7 @@ class NoteDrhTest extends TestCase
             ->postJson("/api/notes/{$note['note_id']}/diffuser-directement")
             ->assertForbidden();
 
-        // Un directeur ne diffuse pas en direct non plus.
+        // Un directeur ne diffuse pas en direct la note d'un autre auteur non plus.
         $this->actingAs($this->user('DIR001'), 'sanctum')
             ->postJson("/api/notes/{$note['note_id']}/diffuser-directement")
             ->assertForbidden();
@@ -84,6 +93,9 @@ class NoteDrhTest extends TestCase
             ->postJson('/api/notes', ['objet' => 'Note DRH à diffuser deux fois'])
             ->assertCreated()
             ->json();
+        $this->actingAs($drh, 'sanctum')
+            ->postJson("/api/notes/{$mienne['note_id']}/valider-directement")
+            ->assertOk();
         $this->actingAs($drh, 'sanctum')
             ->postJson("/api/notes/{$mienne['note_id']}/diffuser-directement")
             ->assertOk();

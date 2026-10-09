@@ -50,53 +50,53 @@
         data-base="../"
       ></div>
       <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+        <div class="max-w-7xl mx-auto nav-tabs py-2">
           <button
             onclick="showTab('users')"
             id="nav-users"
-            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white"
+            class="nav-tab nav-tab-active"
           >
             Gestion des Utilisateurs
           </button>
           <button
             onclick="showTab('search')"
             id="nav-search"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+            class="nav-tab"
           >
             Consultation Globale
           </button>
           <button
             onclick="showTab('notes')"
             id="nav-notes"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+            class="nav-tab"
           >
             Notes de Service
           </button>
           <button
             onclick="showTab('statistiques')"
             id="nav-statistiques"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+            class="nav-tab"
           >
             Statistiques
           </button>
           <button
             onclick="showTab('journal')"
             id="nav-journal"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+            class="nav-tab"
           >
             Journal d'audit
           </button>
           <button
             onclick="showTab('responsables')"
             id="nav-responsables"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+            class="nav-tab"
           >
             Directeurs et responsables
           </button>
           <button
             onclick="showTab('structures')"
             id="nav-structures"
-            class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200"
+            class="nav-tab"
           >
             Structures du ministère
           </button>
@@ -367,6 +367,7 @@
                   <th class="px-4 py-2">Agent</th>
                   <th class="px-4 py-2">Nature</th>
                   <th class="px-4 py-2">Détails</th>
+                  <th class="px-4 py-2">Dates (Début / Fin)</th>
                   <th class="px-4 py-2">Pièce Jointe</th>
                   <th class="px-4 py-2">Statut</th>
                 </tr>
@@ -427,24 +428,14 @@
               <option value="0">Échecs uniquement</option>
             </select>
             <input
-              type="text"
-              data-date-fr
-              inputmode="numeric"
-              autocomplete="off"
-              maxlength="10"
-              placeholder="jj/mm/aaaa"
+              type="date"
               id="jDu"
               onchange="chargerJournal(1)"
               title="Du"
               class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"
             />
             <input
-              type="text"
-              data-date-fr
-              inputmode="numeric"
-              autocomplete="off"
-              maxlength="10"
-              placeholder="jj/mm/aaaa"
+              type="date"
               id="jAu"
               onchange="chargerJournal(1)"
               title="Au"
@@ -605,6 +596,7 @@
         renderUsers();
         filterSearch();
         renderNotes();
+        activerOngletGfp('nav-users');
       }
 
       /** Recharge les dossiers, les notes et la liste des comptes. */
@@ -919,7 +911,7 @@
         });
 
         if (!results.length) {
-          tbody.innerHTML = `<tr><td colspan="6"
+          tbody.innerHTML = `<tr><td colspan="7"
             class="px-4 py-6 text-center text-slate-500 italic">Aucun résultat.</td></tr>`;
           if (window.renderPagination) {
             window.renderPagination({
@@ -941,6 +933,9 @@
         const displayed = results.slice(startIndex, startIndex + PAGE_SIZE);
 
         displayed.forEach((r) => {
+          const dateSearch = r.dateDebut
+            ? afficherPeriode(r.dateDebut, r.dateFin, r.jours)
+            : (r.dateEvt ? `<div><span class="text-slate-500 font-semibold">Le :</span> ${dateFr(r.dateEvt)}</div>` : '<span class="text-slate-400">—</span>');
           const tr = document.createElement('tr');
           tr.innerHTML = `
           <td class="px-4 py-2 font-mono font-bold">${escapeHtml(r.id)}</td>
@@ -948,8 +943,9 @@
           <td class="px-4 py-2 text-slate-600">${escapeHtml(r.nature)}</td>
           <td
             class="px-4 py-2">${escapeHtml(r.typePerm || r.motif || r.nomChild || r.nomDefunt || '')}</td>
+          <td class="px-4 py-2 text-xs">${dateSearch}</td>
           <td class="px-4 py-2 font-mono text-slate-500">${escapeHtml(r.piece)}</td>
-          <td class="px-4 py-2 font-bold">${escapeHtml(r.statut)}</td>
+          <td class="px-4 py-2">${statutBadge(r.statut)}</td>
         `;
           tbody.appendChild(tr);
         });
@@ -1052,11 +1048,6 @@
           'responsables',
         ].forEach((t) => {
           document.getElementById('tab-' + t).classList.add('hidden');
-          const btn = document.getElementById('nav-' + t);
-          if (btn) {
-            btn.classList.remove('bg-emerald-700', 'text-white');
-            btn.classList.add('text-slate-600');
-          }
         });
         document.getElementById('tab-' + name).classList.remove('hidden');
         if (name === 'statistiques')
@@ -1064,11 +1055,7 @@
         if (name === 'journal') chargerJournal(1);
         if (name === 'structures') afficherStructures(document.getElementById('tab-structures'));
         if (name === 'responsables') renderResponsables();
-        const active = document.getElementById('nav-' + name);
-        if (active) {
-          active.classList.add('bg-emerald-700', 'text-white');
-          active.classList.remove('text-slate-600');
-        }
+        activerOngletGfp('nav-' + name);
       }
 
       // ---- Directeurs et autres responsables ----

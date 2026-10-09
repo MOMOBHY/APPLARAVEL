@@ -446,6 +446,12 @@ class LegacyApiController extends Controller
                 'date_fin' => ['required', 'date', 'after_or_equal:date_debut'],
                 'motif' => ['required', 'string', 'min:5'],
                 'piece' => $reglePiece,
+            ], [
+                'date_debut.required' => 'La date de début est obligatoire.',
+                'date_debut.date' => 'La date de début doit être une date valide.',
+                'date_fin.required' => 'La date de fin est obligatoire.',
+                'date_fin.date' => 'La date de fin doit être une date valide.',
+                'date_fin.after_or_equal' => 'La date de fin doit être postérieure ou égale à la date de début.',
             ]);
             $demande = PermissionWorkflowService::soumettre($request->user()->agent, [
                 'type_permission_id' => $data['type_permission_id'],
@@ -472,6 +478,14 @@ class LegacyApiController extends Controller
                 'max:'.PermissionWorkflowService::JOURS_MAX,
             ],
             'piece' => $request->hasFile('piece') ? $reglePiece : ['nullable'],
+        ], [
+            'dateDebut.required' => 'La date de début est obligatoire.',
+            'dateDebut.date' => 'La date de début doit être une date valide.',
+            'dateFin.required' => 'La date de fin est obligatoire.',
+            'dateFin.date' => 'La date de fin doit être une date valide.',
+            'dateFin.after_or_equal' => 'La date de fin doit être postérieure ou égale à la date de début.',
+            'jours.min' => 'La durée doit être d’au moins 1 jour.',
+            'jours.max' => 'Une permission ne peut pas dépasser 30 jours.',
         ]);
 
         $demande = PermissionWorkflowService::soumettre($request->user()->agent, [
@@ -1019,6 +1033,23 @@ class LegacyApiController extends Controller
             ->with(['structures', 'signataire'])
             ->latest('id');
 
+        // Auteurs qui diffusent eux-mêmes leurs notes (DRH, directeurs, sous-directeurs) : leurs notes
+        // ne passent pas par le secrétariat. Une seule requête pour toute la liste.
+        $auteursDirects = Agent::whereHas(
+            'user.roles',
+            fn ($q) => $q->whereIn('code', NoteWorkflowService::ROLES_DIFFUSION_DIRECTE),
+        )
+            ->pluck('id')
+            ->flip();
+
+        // Une note adressée à toutes les structures (directeur de cabinet, secrétariat) s'affiche « Tous
+        // les Services du Ministère » plutôt que la liste complète des structures.
+        $totalStructures = Structure::count();
+        $destinataires = fn (NoteService $n) => $n->structures->isEmpty() ||
+            $n->structures->count() >= $totalStructures
+                ? 'Tous les Services du Ministère'
+                : $n->structures->pluck('nom')->join(', ');
+
         $notes = (clone $query)
             ->when($avecHistorique, fn ($q) => $q->with('historique'))
             ->get()
@@ -1043,15 +1074,13 @@ class LegacyApiController extends Controller
                     'numero' => $n->numero_reference,
                     'libelle' => $n->objet,
                     'date' => $n->date_emission?->format('Y-m-d'),
-                    'service' => $n->structures->pluck('nom')->join(', ') ?:
-                        'Tous les Services du Ministère',
+                    'service' => $destinataires($n),
                     'emetteur' => $n->signataire?->fullName() ?? 'Direction',
                     'signataire_id' => $n->signataire_id,
+                    'diffusion_directe' => $n->signataire_id !== null && $auteursDirects->has($n->signataire_id),
                     'secretaire' => 'Secrétariat',
                     'statut' => $n->statut,
-                    'destinataires_detail' => 'Transmis aux structures : '.
-                        ($n->structures->pluck('nom')->join(', ') ?:
-                            'Tous les Services du Ministère'),
+                    'destinataires_detail' => 'Transmis aux structures : '.$destinataires($n),
                 ],
             )
             ->all();
@@ -1168,13 +1197,14 @@ class LegacyApiController extends Controller
             ]);
         }
 
-        // Nouveau contrat (objet) : rédaction par le secrétariat (brouillon).
-        // L'envoi aux directeurs est une action séparée.
+        // Nouveau contrat (objet) : rédaction (brouillon) par le secrétariat, la DRH, un directeur, un
+        // sous-directeur ou le directeur de cabinet. L'envoi aux directeurs ou la diffusion directe est
+        // une action séparée.
         if ($request->has('objet')) {
             abort_unless(
                 $request->user()->hasRole(...NoteWorkflowService::ROLES_EMETTEURS),
                 403,
-                'Rédaction réservée au secrétariat.',
+                'Rédaction réservée au secrétariat, à la DRH, aux directeurs, aux sous-directeurs et au directeur de cabinet.',
             );
             $data = $request->validate([
                 'objet' => ['required', 'string', 'min:5'],
@@ -1200,7 +1230,7 @@ class LegacyApiController extends Controller
         abort_unless(
             $request->user()->hasRole(...NoteWorkflowService::ROLES_EMETTEURS),
             403,
-            'Rédaction réservée au secrétariat.',
+            'Rédaction réservée au secrétariat, à la DRH, aux directeurs, aux sous-directeurs et au directeur de cabinet.',
         );
         $data = $request->validate([
             'title' => ['required', 'string', 'min:5'],

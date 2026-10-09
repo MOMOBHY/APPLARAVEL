@@ -40,21 +40,28 @@ class PermissionWorkflowService
      * correspondante. La limite s'applique dans les deux cas. */
     protected static function periode(array $data): array
     {
-        $jours =
-            array_key_exists('nombre_jours', $data) && $data['nombre_jours'] !== null
-                ? (int) $data['nombre_jours']
-                : self::nombreJours($data['date_debut'], $data['date_fin']);
+        $dateDebut = Carbon::parse($data['date_debut'])->startOfDay();
+        $dateFin = isset($data['date_fin'])
+            ? Carbon::parse($data['date_fin'])->startOfDay()
+            : null;
+        if ($dateFin && $dateFin->lt($dateDebut)) {
+            abort(422, 'La date de fin doit être postérieure ou égale à la date de début.');
+        }
+
+        $jours = array_key_exists('nombre_jours', $data) && $data['nombre_jours'] !== null
+            ? (int) $data['nombre_jours']
+            : ($dateFin ? (int) $dateDebut->diffInDays($dateFin) + 1 : 0);
 
         if ($jours < 1 || $jours > self::JOURS_MAX) {
             abort(422, 'Le nombre de jours doit être compris entre 1 et '.self::JOURS_MAX.'.');
         }
+        if ($dateFin && $dateDebut->diffInDays($dateFin) + 1 > self::JOURS_MAX) {
+            abort(422, 'Une permission ne peut pas dépasser '.self::JOURS_MAX.' jours.');
+        }
 
         return [
             $jours,
-            Carbon::parse($data['date_debut'])
-                ->startOfDay()
-                ->addDays($jours - 1)
-                ->toDateString(),
+            $dateDebut->copy()->addDays($jours - 1)->toDateString(),
         ];
     }
 

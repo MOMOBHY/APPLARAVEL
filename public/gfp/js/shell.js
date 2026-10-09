@@ -391,3 +391,17 @@
   setInterval(() => chargerNotifications(true), 15000);
   window.rafraichirNotifications = () => chargerNotifications(false);
 })();
+
+/** Met en évidence l'unique onglet actif et l'annonce aux technologies d'assistance. */
+function activerOngletGfp(idActif) {
+  const ongletDemande = document.getElementById(idActif);
+  const idVisible = ongletDemande && window.getComputedStyle(ongletDemande).display !== 'none'
+    ? idActif
+    : 'nav-dashboard';
+  document.querySelectorAll('header nav button').forEach((bouton) => {
+    const actif = bouton.id === idVisible;
+    bouton.classList.toggle('nav-tab-active', actif);
+    if (actif) bouton.setAttribute('aria-current', 'page');
+    else bouton.removeAttribute('aria-current');
+  });
+}

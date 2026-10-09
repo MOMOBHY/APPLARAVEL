@@ -160,7 +160,17 @@ class NoteServiceController extends Controller
         return response()->json(['status' => 'success', 'data' => $note]);
     }
 
-    /** Diffusion directe d'une note du DRH vers les agents de sa direction. */
+    /** Validation directe d'une note par son auteur (DRH, directeur ou sous-directeur), sans circuit de
+     * validation. */
+    public function validerDirectement(NoteService $note)
+    {
+        $note = NoteWorkflowService::validerDirectement($note, request()->user()->agent);
+
+        return response()->json(['status' => 'success', 'data' => $note]);
+    }
+
+    /** Diffusion directe d'une note validée du DRH, d'un directeur ou d'un sous-directeur vers les agents
+     * des structures destinataires. */
     public function diffuserDirectement(NoteService $note)
     {
         $note = NoteWorkflowService::diffuserDirectement($note, request()->user()->agent);

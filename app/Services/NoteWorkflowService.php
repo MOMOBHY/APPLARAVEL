@@ -16,12 +16,33 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Throwable;
 
 /** Notes de service : la secrétaire rédige et envoie aux directeurs ; un directeur valide (la secrétaire
- * diffuse) ou refuse avec motif (elle reprend et renvoie). */
+ * diffuse) ou refuse avec motif (elle reprend et renvoie). Le DRH, les directeurs, les sous-directeurs et
+ * le directeur de cabinet valident et diffusent eux-mêmes leurs notes. */
 class NoteWorkflowService
 {
-    /** Rôle qui rédige une note de service : la secrétaire (vers les directeurs) et le DRH (vers les
-     * agents de sa direction, avec diffusion directe). */
-    public const ROLES_EMETTEURS = ['ROLE_SECRETAIRE', 'ROLE_DRH'];
+    /** Rôles qui rédigent une note de service : la secrétaire (vers les directeurs) ; le DRH, le directeur
+     * et le sous-directeur (vers les agents des structures choisies) ; le directeur de cabinet (vers tous
+     * les agents du ministère). Tous sauf la secrétaire diffusent directement. */
+    public const ROLES_EMETTEURS = [
+        'ROLE_SECRETAIRE',
+        'ROLE_DRH',
+        'ROLE_DIRECTEUR',
+        'ROLE_SOUS_DIRECTEUR',
+        'ROLE_DIRECTEUR_CABINET',
+    ];
+
+    /** Rôles qui diffusent eux-mêmes leurs notes, sans circuit de validation : leur autorité vaut feu
+     * vert. Leurs notes ne passent jamais par le secrétariat. */
+    public const ROLES_DIFFUSION_DIRECTE = [
+        'ROLE_DRH',
+        'ROLE_DIRECTEUR',
+        'ROLE_SOUS_DIRECTEUR',
+        'ROLE_DIRECTEUR_CABINET',
+    ];
+
+    /** Le directeur de cabinet s'adresse à tout le ministère : toutes les structures sont destinataires
+     * et l'email part à tous les agents actifs, comme pour une note diffusée par la secrétaire. */
+    public const ROLE_CABINET = 'ROLE_DIRECTEUR_CABINET';
 
     /** Bilan du dernier envoi d'emails de diffusion (envoyés, échecs, comptes sans adresse), repris dans
      * la réponse de l'API pour informer la secrétaire. */
@@ -63,7 +84,7 @@ class NoteWorkflowService
         });
     }
 
-    /** Étape 1 — rédaction (brouillon) par la secrétaire ou le DRH. */
+    /** Étape 1 — rédaction (brouillon) par la secrétaire, le DRH, un directeur ou un sous-directeur. */
     public static function rediger(Agent $auteur, array $data, ?string $fichierPath): NoteService
     {
         self::exigerRedacteur($auteur);
@@ -77,12 +98,16 @@ class NoteWorkflowService
             'statut' => NoteService::BROUILLON,
             'date_emission' => $data['date_emission'] ?? now()->toDateString(),
         ]);
-        $note->structures()->sync(self::structuresCibles($data['structure_ids'] ?? null));
+        $note->structures()->sync(
+            $auteur->user?->hasRole(self::ROLE_CABINET)
+                ? Structure::pluck('id')->all()
+                : self::structuresCibles($data['structure_ids'] ?? null),
+        );
 
         self::tracer(
             $note,
             $auteur,
-            $auteur->user?->hasRole('ROLE_DRH') ? 'ROLE_DRH' : 'ROLE_SECRETAIRE',
+            self::roleEmetteur($auteur),
             'REDACTION',
             null,
             $note->statut,
@@ -100,6 +125,9 @@ class NoteWorkflowService
             abort(422, 'Seule une note rédigée ou reprise peut être envoyée aux directeurs.');
         }
         self::exigerSecretaire($secretaire);
+        if (self::estDiffusionDirecte($note)) {
+            abort(403, 'Cette note est diffusée directement par son auteur : elle ne passe pas par le secrétariat.');
+        }
 
         $ancien = $note->statut;
         $note->update(['statut' => NoteService::EN_ATTENTE_VALIDATION, 'secretaire_id' => $secretaire->id]);
@@ -287,6 +315,9 @@ class NoteWorkflowService
         if ($note->statut !== NoteService::VALIDEE) {
             abort(422, "La note doit être validée par le directeur avant d'être diffusée.");
         }
+        if (self::estDiffusionDirecte($note)) {
+            abort(403, 'Cette note est diffusée directement par son auteur : elle ne passe pas par le secrétariat.');
+        }
 
         $ancien = $note->statut;
         $note->update([
@@ -308,37 +339,59 @@ class NoteWorkflowService
         return $note->refresh();
     }
 
-    /** Le DRH diffuse directement sa note aux agents de sa direction, sans circuit de validation : son
-     * autorité vaut feu vert. */
-    public static function diffuserDirectement(NoteService $note, Agent $drh): NoteService
+    /** Le DRH, un directeur ou un sous-directeur valide lui-même son brouillon, sans circuit de
+     * validation : son autorité vaut feu vert. La note validée n'est plus modifiable ; il la diffuse
+     * ensuite. */
+    public static function validerDirectement(NoteService $note, Agent $auteur): NoteService
     {
+        self::exigerAuteurDirect($note, $auteur);
         if ($note->statut !== NoteService::BROUILLON) {
-            abort(422, 'Seul un brouillon peut être diffusé directement.');
+            abort(422, 'Seul un brouillon peut être validé.');
         }
-        if (! $drh->user?->hasRole('ROLE_DRH')) {
-            abort(403, 'Diffusion directe réservée à la DRH.');
-        }
-        if ($note->signataire_id !== $drh->id) {
-            abort(403, 'Seul le DRH auteur diffuse sa note.');
+
+        $ancien = $note->statut;
+        $note->update([
+            'statut' => NoteService::VALIDEE,
+            'valide_le' => now(),
+            'valideur_id' => $auteur->id,
+        ]);
+        self::tracer(
+            $note,
+            $auteur,
+            self::roleEmetteur($auteur),
+            'VALIDATION_AUTEUR',
+            $ancien,
+            $note->statut,
+            'Note validée par son auteur, prête à être diffusée.',
+        );
+
+        return $note->refresh();
+    }
+
+    /** Le DRH, un directeur ou un sous-directeur diffuse directement sa note validée aux agents des
+     * structures choisies, sans passer par le secrétariat. */
+    public static function diffuserDirectement(NoteService $note, Agent $auteur): NoteService
+    {
+        self::exigerAuteurDirect($note, $auteur);
+        if ($note->statut !== NoteService::VALIDEE) {
+            abort(422, 'Validez la note avant de la diffuser.');
         }
 
         $ancien = $note->statut;
         $note->update([
             'statut' => NoteService::DIFFUSEE,
-            'valide_le' => now(),
-            'valideur_id' => $drh->id,
             'date_diffusion' => now(),
         ]);
         self::tracer(
             $note,
-            $drh,
-            'ROLE_DRH',
+            $auteur,
+            self::roleEmetteur($auteur),
             'DIFFUSION_DIRECTE',
             $ancien,
             $note->statut,
-            'Note de la DRH diffusée directement, sans validation.',
+            'Note validée diffusée directement par son auteur.',
         );
-        self::avertirDestinataires($note);
+        self::avertirDestinataires($note, emailATousLesAgents: (bool) $auteur->user?->hasRole(self::ROLE_CABINET));
 
         return $note->refresh();
     }
@@ -414,13 +467,45 @@ class NoteWorkflowService
         return $note->refresh();
     }
 
-    /** Garde-fous du circuit : la rédaction appartient à la secrétaire et au DRH ; l'envoi aux directeurs
-     * et la reprise à la secrétaire seule ; la validation et le refus à un directeur. */
+    /** Garde-fous du circuit : la rédaction appartient à la secrétaire, au DRH, aux directeurs et aux
+     * sous-directeurs ; l'envoi aux directeurs et la reprise à la secrétaire seule ; la validation et le
+     * refus à un directeur. */
     protected static function exigerRedacteur(Agent $acteur): void
     {
         if (! $acteur->user?->hasRole(...self::ROLES_EMETTEURS)) {
-            abort(403, 'Rédaction réservée au secrétariat et à la DRH.');
+            abort(403, 'Rédaction réservée au secrétariat, à la DRH, aux directeurs, aux sous-directeurs et au directeur de cabinet.');
         }
+    }
+
+    /** Validation et diffusion directes : réservées au DRH, aux directeurs, aux sous-directeurs et au
+     * directeur de cabinet, et à l'auteur de la note seulement. */
+    protected static function exigerAuteurDirect(NoteService $note, Agent $auteur): void
+    {
+        if (! $auteur->user?->hasRole(...self::ROLES_DIFFUSION_DIRECTE)) {
+            abort(403, 'Validation et diffusion directes réservées à la DRH, aux directeurs, aux sous-directeurs et au directeur de cabinet.');
+        }
+        if ($note->signataire_id !== $auteur->id) {
+            abort(403, "Seul l'auteur de la note la valide et la diffuse directement.");
+        }
+    }
+
+    /** Rôle sous lequel l'auteur émet sa note, repris dans l'historique et le journal d'audit. */
+    protected static function roleEmetteur(Agent $auteur): string
+    {
+        foreach (self::ROLES_DIFFUSION_DIRECTE as $role) {
+            if ($auteur->user?->hasRole($role)) {
+                return $role;
+            }
+        }
+
+        return 'ROLE_SECRETAIRE';
+    }
+
+    /** Vrai si l'auteur de la note la diffuse lui-même (DRH, directeur, sous-directeur) : elle ne passe
+     * pas par le circuit du secrétariat. */
+    public static function estDiffusionDirecte(NoteService $note): bool
+    {
+        return (bool) $note->signataire?->user?->hasRole(...self::ROLES_DIFFUSION_DIRECTE);
     }
 
     protected static function exigerSecretaire(Agent $acteur): void

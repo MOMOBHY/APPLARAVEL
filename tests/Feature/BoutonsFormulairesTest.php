@@ -37,7 +37,7 @@ class BoutonsFormulairesTest extends TestCase
         }
 
         $this->assertNotEmpty($trouves, 'Des formulaires de dépôt doivent être présents.');
-        $this->assertCount(5, $trouves, 'Trois formulaires côté agent, deux côté responsable.');
+        $this->assertCount(6, $trouves, 'Trois formulaires côté agent, trois côté responsable.');
 
         return $trouves;
     }

@@ -55,21 +55,22 @@ class NoteServiceWorkflowTest extends TestCase
             ->assertForbidden();
     }
 
-    /** Seules la secrétaire et la DRH rédigent : ni directeur, ni sous-directeur, ni les autres. */
-    public function test_seuls_la_secretaire_et_la_drh_redigent(): void
+    /** Rédigent : la secrétaire, la DRH, le directeur, le sous-directeur et le directeur de cabinet. Ni
+     * le gestionnaire RH, ni les autres. */
+    public function test_les_redacteurs_de_notes(): void
     {
         $this->rediger($this->user('SEC001'), 'Note du secrétariat');
 
-        foreach (['CAB001', 'SD001', 'DIR001', 'RH001'] as $matricule) {
-            $this->actingAs($this->user($matricule), 'sanctum')
-                ->postJson('/api/notes', ['objet' => 'Note interdite'])
-                ->assertForbidden();
-        }
+        $this->actingAs($this->user('RH001'), 'sanctum')
+            ->postJson('/api/notes', ['objet' => 'Note interdite'])
+            ->assertForbidden();
 
-        // La DRH rédige ses notes vers sa direction.
-        $this->actingAs($this->user('DRH001'), 'sanctum')
-            ->postJson('/api/notes', ['objet' => 'Note autorisée de la DRH'])
-            ->assertCreated();
+        // La DRH, le directeur, le sous-directeur et le directeur de cabinet rédigent leurs notes.
+        foreach (['DRH001', 'DIR001', 'SD001', 'CAB001'] as $matricule) {
+            $this->actingAs($this->user($matricule), 'sanctum')
+                ->postJson('/api/notes', ['objet' => "Note autorisée de {$matricule}"])
+                ->assertCreated();
+        }
     }
 
     public function test_la_secretaire_envoie_la_note_et_les_directeurs_sont_prevenus(): void

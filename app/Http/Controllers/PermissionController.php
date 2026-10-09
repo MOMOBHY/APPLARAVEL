@@ -102,6 +102,14 @@ class PermissionController extends Controller
                 'max:'.PieceService::MAX_KO,
             ],
             'soumettre' => ['nullable', 'boolean'],
+        ], [
+            'date_debut.required' => 'La date de début est obligatoire.',
+            'date_debut.date' => 'La date de début doit être une date valide.',
+            'date_fin.required' => 'La date de fin est obligatoire.',
+            'date_fin.date' => 'La date de fin doit être une date valide.',
+            'date_fin.after_or_equal' => 'La date de fin doit être postérieure ou égale à la date de début.',
+            'nombre_jours.min' => 'La durée doit être d’au moins 1 jour.',
+            'nombre_jours.max' => 'Une permission ne peut pas dépasser 30 jours.',
         ]);
 
         if (! $soumettre) {
@@ -172,6 +180,14 @@ class PermissionController extends Controller
                 'mimes:'.implode(',', PieceService::MIMES),
                 'max:'.PieceService::MAX_KO,
             ],
+        ], [
+            'date_debut.required' => 'La date de début est obligatoire.',
+            'date_debut.date' => 'La date de début doit être une date valide.',
+            'date_fin.required' => 'La date de fin est obligatoire.',
+            'date_fin.date' => 'La date de fin doit être une date valide.',
+            'date_fin.after_or_equal' => 'La date de fin doit être postérieure ou égale à la date de début.',
+            'nombre_jours.min' => 'La durée doit être d’au moins 1 jour.',
+            'nombre_jours.max' => 'Une permission ne peut pas dépasser 30 jours.',
         ]);
 
         PermissionWorkflowService::exigerCorrigeable($permission, $request->user()->agent);

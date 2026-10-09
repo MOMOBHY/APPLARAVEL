@@ -95,11 +95,12 @@
           <div class="h-0.5 w-16 bg-emerald-700 mx-auto rounded-full"></div>
         </div>
 
-        <form onsubmit="demander(event)" class="space-y-3">
-          <h2 class="text-sm font-extrabold text-slate-900">1. Recevoir le code par email</h2>
+        <!-- ÉCRAN 1 : le matricule, pour recevoir le code par email. -->
+        <form id="ecranDemande" onsubmit="demander(event)" class="space-y-3">
+          <h2 class="text-sm font-extrabold text-slate-900">Recevoir le code par email</h2>
           <p class="text-xs text-slate-500">
-            Saisissez votre matricule : le code est envoyé à votre adresse email du ministère,
-            avec un lien qui vous ramène ici pour choisir votre nouveau mot de passe.
+            Saisissez votre matricule : le code de réinitialisation est envoyé à votre adresse email
+            du ministère.
           </p>
           <div>
             <label
@@ -118,70 +119,72 @@
           <p id="demandeMessage" class="hidden text-xs font-bold text-center"></p>
           <button
             type="submit"
+            id="demandeBouton"
             class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow transition"
           >
             Envoyer le code par email
           </button>
         </form>
 
-        <form onsubmit="reinitialiser(event)" class="space-y-3 border-t border-slate-200 pt-5">
-          <h2 class="text-sm font-extrabold text-slate-900">2. Choisir un nouveau mot de passe</h2>
+        <!-- ÉCRAN 2 : remplace l'écran 1 dès que le code est envoyé (ou à l'arrivée par le lien de
+             l'email). -->
+        <form id="ecranReinit" onsubmit="reinitialiser(event)" class="hidden space-y-3">
+          <h2 class="text-sm font-extrabold text-slate-900">Choisir un nouveau mot de passe</h2>
+          <p id="envoiMessage" class="hidden rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"></p>
           <p class="text-xs text-slate-500">
-            Saisissez le code reçu par email, puis votre nouveau mot de passe.
+            Saisissez votre matricule, le code reçu par email, puis votre nouveau mot de passe.
           </p>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="matricule" class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Matricule *</label
-              >
-              <input
-                id="matricule"
-                type="text"
-                required
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono"
-              />
-            </div>
-            <div>
-              <label for="code" class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Code de suivi *</label
-              >
-              <input
-                id="code"
-                type="text"
-                required
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono uppercase"
-              />
-            </div>
+          <div>
+            <label for="matricule" class="block text-xs font-bold text-slate-700 uppercase mb-1"
+              >Matricule *</label
+            >
+            <input
+              id="matricule"
+              type="text"
+              required
+              autocomplete="username"
+              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono"
+            />
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="password" class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Nouveau mot de passe *</label
-              >
-              <input
-                id="password"
-                type="password"
-                required
-                minlength="6"
-                autocomplete="new-password"
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600"
-              />
-            </div>
-            <div>
-              <label
-                for="confirmation"
-                class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Confirmation *</label
-              >
-              <input
-                id="confirmation"
-                type="password"
-                required
-                minlength="6"
-                autocomplete="new-password"
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600"
-              />
-            </div>
+          <div>
+            <label for="code" class="block text-xs font-bold text-slate-700 uppercase mb-1"
+              >Code de réinitialisation *</label
+            >
+            <input
+              id="code"
+              type="text"
+              required
+              autocomplete="one-time-code"
+              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 font-mono uppercase"
+            />
+          </div>
+          <div>
+            <label for="password" class="block text-xs font-bold text-slate-700 uppercase mb-1"
+              >Nouveau mot de passe *</label
+            >
+            <input
+              id="password"
+              type="password"
+              required
+              minlength="6"
+              autocomplete="new-password"
+              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600"
+            />
+          </div>
+          <div>
+            <label
+              for="confirmation"
+              class="block text-xs font-bold text-slate-700 uppercase mb-1"
+              >Confirmation du mot de passe *</label
+            >
+            <input
+              id="confirmation"
+              type="password"
+              required
+              minlength="6"
+              autocomplete="new-password"
+              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600"
+            />
           </div>
           <p id="reinitMessage" class="hidden text-xs font-bold text-center"></p>
           <button
@@ -189,6 +192,13 @@
             class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg text-sm shadow transition"
           >
             Réinitialiser mon mot de passe
+          </button>
+          <button
+            type="button"
+            onclick="afficherEcranDemande()"
+            class="block w-full text-center text-xs font-bold text-emerald-700 hover:text-emerald-900"
+          >
+            Code non reçu ? Renvoyer le code
           </button>
         </form>
 
@@ -210,22 +220,47 @@
           'text-xs font-bold text-center ' + (succes ? 'text-emerald-700' : 'text-red-600');
       }
 
-      /** Étape 1 : le code est envoyé à l'adresse email du ministère ; le formulaire de l'étape 2 est
-       * pré-rempli avec le matricule. */
+      /** Passe à l'écran 2 (matricule, code, nouveau mot de passe) : l'écran 1 disparaît. */
+      function afficherEcranReinit(matricule, message) {
+        document.getElementById('ecranDemande').classList.add('hidden');
+        document.getElementById('ecranReinit').classList.remove('hidden');
+        if (matricule) document.getElementById('matricule').value = matricule.toUpperCase();
+        const info = document.getElementById('envoiMessage');
+        info.textContent = message || '';
+        info.classList.toggle('hidden', !message);
+      }
+
+      /** Revient à l'écran 1 pour demander un nouveau code, matricule conservé. */
+      function afficherEcranDemande() {
+        const matricule = document.getElementById('matricule').value.trim();
+        if (matricule) document.getElementById('matriculeDemande').value = matricule.toUpperCase();
+        document.getElementById('ecranReinit').classList.add('hidden');
+        document.getElementById('ecranDemande').classList.remove('hidden');
+        document.getElementById('demandeMessage').classList.add('hidden');
+        document.getElementById('matriculeDemande').focus();
+      }
+
+      /** Écran 1 : le code est envoyé à l'adresse email du ministère, puis la page passe à l'écran 2,
+       * matricule pré-rempli. */
       async function demander(event) {
         event.preventDefault();
         const matricule = document.getElementById('matriculeDemande').value.trim();
+        const bouton = document.getElementById('demandeBouton');
+        bouton.disabled = true;
         const res = await API.demanderReinitialisation(matricule);
+        bouton.disabled = false;
         if (res.status === 'success') {
-          afficher('demandeMessage', (res.message || 'Code envoyé.') + (res.email_masque ? ' (' + res.email_masque + ')' : ''), true);
-          document.getElementById('matricule').value = matricule.toUpperCase();
+          afficherEcranReinit(
+            matricule,
+            (res.message || 'Code envoyé.') + (res.email_masque ? ' (' + res.email_masque + ')' : ''),
+          );
           document.getElementById('code').focus();
         } else {
           afficher('demandeMessage', res.message || 'Envoi impossible.', false);
         }
       }
 
-      /** Étape 2 : envoie le matricule, le code reçu par email et le nouveau mot de passe. */
+      /** Écran 2 : envoie le matricule, le code reçu par email et le nouveau mot de passe. */
       async function reinitialiser(event) {
         event.preventDefault();
         const password = document.getElementById('password').value;
@@ -249,16 +284,14 @@
         }
       }
 
-      // Arrivée depuis le lien de l'email : matricule et code pré-remplis.
+      // Arrivée depuis le lien de l'email : directement l'écran 2, matricule et code pré-remplis.
       (function () {
         const params = new URLSearchParams(window.location.search);
         const matricule = (params.get('matricule') || '').toUpperCase();
         const code = (params.get('code') || '').toUpperCase();
-        if (matricule) {
-          document.getElementById('matriculeDemande').value = matricule;
-          document.getElementById('matricule').value = matricule;
-        }
+        if (matricule) document.getElementById('matriculeDemande').value = matricule;
         if (code) {
+          afficherEcranReinit(matricule);
           document.getElementById('code').value = code;
           document.getElementById('password').focus();
         }

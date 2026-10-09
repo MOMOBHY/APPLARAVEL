@@ -92,6 +92,7 @@ class EmailDiffusionNotesTest extends TestCase
             ->assertCreated()
             ->json('note_id');
 
+        $this->postJson("/api/notes/{$noteId}/valider-directement")->assertOk();
         Notification::fake();
         $this->postJson("/api/notes/{$noteId}/diffuser-directement")->assertOk();
 

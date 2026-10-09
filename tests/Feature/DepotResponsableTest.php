@@ -11,8 +11,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
-/** Un sous-directeur ou un directeur dépose comme un agent, mais son dossier va directement au DRH : il
- * ne peut pas se déclarer conforme lui-même. */
+/** Un sous-directeur ou un directeur dépose comme un agent (permission, naissance, décès), mais son
+ * dossier va directement au DRH : il ne peut pas se déclarer conforme lui-même. */
 class DepotResponsableTest extends TestCase
 {
     use RefreshDatabase;
@@ -202,6 +202,66 @@ class DepotResponsableTest extends TestCase
         $res = $this->actingAs($this->user('DIR001'), 'sanctum')
             ->postJson('/api/declarations/soumettre-brouillon', [
                 'nature' => 'NAISSANCE',
+                'code_dossier' => $code,
+            ]);
+
+        $res->assertOk();
+        $this->assertSame('EN_ATTENTE_DRH', $res->json('statut'));
+    }
+
+    /* DÉCÈS : DIRECTION VERS LE DRH */
+
+    /** Jeu de champs d'une déclaration de décès, certificat compris. */
+    private function deces(array $surcharge = []): array
+    {
+        return array_merge([
+            'nature' => 'DECES',
+            'nom' => 'Koné',
+            'prenom' => 'Mamadou',
+            'lien_parente' => 'ascendant',
+            'date' => now()->subWeek()->format('Y-m-d'),
+            'lieu' => 'Bouaké',
+            'certificat' => UploadedFile::fake()->create('certificat.pdf', 20, 'application/pdf'),
+        ], $surcharge);
+    }
+
+    public function test_le_deces_du_directeur_va_directement_au_drh(): void
+    {
+        $res = $this->actingAs($this->user('DIR001'), 'sanctum')
+            ->postJson('/api/declarations', $this->deces());
+
+        $res->assertCreated();
+        $this->assertSame('EN_ATTENTE_DRH', $res->json('statut'));
+        $this->assertDatabaseHas('notifications', [
+            'agent_id' => $this->user('DRH001')->agent_id,
+            'reference_dossier' => $res->json('code'),
+        ]);
+    }
+
+    public function test_le_deces_du_sous_directeur_va_directement_au_drh(): void
+    {
+        $res = $this->actingAs($this->user('SD001'), 'sanctum')
+            ->postJson('/api/declarations', $this->deces());
+
+        $res->assertCreated();
+        $this->assertSame('EN_ATTENTE_DRH', $res->json('statut'));
+    }
+
+    public function test_le_brouillon_de_deces_du_directeur_soumis_va_au_drh(): void
+    {
+        $draft = $this->actingAs($this->user('DIR001'), 'sanctum')
+            ->postJson('/api/declarations/brouillon', $this->deces());
+        $draft->assertCreated();
+        $code = $draft->json('code');
+
+        $this->assertDatabaseHas('declarations_deces', [
+            'code_dossier' => $code,
+            'statut' => 'BROUILLON',
+        ]);
+
+        $res = $this->actingAs($this->user('DIR001'), 'sanctum')
+            ->postJson('/api/declarations/soumettre-brouillon', [
+                'nature' => 'DECES',
                 'code_dossier' => $code,
             ]);
 
