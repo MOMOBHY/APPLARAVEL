@@ -1,6 +1,9 @@
 {
   "name": "Plateforme GFP",
   "image": "mcr.microsoft.com/devcontainers/php:1-8.4-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {}
+  },
   "containerEnv": {
     "XDEBUG_MODE": "off"
   },
@@ -13,5 +16,5 @@
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "postStartCommand": "bash .devcontainer/start.sh",
-  "postAttachCommand": "bash .devcontainer/port-public.sh"
+  "postAttachCommand": "bash .devcontainer/start.sh && bash .devcontainer/port-public.sh"
 }
