@@ -26,16 +26,16 @@
   conteneur.className =
     'max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2';
   conteneur.innerHTML = `
-    <div class="flex items-center space-x-3 min-w-0">
+    <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
       <img src="${base}assets/logo.png" alt="Armoiries de Côte d'Ivoire"
-        class="h-10 w-auto object-contain shrink-0">
+        class="h-8 sm:h-10 w-auto object-contain shrink-0">
       <div class="min-w-0">
         <h1 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight max-w-md">
           <span class="hidden md:inline">${NOM_MINISTERE}</span>
           <span class="md:hidden" title="${NOM_MINISTERE}">MFPMA</span>
         </h1>
         <p id="gfpSousTitre"
-          class="text-[10px] sm:text-xs text-slate-500 truncate">${escapeHtml(conteneur.dataset.sousTitre || '')}</p>
+          class="text-[10px] sm:text-xs leading-tight text-slate-500 line-clamp-2 sm:line-clamp-none sm:truncate">${escapeHtml(conteneur.dataset.sousTitre || '')}</p>
       </div>
     </div>
     <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
@@ -65,10 +65,10 @@
         </div>
       </div>
       <div
-        class="flex items-center space-x-2 bg-slate-100 p-1 sm:p-1.5 rounded-full border border-slate-200">
+        class="flex items-center space-x-2 bg-slate-100 p-0.5 sm:p-1.5 rounded-full border border-slate-200">
         <div class="relative group cursor-pointer" id="avatarZone" title="Changer la photo">
           <img id="avatarImg" src="${AVATAR_PAR_DEFAUT}" alt="Photo de profil"
-            class="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover border-2 border-emerald-600 shadow-sm">
+            class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover border-2 border-emerald-600 shadow-sm">
           <div
             class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">Changer</div>
         </div>
@@ -80,13 +80,23 @@
           <p id="navStructure" class="text-[11px] text-slate-500 max-w-[14rem] truncate"></p>
         </div>
       </div>
-      <button type="button" id="btnMonCompte"
-        class="px-2.5 sm:px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
-        <span class="hidden sm:inline">Mon compte</span><span class="sm:hidden">Compte</span>
+      <!-- Sur mobile, « Mon compte » et « Déconnexion » deviennent des icônes (libellé gardé pour les
+           lecteurs d'écran) : le nom de l'espace garde ainsi sa place. -->
+      <button type="button" id="btnMonCompte" title="Mon compte"
+        class="p-1.5 sm:px-3 sm:py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+        <span class="hidden sm:inline">Mon compte</span>
+        <span class="sr-only sm:hidden">Mon compte</span>
+        <svg class="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.1a7.5 7.5 0 0115 0"/>
+        </svg>
       </button>
-      <button type="button" id="btnDeconnexion"
-        class="px-2.5 sm:px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
-        <span class="hidden sm:inline">Déconnexion</span><span class="sm:hidden">Sortir</span>
+      <button type="button" id="btnDeconnexion" title="Déconnexion"
+        class="p-1.5 sm:px-3 sm:py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
+        <span class="hidden sm:inline">Déconnexion</span>
+        <span class="sr-only sm:hidden">Déconnexion</span>
+        <svg class="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+        </svg>
       </button>
     </div>`;
 
@@ -403,5 +413,47 @@ function activerOngletGfp(idActif) {
     bouton.classList.toggle('nav-tab-active', actif);
     if (actif) bouton.setAttribute('aria-current', 'page');
     else bouton.removeAttribute('aria-current');
+    // Sur mobile, la barre d'onglets défile : l'onglet actif est ramené au centre, toujours visible.
+    const barre = bouton.closest('.nav-tabs');
+    if (actif && barre && barre.scrollWidth > barre.clientWidth) {
+      barre.scrollTo({ left: bouton.offsetLeft - (barre.clientWidth - bouton.offsetWidth) / 2, behavior: 'smooth' });
+    }
   });
 }
+
+/* TABLEAUX SUR MOBILE — chaque cellule reçoit le nom de sa colonne (data-label), affiché devant la valeur
+   quand la ligne devient une fiche (voir theme.css). Recalculé à chaque rendu d'un tableau. */
+function etiqueterTableaux() {
+  document.querySelectorAll('main table').forEach((table) => {
+    const colonnes = [...(table.tHead?.rows[0]?.cells || [])].flatMap((th) =>
+      Array(th.colSpan || 1).fill(th.textContent.trim().replace(/\s+/g, ' ').replace(/\s*\(.*\)$/, '')),
+    );
+    if (!colonnes.length) return;
+    table.classList.add('gfp-fiches');
+    for (const corps of table.tBodies) {
+      for (const ligne of corps.rows) {
+        // Ligne d'une seule cellule (« Aucun dossier… ») : pleine largeur, sans libellé.
+        if (ligne.cells.length === 1) {
+          ligne.cells[0].removeAttribute('data-label');
+          continue;
+        }
+        let colonne = 0;
+        for (const cellule of ligne.cells) {
+          cellule.dataset.label = colonnes[colonne] || '';
+          colonne += cellule.colSpan || 1;
+        }
+      }
+    }
+  });
+}
+
+let etiquetagePrevu = false;
+new MutationObserver(() => {
+  if (etiquetagePrevu) return;
+  etiquetagePrevu = true;
+  requestAnimationFrame(() => {
+    etiquetagePrevu = false;
+    etiqueterTableaux();
+  });
+}).observe(document.body, { childList: true, subtree: true });
+etiqueterTableaux();

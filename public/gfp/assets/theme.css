@@ -206,3 +206,111 @@ header > nav button.nav-tab.nav-tab-locked::after {
   font-size: 0.6rem;
   margin-left: 0.25rem;
 }
+
+/* ===== AFFICHAGE MOBILE (moins de 640 px de large) ===== */
+@media (max-width: 639px) {
+  /* Onglets : une seule ligne qui défile horizontalement, au lieu de plusieurs lignes empilées. */
+  header > nav .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  header > nav .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  header > nav button.nav-tab {
+    flex: 0 0 auto;
+  }
+
+  /* Compteurs des tableaux de bord : plusieurs par ligne et plus compacts. */
+  .gfp-compteurs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+  .gfp-compteurs.gfp-compteurs-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .gfp-compteurs > * {
+    padding: 0.75rem !important;
+  }
+  .gfp-compteurs > * > span:first-child {
+    display: block;
+    font-size: 10px !important;
+    line-height: 1.25;
+  }
+  .gfp-compteurs > * > p.text-3xl {
+    font-size: 1.5rem !important;
+    margin-top: 0.25rem !important;
+  }
+
+  /* Filtres : un champ n'est jamais plus large que l'écran (un menu aux options longues s'y adapte). */
+  main .flex-wrap > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+  main select {
+    max-width: 100%;
+  }
+
+  /* En-têtes de section : le titre prend toute la largeur, le compteur passe dessous. */
+  main .border-b.flex.justify-between {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  main .border-b.flex.justify-between > :first-child {
+    flex: 1 1 100%;
+  }
+
+  /* Tableaux : chaque ligne devient une fiche, chaque valeur précédée du nom de sa colonne
+     (data-label, posé par shell.js). */
+  main .overflow-x-auto > table.gfp-fiches {
+    min-width: 0;
+  }
+  main table.gfp-fiches thead {
+    display: none;
+  }
+  main table.gfp-fiches,
+  main table.gfp-fiches tbody,
+  main table.gfp-fiches tr,
+  main table.gfp-fiches td {
+    display: block;
+    width: 100%;
+  }
+  main table.gfp-fiches tbody tr {
+    padding: 0.5rem 0.75rem;
+  }
+  /* Libellé flottant dans une marge fixe à gauche (la fiche s'agrandit s'il tient sur deux lignes) ; le
+     contenu (pastilles, boutons...) garde sa disposition. */
+  main table.gfp-fiches td {
+    display: flow-root;
+    padding: 0.3rem 0 0.3rem 7rem !important;
+    border: 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+  main table.gfp-fiches td .flex {
+    flex-wrap: wrap;
+  }
+  main table.gfp-fiches td::before {
+    content: attr(data-label);
+    float: left;
+    width: 6.5rem;
+    margin-left: -7rem;
+    padding-top: 0.15rem;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #64748b;
+  }
+  main table.gfp-fiches td:not([data-label]),
+  main table.gfp-fiches td[data-label=''] {
+    padding-left: 0 !important;
+  }
+  main table.gfp-fiches td:not([data-label])::before,
+  main table.gfp-fiches td[data-label='']::before {
+    content: none;
+  }
+}
