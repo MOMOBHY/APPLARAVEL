@@ -1,4 +1,10 @@
-const API_BASE_URL = '/api';
+/** Adresse de l'API. Quand Laravel sert lui-même les pages (/gfp/...), l'API est sur le même serveur ;
+ * quand les pages sont publiées sur GitHub Pages, elle est dans le Codespace GitHub qui fait tourner
+ * Laravel. */
+const API_SERVEUR_CODESPACE = 'https://plateforme-gfp-694q495x6qj52xv54-8000.app.github.dev';
+const API_BASE_URL = window.location.pathname.startsWith('/gfp/')
+  ? '/api'
+  : `${API_SERVEUR_CODESPACE}/api`;
 
 /** En-têtes de toutes les requêtes API : réponse toujours en JSON (Accept) et jeton Sanctum de la session
  * (Authorization). */
@@ -613,7 +619,10 @@ const API = {
       return result;
     } catch (e) {
       console.error('Erreur API login', e);
-      return { status: 'error', message: 'Erreur réseau' };
+      return {
+        status: 'error',
+        message: 'Erreur : serveur injoignable (il est peut-être en veille). Réessayez dans quelques minutes.',
+      };
     }
   },
 

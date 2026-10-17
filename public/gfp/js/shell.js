@@ -151,7 +151,7 @@
     document.getElementById('monCompteConfirmation').value = '';
     document.getElementById('monCompteActuel').value = '';
     try {
-      const res = await fetch('/api/me', { headers: authHeaders() });
+      const res = await fetch(`${API_BASE_URL}/me`, { headers: authHeaders() });
       const data = await res.json();
       if (data.status === 'success' && data.user) {
         document.getElementById('monCompteEmail').value = data.user.email || '';
