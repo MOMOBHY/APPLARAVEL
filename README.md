@@ -93,6 +93,14 @@ L’application est alors accessible sur **http://localhost:8000**.
 
 > Pour un essai rapide sans MariaDB, gardez `DB_CONNECTION=sqlite` dans le `.env` : la base est alors un simple fichier dans `database/`, que la commande `migrate` propose de créer.
 
+### En ligne avec GitHub Codespaces
+
+[![Ouvrir dans GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MOMOBHY/APPLARAVEL)
+
+Le bouton ci-dessus crée un serveur GitHub qui installe l’application (base SQLite et comptes de démonstration compris) puis la lance sur le port 8000, rendu public. Le lien à partager s’affiche dans le terminal (`https://<nom-du-codespace>-8000.app.github.dev`) et dans l’onglet **PORTS**.
+
+Le Codespace s’arrête après une période d’inactivité (30 minutes par défaut, jusqu’à 4 heures dans les [paramètres Codespaces](https://github.com/settings/codespaces)) : le lien ne fonctionne que pendant qu’il tourne. Pour le relancer, rouvrir le Codespace depuis https://github.com/codespaces ; les données sont conservées.
+
 ## Comptes de démonstration
 
 Tous les comptes utilisent le mot de passe `test123`. On se connecte avec le matricule, et l’espace affiché dépend du rôle du compte.

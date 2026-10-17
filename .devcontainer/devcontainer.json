@@ -1,0 +1,17 @@
+{
+  "name": "Plateforme GFP",
+  "image": "mcr.microsoft.com/devcontainers/php:1-8.4-bookworm",
+  "containerEnv": {
+    "XDEBUG_MODE": "off"
+  },
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Plateforme GFP",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "postAttachCommand": "bash .devcontainer/port-public.sh"
+}
