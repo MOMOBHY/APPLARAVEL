@@ -3,6 +3,8 @@
 # du Codespace et à chaque ouverture), sauf si elles tournent déjà.
 cd "$(dirname "$0")/.."
 mkdir -p storage/logs
+# Réglages PHP du dépôt (taille des pièces jointes), en plus de ceux de l'image.
+export PHP_INI_SCAN_DIR="${PHP_INI_SCAN_DIR:-}:$(pwd)/.devcontainer/php"
 if ! pgrep -f .devcontainer/sync.sh > /dev/null; then
   setsid nohup bash .devcontainer/sync.sh >> storage/logs/sync.log 2>&1 < /dev/null &
 fi

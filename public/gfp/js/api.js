@@ -37,6 +37,60 @@ function idNumeriqueOuErreur(id, methode) {
 /** Message affiché quand l'identifiant du dossier est invalide. */
 const MESSAGE_ID_INVALIDE = 'Dossier introuvable. Rechargez la page et réessayez.';
 
+/* ENVOI EN COURS — carte centrée « Envoi en cours » pendant tout envoi au serveur (dépôt, décision,
+   pièce jointe...) : sans elle, un envoi lent (pièce jointe, connexion faible) donne l'impression que
+   le bouton ne fait rien. Une pièce jointe de plus de 5 Mo (limite du serveur) est refusée avant
+   l'envoi. */
+const PIECE_MAX_OCTETS = 5 * 1024 * 1024;
+const fetchNavigateur = window.fetch.bind(window);
+let envoisEnCours = 0;
+
+/** Affiche ou masque la carte « Envoi en cours ». */
+function afficherEnvoi(visible) {
+  let voile = document.getElementById('gfp-envoi');
+  if (!voile) {
+    voile = document.createElement('div');
+    voile.id = 'gfp-envoi';
+    voile.className = 'hidden fixed inset-0 z-[90] bg-slate-900/40 flex items-center justify-center p-4';
+    voile.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl px-6 py-5 flex items-center gap-4 max-w-sm">
+        <div class="h-8 w-8 shrink-0 rounded-full border-4 border-emerald-200 border-t-emerald-700 animate-spin"></div>
+        <div>
+          <p class="font-bold text-slate-900 text-sm">Envoi en cours…</p>
+          <p class="text-xs text-slate-500">Ne fermez pas la page : une pièce jointe peut prendre quelques secondes.</p>
+        </div>
+      </div>`;
+    document.body.appendChild(voile);
+  }
+  voile.classList.toggle('hidden', !visible);
+}
+
+window.fetch = async (url, options = {}) => {
+  if (String(options.method || 'GET').toUpperCase() === 'GET') return fetchNavigateur(url, options);
+  if (options.body instanceof FormData) {
+    const tropLourd = [...options.body.values()].find(
+      (v) => v instanceof File && v.size > PIECE_MAX_OCTETS,
+    );
+    if (tropLourd) {
+      const message = `La pièce jointe « ${tropLourd.name} » dépasse 5 Mo : réduisez-la (photo moins lourde, PDF compressé) puis réessayez.`;
+      return new Response(JSON.stringify({ status: 'error', message }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+  envoisEnCours += 1;
+  // Petit délai : un envoi rapide ne fait pas clignoter la carte.
+  const minuteur = setTimeout(() => envoisEnCours > 0 && afficherEnvoi(true), 300);
+  try {
+    return await fetchNavigateur(url, options);
+  } finally {
+    envoisEnCours -= 1;
+    clearTimeout(minuteur);
+    if (envoisEnCours === 0) afficherEnvoi(false);
+  }
+};
+
 /* NOTIFICATIONS DESIGNÉES — carte centrée sur l'écran (remplace les alertes natives du navigateur) :
    icône par ton, fermeture auto + croix. */
 /** Affiche une belle notification au centre de l'écran. */
