@@ -93,13 +93,16 @@ L’application est alors accessible sur **http://localhost:8000**.
 
 > Pour un essai rapide sans MariaDB, gardez `DB_CONNECTION=sqlite` dans le `.env` : la base est alors un simple fichier dans `database/`, que la commande `migrate` propose de créer.
 
-### En ligne avec GitHub Codespaces
+### En ligne, hébergée sur GitHub
 
-[![Ouvrir dans GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MOMOBHY/APPLARAVEL)
+La plateforme en ligne repose uniquement sur GitHub :
 
-Le bouton ci-dessus crée un serveur GitHub qui installe l’application (base SQLite et comptes de démonstration compris) puis la lance sur le port 8000, rendu public. Le lien à partager s’affiche dans le terminal (`https://<nom-du-codespace>-8000.app.github.dev`) et dans l’onglet **PORTS**.
+- **les pages** (`public/gfp`) sont publiées sur **GitHub Pages** par le workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) à chaque push sur `main` ;
+- **l’API Laravel et sa base SQLite** tournent dans un **GitHub Codespace** ([![Ouvrir dans GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MOMOBHY/APPLARAVEL)), dont le port 8000 est public. L’adresse de ce Codespace est indiquée en tête de [`public/gfp/js/api.js`](public/gfp/js/api.js) ; elle est à modifier si le Codespace est recréé.
 
-Le Codespace s’arrête après une période d’inactivité (30 minutes par défaut, jusqu’à 4 heures dans les [paramètres Codespaces](https://github.com/settings/codespaces)) : le lien ne fonctionne que pendant qu’il tourne. Pour le relancer, rouvrir le Codespace depuis https://github.com/codespaces ; les données sont conservées.
+Le Codespace récupère tout seul les nouveaux commits de `main` toutes les 30 secondes ([`.devcontainer/sync.sh`](.devcontainer/sync.sh)) : un `git push` met donc à jour les pages et l’API.
+
+Le Codespace s’arrête après 4 heures d’inactivité : les pages restent en ligne, mais la connexion indique « serveur injoignable » jusqu’à ce qu’il soit rouvert depuis https://github.com/codespaces (les données sont conservées).
 
 ## Comptes de démonstration
 

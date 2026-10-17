@@ -18,6 +18,8 @@ concurrency:
 
 jobs:
   deploy:
+    # Seul le dépôt public MOMOBHY/APPLARAVEL publie le site.
+    if: github.repository == 'MOMOBHY/APPLARAVEL'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
