@@ -195,7 +195,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
-            <input type="date" id="respPermDate" onchange="pageRespPerm = 1; renderValidation()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="respPermDate" onchange="pageRespPerm = 1; renderValidation()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
           </div>
           <button type="button" onclick="document.getElementById('respPermSearch').value='';viderDateFr('respPermDate'); pageRespPerm = 1;renderValidation();"
             class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
@@ -310,14 +310,14 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label for="permStart" class="block text-xs font-bold text-slate-700 mb-1">Date de début *</label>
-                <input type="date" id="permStart" required oninput="majJours('permStart','permEnd','permJours')"
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="permStart" required oninput="majJours('permStart','permEnd','permJours')"
                   onchange="majJours('permStart','permEnd','permJours')"
                   aria-describedby="permDateError permJoursInfo"
                   class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
               </div>
               <div>
                 <label for="permEnd" class="block text-xs font-bold text-slate-700 mb-1">Date de fin *</label>
-                <input type="date" id="permEnd" required oninput="majJours('permStart','permEnd','permJours')"
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="permEnd" required oninput="majJours('permStart','permEnd','permJours')"
                   onchange="majJours('permStart','permEnd','permJours')"
                   aria-describedby="permDateError permJoursInfo"
                   class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
@@ -382,7 +382,7 @@
           </div>
           <div>
             <label for="permFiltreDate" class="block text-xs font-bold text-slate-600 mb-1">Date de début (à partir du)</label>
-            <input type="date" id="permFiltreDate" onchange="pagePerm=1;renderPermDepot()" class="w-full sm:w-48 border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="permFiltreDate" onchange="pagePerm=1;renderPermDepot()" class="w-full sm:w-48 border border-slate-300 rounded-lg px-2 py-1.5 text-xs">
           </div>
         </div>
 
@@ -1290,8 +1290,8 @@
         document.getElementById('permBrouillonCode').value = r.id;
         document.getElementById('permType').value = r.typePerm || 'Evenement Familial';
         document.getElementById('permMotif').value = r.motif || '';
-        document.getElementById('permStart').value = dateIso(r.dateDebut);
-        document.getElementById('permEnd').value = dateIso(r.dateFin);
+        document.getElementById('permStart').value = dateFr(r.dateDebut);
+        document.getElementById('permEnd').value = dateFr(r.dateFin);
         document.getElementById('permJours').value = r.jours || 1;
         majJours('permStart', 'permEnd', 'permJours');
         majBoutonsBrouillon('perm');

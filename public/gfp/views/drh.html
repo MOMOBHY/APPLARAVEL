@@ -228,7 +228,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
-              <input type="date" id="drhPermDate" onchange="renderPermissions()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+              <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="drhPermDate" onchange="renderPermissions()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1">Durée</label>
@@ -286,7 +286,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1">Date (depuis)</label>
-              <input type="date" id="drhEcDate" onchange="pageDrhEc=1;renderEtatCivil()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+              <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="drhEcDate" onchange="pageDrhEc=1;renderEtatCivil()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
             </div>
             <button onclick="document.getElementById('drhEcSearch').value='';document.getElementById('drhEcType').value='';viderDateFr('drhEcDate');pageDrhEc=1;renderEtatCivil();"
               class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">

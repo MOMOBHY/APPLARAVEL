@@ -500,6 +500,20 @@ function dateFr(valeur) {
   return '';
 }
 
+/** Date et heure du serveur (« aaaa-mm-jj hh:mm:ss », heure d'Abidjan = UTC) en « jj/mm/aaaa hh:mm ».
+ * Même principe que dateFr() : travail sur la chaîne, sans dépendre du fuseau du poste. */
+function dateHeureFr(valeur) {
+  const s = String(valeur ?? '');
+  const heure = s.match(/^\d{4}-\d{2}-\d{2}[ T](\d{2}):(\d{2})/);
+  const jour = dateFr(s);
+  return heure && jour ? `${jour} ${heure[1]}:${heure[2]}` : jour;
+}
+
+/** Attributs d'un champ de date : texte au format jj/mm/aaaa (voir activerSaisieDateFr), jamais le
+ * sélecteur du navigateur, dont l'affichage suit la langue du poste (mm/jj/aaaa en anglais). */
+const ATTRIBUTS_DATE_FR =
+  'type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa"';
+
 /** Convertit une saisie française « jj/mm/aaaa » en « aaaa-mm-jj » pour l'API. Accepte aussi une date
  * déjà en ISO (utile pour les brouillons et le filtrage). (jour 31/02, mois 13, année hors bornes…). */
 function dateIso(valeur) {
@@ -1491,7 +1505,7 @@ function ouvrirCorrection(r, onDone) {
     label,
     type = 'text',
   ) => `<label class="block text-xs font-bold text-slate-700 uppercase">${label}
-      <input id="${id}" type="${type}"
+      <input id="${id}" ${type === 'date' ? ATTRIBUTS_DATE_FR : `type="${type}"`}
         class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal normal-case">
       </label>`;
   const overlay = document.createElement('div');
@@ -1509,11 +1523,11 @@ function ouvrirCorrection(r, onDone) {
           ? `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label for="corrDebut" class="block text-xs font-bold text-slate-700">Date de début *
-            <input id="corrDebut" type="date" required
+            <input id="corrDebut" ${ATTRIBUTS_DATE_FR} required
               class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal">
           </label>
           <label for="corrFin" class="block text-xs font-bold text-slate-700">Date de fin *
-            <input id="corrFin" type="date" required
+            <input id="corrFin" ${ATTRIBUTS_DATE_FR} required
               class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal">
             <span id="corrDateErreur" role="alert" class="hidden text-xs text-red-600 font-semibold mt-1"></span>
           </label>
@@ -1560,11 +1574,11 @@ function ouvrirCorrection(r, onDone) {
   $('[data-ref]').textContent = r.id;
   $('[data-motif]').textContent = r.motif_retour || 'non précisé';
   if (estPermission) {
-    $('#corrDebut').value = dateIso(r.dateDebut || '');
-    $('#corrFin').value = dateIso(r.dateFin || '');
+    $('#corrDebut').value = dateFr(r.dateDebut || '');
+    $('#corrFin').value = dateFr(r.dateFin || '');
     const majPeriodeCorrection = () => {
-      const debut = $('#corrDebut').value;
-      const fin = $('#corrFin').value;
+      const debut = dateIso($('#corrDebut').value);
+      const fin = dateIso($('#corrFin').value);
       const erreurDate = $('#corrDateErreur');
       const infoJours = $('#corrJoursInfo');
       $('#corrFin').min = debut;
@@ -1603,7 +1617,7 @@ function ouvrirCorrection(r, onDone) {
   } else {
     $('#corrNom').value = r.nom || '';
     $('#corrPrenom').value = r.prenom || '';
-    $('#corrDate').value = r.dateEvt || '';
+    $('#corrDate').value = dateFr(r.dateEvt || '');
     $('#corrLieu').value = r.lieu || '';
     if (!estNaissance) $('#corrLien').value = r.lien_parente || 'ascendant';
   }
@@ -1613,8 +1627,8 @@ function ouvrirCorrection(r, onDone) {
     const data = new FormData();
     const fichier = $('#corrFichier').files[0];
     if (estPermission) {
-      const debut = $('#corrDebut').value;
-      const fin = $('#corrFin').value;
+      const debut = dateIso($('#corrDebut').value);
+      const fin = dateIso($('#corrFin').value);
       const duree = Number($('#corrJours').value);
       if (!debut || !fin || fin < debut || duree < 1 || duree > 30) {
         const erreur = $('#corrDateErreur');
@@ -1625,15 +1639,15 @@ function ouvrirCorrection(r, onDone) {
         $('#corrFin').focus();
         return;
       }
-      data.append('date_debut', $('#corrDebut').value);
-      data.append('date_fin', $('#corrFin').value);
+      data.append('date_debut', debut);
+      data.append('date_fin', fin);
       data.append('motif', $('#corrMotif').value);
       if (fichier) data.append('piece', fichier);
     } else {
       const prefixe = estNaissance ? 'enfant' : 'defunt';
       data.append('nom_' + prefixe, $('#corrNom').value);
       data.append('prenom_' + prefixe, $('#corrPrenom').value);
-      data.append(estNaissance ? 'date_naissance_enfant' : 'date_deces', $('#corrDate').value);
+      data.append(estNaissance ? 'date_naissance_enfant' : 'date_deces', dateIso($('#corrDate').value));
       data.append(estNaissance ? 'lieu_naissance_enfant' : 'lieu_deces', $('#corrLieu').value);
       if (!estNaissance) data.append('lien_parente', $('#corrLien').value);
       if (fichier) data.append(estNaissance ? 'extrait' : 'certificat', fichier);
@@ -1703,8 +1717,11 @@ function prochaineEtape(r) {
   return null;
 }
 
-/** Met une date du serveur au format français jj/mm/aaaa hh:mm. */
+/** Met une date du serveur au format français jj/mm/aaaa hh:mm, à l'heure d'Abidjan. */
 function formatDateSuivi(valeur) {
+  // Sans fuseau (« aaaa-mm-jj hh:mm:ss »), c'est déjà l'heure d'Abidjan : new Date() la lirait comme
+  // l'heure locale du poste et la décalerait sur un poste réglé sur un autre fuseau.
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(String(valeur ?? ''))) return dateHeureFr(valeur);
   const date = new Date(valeur);
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('fr-FR', {

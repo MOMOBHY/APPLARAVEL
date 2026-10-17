@@ -274,7 +274,7 @@
           </div>
           <div>
             <label for="histoDepuis" class="block text-xs font-bold text-slate-600 mb-1">Activité depuis le</label>
-            <input type="date" id="histoDepuis" onchange="pageHisto = 1; renderHistorique()"
+            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="histoDepuis" onchange="pageHisto = 1; renderHistorique()"
               class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
           </div>
           <button type="button"
