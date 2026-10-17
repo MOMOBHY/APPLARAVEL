@@ -5,7 +5,7 @@ body {
 }
 /* Fond du ministère visible et légèrement flouté (blur : plus grand = plus flou ; opacity : 1 = image pure). */
 body::before {
-  background-image: url('ministere_bg.png') !important;
+  background-image: url('ministere_bg.webp') !important;
   background-size: cover !important;
   background-position: center !important;
   filter: blur(3px) !important;
