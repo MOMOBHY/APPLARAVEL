@@ -8,8 +8,8 @@ Chaque démarche suit le circuit réel de l’administration : l’agent dépose
 
 - **Demandes de permission**, avec pièce justificative et calcul automatique de la durée
 - **Déclarations de naissance et de décès**, avec extrait d’acte ou certificat obligatoire
-- **Notes de service**, de la rédaction à la diffusion, avec l’historique de chaque note
-- **Notifications** dans l’application, et **email** à tous les agents du ministère à la diffusion d’une note
+- **Notes de service** : document Word déposé par la secrétaire, validé par son directeur, puis envoyé aux destinataires qu’elle choisit, avec l’historique de chaque note
+- **Notifications** dans l’application, et **email** aux destinataires d’une note de service (document Word joint)
 - **Retour pour correction** : un dossier incomplet revient à l’agent, qui le corrige et le renvoie
 - **Consultation des justificatifs** par les personnes habilitées uniquement
 - **Inscription** sans choix du rôle (l’administrateur l’attribue), et **mot de passe oublié** par code envoyé par email, valable une heure
@@ -38,7 +38,11 @@ Agent → Gestionnaire RH (vérification des pièces) → DRH (validation ou rej
 
 ### Notes de service
 
-Secrétaire (rédaction) → Directeurs (validation, ou refus motivé qui renvoie la note à la secrétaire) → Secrétaire (diffusion). À la diffusion, la note est envoyée par email à tous les agents actifs du ministère et apparaît sur la plateforme pour les structures destinataires. Le DRH peut aussi rédiger et diffuser directement une note vers sa direction.
+Secrétaire (dépôt du document Word) → son directeur (validation, ou retour motivé : la secrétaire charge une version corrigée et la retransmet) → Secrétaire (envoi).
+
+- Le directeur de la secrétaire est le responsable de sa structure ou, à défaut, le compte de direction de sa structure : pour le Cabinet, le Directeur de Cabinet. Il ouvre le document dans la plateforme (aperçu des `.docx`) avant de décider.
+- Une fois la note validée, la secrétaire choisit les destinataires : tous les agents du ministère, des structures et/ou des agents désignés. Chacun la reçoit par email (document Word joint) et dans l’onglet « Notes de service » de son espace, avec une notification.
+- Formats acceptés : `.docx` (aperçu dans la plateforme) et `.doc`, 5 Mo maximum.
 
 ## Technologies
 
@@ -142,12 +146,13 @@ app/
   Http/Controllers/   contrôleurs de l’API
   Models/             modèles Eloquent (agents, demandes, notes…)
   Services/           règles des circuits (permissions, état civil, notes)
-  Notifications/      email de diffusion des notes de service
+  Mail/               emails (code de réinitialisation, note de service avec le document joint)
 database/
   migrations/         structure des tables
   seeders/            structures, rôles et comptes de démonstration
 public/gfp/           interface de l’application (HTML, CSS, JavaScript)
   js/shell.js         en-tête commun : identité, structure, notifications, déconnexion
+  js/notes.js         notes de service communes à tous les espaces (à valider, reçues, aperçu du document Word)
   views/              un espace par profil (agent, RH, DRH, administrateur, notes de service)
 routes/api.php        routes de l’API
 ___partage/           script SQL de la plateforme (structure et données de référence)
@@ -156,6 +161,6 @@ tests/Feature/        tests automatiques
 
 ## Remarques
 
-- Les justificatifs sont stockés dans un espace privé (`storage/app/private`). On ne peut les ouvrir qu’en étant connecté et habilité.
+- Les justificatifs et les documents des notes de service sont stockés dans un espace privé (`storage/app/private`). On ne peut les ouvrir qu’en étant connecté et habilité.
 - Les emails (codes de réinitialisation, notes de service) partent par le serveur SMTP configuré dans le `.env`, ou dans le journal de Laravel (`storage/logs/laravel.log`) si aucun n’est configuré.
 - Le fichier `.env` contient les mots de passe (base de données, email) : il n’est jamais envoyé sur GitHub.

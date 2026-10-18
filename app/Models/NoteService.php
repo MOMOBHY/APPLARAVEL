@@ -2,75 +2,88 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/** Note de service : document Word déposé par la secrétaire, validé par son directeur, puis envoyé aux
+ * destinataires qu'elle choisit (e-mail et application). */
 class NoteService extends Model
 {
-    use HasFactory;
-
     protected $table = 'notes_service';
 
+    /** Déposée par la secrétaire, pas encore transmise. */
     public const BROUILLON = 'BROUILLON';
 
-    public const EN_ATTENTE_SAISIE = 'EN_ATTENTE_SAISIE';
-
+    /** Transmise au directeur, en attente de sa décision. */
     public const EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION';
 
+    /** Retournée par le directeur avec un motif : la secrétaire charge une version corrigée. */
+    public const A_CORRIGER = 'A_CORRIGER';
+
+    /** Validée par le directeur : la secrétaire peut l'envoyer. */
     public const VALIDEE = 'VALIDEE';
 
-    /** Note refusée à la validation par le directeur : elle revient au secrétariat, qui la reprend avant
-     * de la soumettre de nouveau au directeur. */
-    public const A_REPRENDRE = 'A_REPRENDRE';
-
-    public const REJETEE = 'REJETEE';
-
-    public const DIFFUSEE = 'DIFFUSEE';
-
-    public const ARCHIVEE = 'ARCHIVEE';
+    /** Envoyée aux destinataires. */
+    public const ENVOYEE = 'ENVOYEE';
 
     protected $fillable = [
-        'numero_reference',
+        'numero',
         'objet',
-        'contenu',
+        'date_note',
         'fichier_path',
-        'signataire_id',
-        'secretaire_id',
+        'fichier_nom',
+        'fichier_taille',
         'statut',
-        'date_emission',
-        'date_diffusion',
-        'valide_le',
-        'valideur_id',
+        'secretaire_id',
+        'directeur_id',
+        'motif_retour',
+        'envoi_a_tous',
+        'transmise_le',
+        'validee_le',
+        'envoyee_le',
     ];
 
-    /** Conversion automatique des colonnes (dates, booléens, mot de passe haché). */
+    /** Conversion automatique des colonnes (dates, booléens). */
     protected function casts(): array
     {
         return [
-            'date_emission' => 'date',
-            'date_diffusion' => 'datetime',
-            'valide_le' => 'datetime',
+            'date_note' => 'date',
+            'envoi_a_tous' => 'boolean',
+            'transmise_le' => 'datetime',
+            'validee_le' => 'datetime',
+            'envoyee_le' => 'datetime',
         ];
     }
 
-    /** Structures destinataires de la note. */
+    /** Secrétaire qui a déposé la note. */
+    public function secretaire(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class, 'secretaire_id');
+    }
+
+    /** Directeur à qui la note a été transmise pour validation. */
+    public function directeur(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class, 'directeur_id');
+    }
+
+    /** Structures choisies à l'envoi. */
     public function structures(): BelongsToMany
     {
         return $this->belongsToMany(Structure::class, 'note_structure', 'note_id', 'structure_id');
     }
 
-    /** Autorité qui émet et signe la note. */
-    public function signataire(): BelongsTo
+    /** Destinataires effectifs, figés à l'envoi. */
+    public function destinataires(): HasMany
     {
-        return $this->belongsTo(Agent::class, 'signataire_id');
+        return $this->hasMany(NoteDestinataire::class, 'note_id');
     }
 
     /** Étapes de la note, de la plus ancienne à la plus récente. */
     public function historique(): HasMany
     {
-        return $this->hasMany(NoteHistorique::class, 'note_id')->latest('id');
+        return $this->hasMany(NoteHistorique::class, 'note_id')->orderBy('id');
     }
 }

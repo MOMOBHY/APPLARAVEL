@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NaissanceController;
-use App\Http\Controllers\NoteServiceController;
 use App\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,5 +40,4 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::get('/naissances', [NaissanceController::class, 'index'])->name('naissances.index');
-    Route::get('/notes', [NoteServiceController::class, 'index'])->name('notes.index');
 });

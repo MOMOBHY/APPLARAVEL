@@ -220,9 +220,6 @@ function garderSiEchec(reponse, cle, precedent) {
    valeur par défaut. */
 let PAGE_SIZE_DEFAUT = 3;
 
-/** Notes de service : affichées une à une dans tous les espaces (lecture sans défilement). */
-const PAGE_SIZE_NOTES = 1;
-
 /** Dossiers affichés en grandes cartes (à viser, à contrôler, à trancher) : un à la fois. */
 const PAGE_SIZE_CARTES = 1;
 
@@ -980,151 +977,121 @@ const API = {
     }
   },
 
-  /** Charge les notes de service visibles par l'utilisateur (selon son rôle et sa structure). */
-  async getNotes() {
+  /* NOTES DE SERVICE — la secrétaire dépose un document Word, son directeur le valide (ou le retourne),
+     puis elle l'envoie aux destinataires qu'elle choisit (e-mail et application). */
+
+  /** Notes de l'utilisateur : déposées (secrétaire), à valider ou traitées (directeur), reçues. */
+  async notesService() {
     try {
       const response = await avecIndicateur(fetch(`${API_BASE_URL}/notes`, { headers: authHeaders() }));
       return await response.json();
     } catch (e) {
-      console.error('Erreur API getNotes', e);
-      return { status: 'error', notes: [] };
-    }
-  },
-
-  /** Autorité émettrice : crée une note de service et la transmet à la secrétaire. */
-  async publishNote(title, recipientStructureIds, contenu = null) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/notes`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ title, recipient_structure_ids: recipientStructureIds, objet: title, structure_ids: recipientStructureIds, contenu }),
-      });
-      return await response.json();
-    } catch (e) {
-      console.error('Erreur API publishNote', e);
+      console.error('Erreur API notesService', e);
       return { status: 'error' };
     }
   },
 
-  /** DRH, directeur ou sous-directeur : valide lui-même son brouillon, sans circuit de validation. La
-   * note validée n'est plus modifiable et peut être diffusée. */
-  async validerNoteDirecte(noteId) {
+  /** Secrétaire : dépôt du document Word (objet, date, fichier ; « transmettre » pour l'envoyer aussitôt
+   * au directeur). */
+  async deposerNote(donnees) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes/${noteId}/valider-directement`, {
-        method: 'POST',
-        headers: authHeaders(),
-      });
+      const response = await fetch(`${API_BASE_URL}/notes`, { method: 'POST', ...requestBody(donnees) });
       return await response.json();
     } catch (e) {
-      console.error('Erreur API validerNoteDirecte', e);
+      console.error('Erreur API deposerNote', e);
       return { status: 'error' };
     }
   },
 
-  /** DRH, directeur ou sous-directeur : diffuse directement sa note validée vers les agents des
-   * structures destinataires. */
-  async diffuserNoteDirecte(noteId) {
+  /** Secrétaire : nouvelle version du document (brouillon ou note retournée). */
+  async remplacerDocumentNote(id, donnees) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes/${noteId}/diffuser-directement`, {
+      const response = await fetch(`${API_BASE_URL}/notes/${Number(id)}/document`, {
         method: 'POST',
-        headers: authHeaders(),
+        ...requestBody(donnees),
       });
       return await response.json();
     } catch (e) {
-      console.error('Erreur API diffuserNoteDirecte', e);
-      return { status: 'error' };
-    }
-  },
-  /** Secrétaire : envoie une note rédigée ou reprise à tous les directeurs. */
-  async envoyerNote(noteId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/notes`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ action: 'envoyer', note_id: noteId }),
-      });
-      return await response.json();
-    } catch (e) {
-      console.error('Erreur API envoyerNote', e);
+      console.error('Erreur API remplacerDocumentNote', e);
       return { status: 'error' };
     }
   },
 
-  /** Secrétaire : reprend une note refusée (objet, contenu, destinataires) sans changer d'étape, avant de
-   * la renvoyer aux directeurs. */
-  async reprendreNote(noteId, data) {
+  /** Secrétaire : transmission de la note à son directeur. */
+  async transmettreNote(id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes/${noteId}/reprendre`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(data),
-      });
-      return await response.json();
+      return await postJson(`${API_BASE_URL}/notes/${Number(id)}/transmettre`, {});
     } catch (e) {
-      console.error('Erreur API reprendreNote', e);
+      console.error('Erreur API transmettreNote', e);
       return { status: 'error' };
     }
   },
 
-  /** Secrétaire : saisit puis diffuse une note (notification et email aux destinataires). */
-  async diffuseNote(noteId) {
+  /** Directeur : validation de la note qui lui a été transmise. */
+  async validerNote(id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ action: 'diffuse', note_id: noteId }),
-      });
-      return await response.json();
-    } catch (e) {
-      console.error('Erreur API diffuseNote', e);
-      return { status: 'error' };
-    }
-  },
-
-  /** Directeur : valide la note que sa secrétaire vient de saisir. C'est le feu vert qui autorise ensuite
-   * la secrétaire à la diffuser. */
-  async validerNote(noteId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/notes/${noteId}/valider`, {
-        method: 'POST',
-        headers: authHeaders(),
-      });
-      return await response.json();
+      return await postJson(`${API_BASE_URL}/notes/${Number(id)}/valider`, {});
     } catch (e) {
       console.error('Erreur API validerNote', e);
       return { status: 'error' };
     }
   },
 
-  /** Directeur : refuse la note, qui revient alors à la secrétaire pour correction avant de lui être
-   * soumise de nouveau. */
-  async refuserNote(noteId, motif) {
+  /** Directeur : retour de la note à la secrétaire, avec le motif. */
+  async retournerNote(id, motif) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes/${noteId}/refuser`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ motif }),
-      });
-      return await response.json();
+      return await postJson(`${API_BASE_URL}/notes/${Number(id)}/retourner`, { motif });
     } catch (e) {
-      console.error('Erreur API refuserNote', e);
+      console.error('Erreur API retournerNote', e);
       return { status: 'error' };
     }
   },
 
-  /** Secrétaire : saisit la note que le directeur lui a envoyée, ou reprend celle qu'il a refusée. La
-   * note part alors chez le directeur pour validation. */
-  async saisirNote(noteId, contenu) {
+  /** Secrétaire : envoi de la note validée ({ tous } ou { structures: [ids], agents: [ids] }). */
+  async envoyerNote(id, choix) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ action: 'saisir', note_id: noteId, contenu }),
+      return await postJson(`${API_BASE_URL}/notes/${Number(id)}/envoyer`, choix);
+    } catch (e) {
+      console.error('Erreur API envoyerNote', e);
+      return { status: 'error' };
+    }
+  },
+
+  /** Secrétaire : suppression d'un brouillon. */
+  async supprimerNote(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notes/${Number(id)}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
       });
       return await response.json();
     } catch (e) {
-      console.error('Erreur API saisirNote', e);
+      console.error('Erreur API supprimerNote', e);
       return { status: 'error' };
+    }
+  },
+
+  /** Secrétaire : structures et agents proposés comme destinataires. */
+  async destinatairesNotes() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notes/destinataires`, { headers: authHeaders() });
+      return await response.json();
+    } catch (e) {
+      console.error('Erreur API destinatairesNotes', e);
+      return { status: 'error' };
+    }
+  },
+
+  /** Document Word d'une note (accès contrôlé) : { ok, blob } ou { ok: false, message }. */
+  async documentNote(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notes/${Number(id)}/fichier`, { headers: authHeaders() });
+      if (response.ok) return { ok: true, blob: await response.blob() };
+      const erreur = await response.json().catch(() => ({}));
+      return { ok: false, message: erreur.message };
+    } catch (e) {
+      console.error('Erreur API documentNote', e);
+      return { ok: false };
     }
   },
 

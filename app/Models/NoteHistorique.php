@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/** Étape d'une note de service : dépôt, transmission, validation, retour, nouvelle version, envoi. */
 class NoteHistorique extends Model
 {
     protected $table = 'note_historique';
@@ -14,8 +15,6 @@ class NoteHistorique extends Model
         'acteur_nom',
         'acteur_role',
         'action',
-        'ancien_statut',
-        'nouveau_statut',
         'commentaire',
     ];
 }

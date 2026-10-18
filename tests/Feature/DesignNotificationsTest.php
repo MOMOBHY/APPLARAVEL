@@ -11,19 +11,19 @@ class DesignNotificationsTest extends TestCase
     /** Types émis par les services (voir self::notifier dans chaque service). */
     private const TYPES_CONNUS = [
         'VALIDATION',
-        'VALIDEE',
         'REJET',
-        'REFUS_VALIDATION',
         'RETOUR',
         'RETOUR_CORRECTION',
         'ATTENTE_DRH',
         'ATTENTE_VALIDATION',
         'ATTENTE_VERIF',
         'ATTENTE_CONTROLE',
-        'ATTENTE_SAISIE',
         'INFO',
         'STRUCTURE',
         'NOTE_SERVICE',
+        'NOTE_A_VALIDER',
+        'NOTE_VALIDEE',
+        'NOTE_RETOURNEE',
     ];
 
     private function shell(): string

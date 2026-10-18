@@ -9,7 +9,7 @@ class PieceJointe extends Model
 {
     protected $table = 'pieces_jointes';
 
-    public const TYPES = ['permission', 'naissance', 'deces', 'note'];
+    public const TYPES = ['permission', 'naissance', 'deces'];
 
     protected $fillable = [
         'dossier_type',

@@ -2,195 +2,280 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agent;
+use App\Models\NoteDestinataire;
 use App\Models\NoteService;
+use App\Models\Structure;
 use App\Services\NoteWorkflowService;
-use App\Services\PieceService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
+/** Notes de service : dépôt du document Word par la secrétaire, validation par son directeur, envoi aux
+ * destinataires choisis, consultation par chacun. */
 class NoteServiceController extends Controller
 {
-    /** Consultation : agents destinataires (diffusées/archivées), émetteur, admin, secrétaire. */
+    /** Messages de validation du document. */
+    private const MESSAGES = [
+        'fichier.required' => 'Joignez le document Word de la note.',
+        'fichier.extensions' => 'Le document doit être un fichier Word (.doc ou .docx).',
+        'fichier.mimetypes' => 'Le document doit être un fichier Word (.doc ou .docx).',
+        'fichier.max' => 'Le document ne doit pas dépasser 5 Mo.',
+        'objet.required' => 'Indiquez l’objet de la note.',
+        'date_note.required' => 'Indiquez la date de la note.',
+        'motif.required' => 'Le motif du retour est obligatoire.',
+    ];
+
+    /** Règles du document Word. */
+    private static function regleFichier(bool $obligatoire): array
+    {
+        return [
+            $obligatoire ? 'required' : 'nullable',
+            'file',
+            'max:'.NoteWorkflowService::MAX_KO,
+            'extensions:'.implode(',', NoteWorkflowService::EXTENSIONS),
+            'mimetypes:'.implode(',', NoteWorkflowService::MIMES),
+        ];
+    }
+
+    /** Notes de l'utilisateur connecté : celles qu'il a déposées (secrétaire), celles qu'il doit valider
+     * ou qu'il a traitées (directeur) et celles qu'il a reçues (tout agent). */
     public function index(Request $request)
     {
-        $query = NoteWorkflowService::visiblesPour($request->user())
-            ->with(['structures', 'signataire'])
-            ->latest();
-
-        if ($request->expectsJson()) {
-            return response()->json(['status' => 'success', 'data' => $query->paginate(20)]);
+        $user = $request->user();
+        $agent = $user->agent;
+        $estSecretaire = $user->hasRole('ROLE_SECRETAIRE');
+        if (! $agent) {
+            return response()->json([
+                'status' => 'success',
+                'secretaire' => $estSecretaire,
+                'directeur' => null,
+                'mes_notes' => [],
+                'a_valider' => [],
+                'traitees' => [],
+                'recues' => [],
+            ]);
         }
 
-        return view('notes.index', ['notes' => $query->paginate(20)]);
+        $avecSuivi = fn () => NoteService::with(['secretaire', 'directeur', 'historique']);
+        $mesNotes = $estSecretaire ? $avecSuivi()->where('secretaire_id', $agent->id)->latest('id')->get() : collect();
+        $aValider = $avecSuivi()
+            ->where('directeur_id', $agent->id)
+            ->where('statut', NoteService::EN_ATTENTE_VALIDATION)
+            ->latest('transmise_le')
+            ->get();
+        $traitees = $avecSuivi()
+            ->where('directeur_id', $agent->id)
+            ->whereIn('statut', [NoteService::A_CORRIGER, NoteService::VALIDEE, NoteService::ENVOYEE])
+            ->latest('updated_at')
+            ->get();
+        $recues = NoteService::with(['secretaire', 'directeur'])
+            ->where('statut', NoteService::ENVOYEE)
+            ->whereHas('destinataires', fn ($q) => $q->where('agent_id', $agent->id))
+            ->latest('envoyee_le')
+            ->get();
+        $lues = NoteDestinataire::where('agent_id', $agent->id)
+            ->whereIn('note_id', $recues->pluck('id'))
+            ->whereNotNull('lu_le')
+            ->pluck('note_id')
+            ->all();
+        $directeur = $estSecretaire ? NoteWorkflowService::directeurDe($agent) : null;
+
+        return response()->json([
+            'status' => 'success',
+            'secretaire' => $estSecretaire,
+            'directeur' => $directeur
+                ? ['nom' => $directeur->fullName(), 'fonction' => $directeur->user?->roles()->value('libelle')]
+                : null,
+            'mes_notes' => $mesNotes->map(fn ($n) => $this->format($n, true))->values(),
+            'a_valider' => $aValider->map(fn ($n) => $this->format($n, true))->values(),
+            'traitees' => $traitees->map(fn ($n) => $this->format($n, true))->values(),
+            'recues' => $recues->map(fn ($n) => $this->format($n) + ['lu' => in_array($n->id, $lues, true)])->values(),
+        ]);
     }
 
-    /** Détail d'une note de service avec son historique, si l'utilisateur a le droit de la voir. */
-    public function show(Request $request, NoteService $note)
-    {
-        abort_unless(
-            NoteWorkflowService::visiblesPour($request->user())->whereKey($note->id)->exists(),
-            403,
-            'Accès non autorisé à cette note.',
-        );
-
-        $note->load(['structures', 'signataire', 'historique']);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Étape 1 — rédaction (brouillon) par le secrétariat. */
+    /** Dépôt du document Word ; transmis aussitôt au directeur si demandé. */
     public function store(Request $request)
     {
         $data = $request->validate([
-            'objet' => ['required', 'string', 'min:5'],
-            'contenu' => ['nullable', 'string'],
-            'date_emission' => ['nullable', 'date'],
-            'structure_ids' => ['nullable', 'array'],
-            'structure_ids.*' => ['exists:structures,id'],
-            'fichier' => [
-                'nullable',
-                'file',
-                'mimes:'.implode(',', PieceService::MIMES),
-                'max:'.PieceService::MAX_KO,
-            ],
-        ]);
-
-        $note = NoteWorkflowService::rediger($request->user()->agent, $data, null);
-
-        if ($request->hasFile('fichier')) {
-            $piece = PieceService::deposer(
-                $request->file('fichier'),
-                'note',
-                $note->id,
-                $note->numero_reference,
-                $request->user()->agent,
-            );
-            $note->update(['fichier_path' => $piece->chemin_stockage]);
+            'objet' => ['required', 'string', 'min:3', 'max:255'],
+            'date_note' => ['required', 'date'],
+            'fichier' => self::regleFichier(true),
+            'transmettre' => ['nullable', 'boolean'],
+        ], self::MESSAGES);
+        $secretaire = $request->user()->agent;
+        if ($request->boolean('transmettre') && ! NoteWorkflowService::directeurDe($secretaire)) {
+            abort(422, 'Aucun directeur n’est rattaché à votre structure : la note ne peut pas être transmise.');
+        }
+        $note = NoteWorkflowService::deposer($secretaire, $data['objet'], $data['date_note'], $request->file('fichier'));
+        if ($request->boolean('transmettre')) {
+            $note = NoteWorkflowService::transmettre($secretaire, $note);
         }
 
-        return response()->json(
-            ['status' => 'success', 'data' => $note->refresh()->load('structures')],
-            201,
-        );
+        return response()->json(['status' => 'success', 'data' => $this->format($note->load('directeur'))], 201);
     }
 
-    /** Envoi aux directeurs par le secrétariat (brouillon ou note reprise). */
-    public function envoyer(NoteService $note)
-    {
-        $note = NoteWorkflowService::envoyerAuxDirecteurs($note, request()->user()->agent);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Étape 2 — saisie / mise en forme / enregistrement (secrétaire). */
-    public function saisir(Request $request, NoteService $note)
+    /** Nouvelle version du document (brouillon ou note retournée par le directeur). */
+    public function remplacer(Request $request, NoteService $note)
     {
         $data = $request->validate([
-            'contenu' => ['nullable', 'string', 'min:5'],
-            'numero_reference' => [
-                'nullable',
-                'string',
-                'max:80',
-                Rule::unique('notes_service', 'numero_reference')->ignore($note->id),
-            ],
-            'structure_ids' => ['nullable', 'array'],
-            'structure_ids.*' => ['exists:structures,id'],
-            'fichier' => [
-                'nullable',
-                'file',
-                'mimes:'.implode(',', PieceService::MIMES),
-                'max:'.PieceService::MAX_KO,
-            ],
+            'fichier' => self::regleFichier(true),
+            'objet' => ['nullable', 'string', 'min:3', 'max:255'],
+            'date_note' => ['nullable', 'date'],
+        ], self::MESSAGES);
+        $note = NoteWorkflowService::remplacerDocument(
+            $request->user()->agent,
+            $note,
+            $request->file('fichier'),
+            $data['objet'] ?? null,
+            $data['date_note'] ?? null,
+        );
+
+        return response()->json(['status' => 'success', 'data' => $this->format($note)]);
+    }
+
+    public function transmettre(Request $request, NoteService $note)
+    {
+        $note = NoteWorkflowService::transmettre($request->user()->agent, $note);
+
+        return response()->json(['status' => 'success', 'data' => $this->format($note->load('directeur'))]);
+    }
+
+    public function valider(Request $request, NoteService $note)
+    {
+        $note = NoteWorkflowService::valider($this->agentOuRefus($request), $note);
+
+        return response()->json(['status' => 'success', 'data' => $this->format($note)]);
+    }
+
+    public function retourner(Request $request, NoteService $note)
+    {
+        $data = $request->validate(['motif' => ['required', 'string', 'min:3', 'max:2000']], self::MESSAGES);
+        $note = NoteWorkflowService::retourner($this->agentOuRefus($request), $note, $data['motif']);
+
+        return response()->json(['status' => 'success', 'data' => $this->format($note)]);
+    }
+
+    /** Envoi de la note validée : tous les agents, des structures et/ou des agents désignés. */
+    public function envoyer(Request $request, NoteService $note)
+    {
+        $data = $request->validate([
+            'tous' => ['nullable', 'boolean'],
+            'structures' => ['nullable', 'array'],
+            'structures.*' => ['integer', 'exists:structures,id'],
+            'agents' => ['nullable', 'array'],
+            'agents.*' => ['integer', 'exists:agents,id'],
         ]);
+        $resultat = NoteWorkflowService::envoyer(
+            $request->user()->agent,
+            $note,
+            $request->boolean('tous'),
+            $data['structures'] ?? [],
+            $data['agents'] ?? [],
+        );
 
-        NoteWorkflowService::exigerSaisissable($note);
+        return response()->json([
+            'status' => 'success',
+            'data' => $this->format($resultat['note']),
+            'destinataires' => $resultat['destinataires'],
+            'emails' => $resultat['emails'],
+        ]);
+    }
 
-        if ($request->hasFile('fichier')) {
-            $piece = PieceService::deposer(
-                $request->file('fichier'),
-                'note',
-                $note->id,
-                $note->numero_reference,
-                $request->user()->agent,
-            );
-            $data['fichier_path'] = $piece->chemin_stockage;
+    public function supprimer(Request $request, NoteService $note)
+    {
+        NoteWorkflowService::supprimer($request->user()->agent, $note);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    /** Document Word : téléchargement (ou aperçu) réservé aux personnes concernées par la note. */
+    public function fichier(Request $request, NoteService $note)
+    {
+        $user = $request->user();
+        if (! NoteWorkflowService::peutConsulter($user, $note)) {
+            abort(403, 'Vous n’avez pas accès à cette note de service.');
+        }
+        if (! Storage::disk('local')->exists($note->fichier_path)) {
+            abort(404, 'Le document de cette note est introuvable.');
+        }
+        if ($user->agent) {
+            NoteWorkflowService::marquerLue($user->agent, $note);
         }
 
-        $note = NoteWorkflowService::saisir($note, $request->user()->agent, $data);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
+        return Storage::disk('local')->download($note->fichier_path, $note->fichier_nom);
     }
 
-    /** Reprise d'une note refusée par le secrétariat (correction sans changer d'étape). */
-    public function reprendre(Request $request, NoteService $note)
+    /** Destinataires possibles pour la secrétaire : structures (avec effectif) et agents. */
+    public function destinatairesPossibles()
     {
-        $data = $request->validate([
-            'objet' => ['nullable', 'string', 'min:5', 'max:200'],
-            'contenu' => ['nullable', 'string'],
-            'structure_ids' => ['nullable', 'array'],
-            'structure_ids.*' => ['exists:structures,id'],
+        return response()->json([
+            'status' => 'success',
+            'structures' => Structure::withCount('agents')
+                ->orderBy('nom')
+                ->get(['id', 'code', 'nom', 'sigle', 'type'])
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'nom' => $s->nom,
+                    'sigle' => $s->sigle ?: $s->code,
+                    'type' => $s->type,
+                    'effectif' => $s->agents_count,
+                ]),
+            'agents' => Agent::with('structure:id,nom,sigle,code')
+                ->orderBy('nom')
+                ->orderBy('prenom')
+                ->get(['id', 'matricule', 'civilite', 'nom', 'prenom', 'structure_id'])
+                ->map(fn ($a) => [
+                    'id' => $a->id,
+                    'nom' => $a->fullName(),
+                    'matricule' => $a->matricule,
+                    'structure' => $a->structure?->sigle ?: $a->structure?->nom,
+                ]),
         ]);
-        $note = NoteWorkflowService::reprendre($note, $request->user()->agent, $data);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
     }
 
-    /** Étape 3 — validation par un directeur (la première validation l'emporte). */
-    public function valider(NoteService $note)
+    /** Agent du compte connecté (un compte sans agent ne peut pas agir sur une note). */
+    private function agentOuRefus(Request $request): Agent
     {
-        $note = NoteWorkflowService::valider($note, request()->user()->agent);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
+        return $request->user()->agent ?? abort(403, 'Votre compte n’est rattaché à aucun agent.');
     }
 
-    /** Refus motivé de validation par un directeur (retour au secrétariat). */
-    public function refuser(Request $request, NoteService $note)
+    /** Représentation d'une note pour l'interface ; avec son historique pour la secrétaire et le
+     * directeur. */
+    private function format(NoteService $note, bool $avecHistorique = false): array
     {
-        $data = $request->validate(['motif' => ['required', 'string', 'min:3']]);
-        $note = NoteWorkflowService::refuser($note, request()->user()->agent, $data['motif']);
+        $donnees = [
+            'id' => $note->id,
+            'numero' => $note->numero,
+            'objet' => $note->objet,
+            'date_note' => $note->date_note?->format('Y-m-d'),
+            'statut' => $note->statut,
+            'fichier_nom' => $note->fichier_nom,
+            'fichier_taille' => $note->fichier_taille,
+            'apercu' => str_ends_with(strtolower($note->fichier_nom), '.docx'),
+            'secretaire' => $note->secretaire?->fullName(),
+            'directeur' => $note->directeur?->fullName(),
+            'motif_retour' => $note->motif_retour,
+            'transmise_le' => $note->transmise_le?->format('Y-m-d H:i:s'),
+            'validee_le' => $note->validee_le?->format('Y-m-d H:i:s'),
+            'envoyee_le' => $note->envoyee_le?->format('Y-m-d H:i:s'),
+            'destinataires' => $note->statut === NoteService::ENVOYEE
+                ? [
+                    'resume' => NoteWorkflowService::resumeDestinataires($note),
+                    'total' => $note->destinataires()->count(),
+                    'lus' => $note->destinataires()->whereNotNull('lu_le')->count(),
+                ]
+                : null,
+        ];
+        if ($avecHistorique) {
+            $donnees['historique'] = $note->historique->map(fn ($h) => [
+                'action' => $h->action,
+                'acteur' => $h->acteur_nom,
+                'role' => $h->acteur_role,
+                'date' => $h->created_at?->format('Y-m-d H:i:s'),
+                'commentaire' => $h->commentaire,
+            ])->values();
+        }
 
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Étape 4 — diffusion (note validée uniquement). */
-    public function diffuser(NoteService $note)
-    {
-        $note = NoteWorkflowService::diffuser($note, request()->user()->agent);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Validation directe d'une note par son auteur (DRH, directeur ou sous-directeur), sans circuit de
-     * validation. */
-    public function validerDirectement(NoteService $note)
-    {
-        $note = NoteWorkflowService::validerDirectement($note, request()->user()->agent);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Diffusion directe d'une note validée du DRH, d'un directeur ou d'un sous-directeur vers les agents
-     * des structures destinataires. */
-    public function diffuserDirectement(NoteService $note)
-    {
-        $note = NoteWorkflowService::diffuserDirectement($note, request()->user()->agent);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Archive une note validée ou diffusée. La note reste consultable. */
-    public function archiver(NoteService $note)
-    {
-        $note = NoteWorkflowService::archiver($note, request()->user()->agent);
-
-        return response()->json(['status' => 'success', 'data' => $note]);
-    }
-
-    /** Étape 5 — liste exacte des structures et agents destinataires. */
-    public function destinataires(NoteService $note)
-    {
-        return response()->json(
-            ['status' => 'success'] + NoteWorkflowService::destinataires($note),
-        );
+        return $donnees;
     }
 }

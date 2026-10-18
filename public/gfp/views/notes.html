@@ -45,932 +45,505 @@
     <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
       <div id="gfp-entete" data-sous-titre="Notes de service" data-role="" data-base="../"></div>
       <nav class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
-          <!-- Secrétaire : ses notes (avec les actions) d'un côté, la rédaction de l'autre. -->
-          <button
-            id="nav-historique"
-            onclick="showTab('historique')"
-            class="hidden px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap"
-          >Mes notes de service</button>
-          <button
-            id="onglet"
-            onclick="showTab('suivi')"
-            class="px-3 py-2 rounded-md text-xs font-bold bg-emerald-700 text-white whitespace-nowrap"
-          ></button>
-          <!-- Directeur de cabinet : ses notes envoyées, dans un menu à part. -->
-          <button
-            id="nav-envoyees"
-            onclick="showTab('envoyees')"
-            class="hidden px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 whitespace-nowrap"
-          >Notes de service envoyées</button>
+        <div class="max-w-7xl mx-auto nav-tabs py-2">
+          <!-- Secrétaire : dépôt des notes, suivi de la validation et envoi aux destinataires. -->
+          <button id="nav-mes-notes" onclick="showTab('mes-notes')" class="hidden nav-tab">
+            Mes notes de service
+          </button>
+          <!-- Tous : notes à valider (directeur) et notes reçues. -->
+          <button id="nav-notes" onclick="showTab('notes')" class="nav-tab">
+            Notes de service <span class="tab-badge" data-notes-non-lues data-count="0"></span>
+          </button>
         </div>
       </nav>
     </header>
 
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-      <div id="tab-suivi" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-        <div class="border-b border-slate-200 pb-3">
-          <h2 id="titre" class="text-base font-bold text-slate-900"></h2>
-          <p id="description" class="text-xs text-slate-500"></p>
-        </div>
-
-        <form
-          id="formNote"
-          class="hidden space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200"
-        >
-          <input type="hidden" id="noteEditionId" value="">
-          <p id="noteEditionInfo" class="hidden rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"></p>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-              >Objet de la note *</label
-            >
-            <input
-              type="text"
-              id="noteObjet"
-              required
-              maxlength="200"
-              class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-              >Contenu de la note *</label
-            >
-            <textarea
-              id="noteContenu"
-              required
-              rows="3"
-              placeholder="Rédigez le contenu de la note..."
-              class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm"
-            ></textarea>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-              >Structures destinataires *
-              <span class="normal-case font-normal text-slate-500"
-                >(Ctrl/Cmd + clic pour en choisir plusieurs)</span
-              ></label
-            >
-            <select
-              id="noteStructures"
-              multiple
-              required
-              class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm h-24"
-            ></select>
-          </div>
-          <div class="flex flex-wrap gap-2 items-center">
-            <button
-              type="submit"
-              id="noteSubmitBtn"
-              class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow"
-            >
-              Enregistrer le brouillon
-            </button>
-            <!-- Enregistre la note puis l'envoie aussitôt aux directeurs pour validation. -->
-            <button
-              type="button"
-              id="noteEnvoyerBtn"
-              onclick="enregistrerEtEnvoyer()"
-              class="px-4 py-2.5 bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs rounded-lg shadow"
-            >
-              Envoyer aux directeurs
-            </button>
-            <button
-              type="button"
-              id="noteCancelEdit"
-              onclick="annulerReprise()"
-              class="hidden px-4 py-2.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg"
-            >
-              Annuler la reprise
-            </button>
-          </div>
-        </form>
-
-        <!-- Tableau de consultation des autres profils. La secrétaire suit ses notes, et agit dessus, dans
-             l'historique ci-dessous. -->
-        <div id="blocSuivi">
-          <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
-            <h3 class="text-sm font-bold text-slate-900">
-              <span id="suiviTitre">Suivi des notes</span> <span id="compteur" class="text-xs font-bold text-slate-500"></span>
-            </h3>
-            <div class="flex gap-2 flex-wrap items-center">
-              <input type="text" id="noteSearch" oninput="pageNotes = 1; filtrerNotes()" placeholder="Rechercher par objet, référence..." class="border border-slate-300 rounded px-2.5 py-1 text-xs w-56 bg-white">
-              <select id="noteStatutFilter" onchange="pageNotes = 1; filtrerNotes()" class="border border-slate-300 rounded px-2 py-1 text-xs bg-white">
-                <option value="">Tous les états</option>
-                <option value="BROUILLON">Brouillon</option>
-                <option value="EN_ATTENTE_VALIDATION">En attente de validation des directeurs</option>
-                <option value="A_REPRENDRE">À reprendre (refusée)</option>
-                <option value="VALIDEE">Validée — à diffuser</option>
-                <option value="DIFFUSEE">Diffusée</option>
-                <option value="ARCHIVEE">Archivée</option>
-              </select>
-              <button type="button" onclick="document.getElementById('noteSearch').value='';document.getElementById('noteStatutFilter').value='';pageNotes = 1;filtrerNotes();"
-                class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
-                Réinitialiser
-              </button>
-            </div>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left">
-              <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
-                <tr>
-                  <th class="px-4 py-2">Référence</th>
-                  <th class="px-4 py-2">Objet</th>
-                  <th class="px-4 py-2">Émetteur</th>
-                  <th class="px-4 py-2">Destinataires</th>
-                  <th class="px-4 py-2">État</th>
-                  <th class="px-4 py-2">Action</th>
-                </tr>
-              </thead>
-              <tbody id="tableNotes" class="divide-y divide-slate-200"></tbody>
-            </table>
-          </div>
-          <div id="notesPagination"></div>
-        </div>
-      </div>
-
-      <!-- ONGLET : NOTES DE SERVICE ENVOYÉES (directeur de cabinet) : ses notes, validées puis diffusées
-           par lui-même à tous les agents du ministère. -->
-      <div id="tab-envoyees" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <div id="blocCabinet" class="space-y-4">
-          <div class="flex justify-between items-center flex-wrap gap-2">
-            <div>
-              <h2 class="text-base font-bold text-slate-900">Notes de service envoyées</h2>
-              <p class="text-xs text-slate-500">
-                Rédigez la note, validez-la, puis diffusez-la : elle part à tous les agents du ministère,
-                par notification et par email.
-              </p>
-            </div>
-            <span id="cabinetCompteur"
-              class="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-full text-xs font-bold">0 note</span>
-          </div>
-          <form id="formNoteCabinet" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Objet de la note *</label>
-              <input type="text" id="noteCabinetObjet" required maxlength="200"
-                class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contenu de la note *</label>
-              <textarea id="noteCabinetContenu" required rows="3" placeholder="Rédigez le contenu de la note..."
-                class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm"></textarea>
-            </div>
-            <p class="text-xs text-slate-600">
-              <span class="font-bold uppercase">Destinataires :</span> tous les agents du ministère.
+      <!-- ============================================================ -->
+      <!-- SECRÉTAIRE : MES NOTES DE SERVICE                             -->
+      <!-- ============================================================ -->
+      <div id="tab-mes-notes" class="hidden space-y-6">
+        <!-- Dépôt d'une nouvelle note (document Word) -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-base font-bold text-slate-900">Nouvelle note de service</h2>
+            <p class="text-xs text-slate-500">
+              Chargez le document Word de la note, puis transmettez-le à votre directeur. Une fois la
+              note validée, vous choisirez les destinataires et l’enverrez.
             </p>
-            <div class="flex flex-wrap gap-2 items-center">
-              <button type="submit"
-                class="px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs rounded-lg shadow">
-                Enregistrer le brouillon
-              </button>
-              <button type="button" onclick="enregistrerNoteCabinet(true)"
-                class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">
-                Valider
-              </button>
+          </div>
+          <form id="formDepot" class="space-y-4" onsubmit="event.preventDefault()">
+            <div>
+              <label for="depotObjet" class="block text-xs font-bold text-slate-700 mb-1">Objet *</label>
+              <input type="text" id="depotObjet" maxlength="255"
+                placeholder="Ex. : Réglementation de l’accès au Ministère d’État"
+                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label for="depotDate" class="block text-xs font-bold text-slate-700 mb-1">Date de la note *</label>
+                <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="depotDate"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="depotFichier" class="block text-xs font-bold text-slate-700 mb-1">Document Word *</label>
+                <input type="file" id="depotFichier" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs" />
+                <p class="text-[10px] text-slate-500 mt-1">Formats : .docx (aperçu dans la plateforme) ou .doc — max 5 Mo</p>
+              </div>
+            </div>
+            <p id="depotDirecteur" class="text-xs rounded-lg border px-3 py-2"></p>
+            <div class="gfp-form-actions flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-3 border-t border-slate-200">
+              <div>
+                <button type="button" onclick="deposerNoteSecretaire(false)"
+                  class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-lg text-sm">Enregistrer le brouillon</button>
+              </div>
+              <button type="button" id="btnTransmettreDepot" onclick="deposerNoteSecretaire(true)"
+                class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-sm shadow">Transmettre au directeur</button>
             </div>
           </form>
-          <div id="cabinetListe" class="space-y-3"></div>
-          <div id="cabinetPagination"></div>
         </div>
 
+        <!-- Suivi des notes déposées -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-200 pb-3 flex justify-between items-center gap-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Mes notes de service</h2>
+              <p class="text-xs text-slate-500">Chaque note avec son état et la prochaine action à faire.</p>
+            </div>
+            <span id="mesNotesNombre" class="px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-xs font-bold text-slate-700"></span>
+          </div>
+          <div id="mesNotesIndicateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+          <div class="flex flex-wrap gap-3 items-end bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div>
+              <label for="mesNotesRecherche" class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
+              <input type="text" id="mesNotesRecherche" oninput="renderMesNotes()" placeholder="Objet, numéro..."
+                class="border border-slate-300 rounded px-2.5 py-1.5 text-xs w-56 bg-white">
+            </div>
+            <div>
+              <label for="mesNotesEtat" class="block text-xs font-bold text-slate-600 mb-1">État</label>
+              <select id="mesNotesEtat" onchange="renderMesNotes()" class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
+                <option value="">Tous les états</option>
+                <option value="BROUILLON">Brouillon</option>
+                <option value="EN_ATTENTE_VALIDATION">En attente de validation</option>
+                <option value="A_CORRIGER">À corriger</option>
+                <option value="VALIDEE">Validée (à envoyer)</option>
+                <option value="ENVOYEE">Envoyée</option>
+              </select>
+            </div>
+          </div>
+          <div id="mesNotesListe" class="space-y-3"></div>
+        </div>
       </div>
 
-      <!-- ONGLET : HISTORIQUE DES NOTES (secrétaire) -->
-      <div id="tab-historique" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-        <div class="border-b border-slate-200 pb-3 flex justify-between items-start flex-wrap gap-2">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Mes notes de service</h2>
-            <p class="text-xs text-slate-500">
-              Chaque note avec ses actions et toutes ses étapes : rédaction, envoi aux directeurs,
-              validation ou refus (avec le motif), reprise et diffusion, datées et signées par leur auteur.
-              À la diffusion, la note est envoyée par email à tous les agents du ministère.
-            </p>
-          </div>
-          <span id="histoCompteur"
-            class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">0 note</span>
-        </div>
-
-        <!-- Indicateurs : où en sont les notes de la secrétaire -->
-        <div id="histoIndicateurs" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-
-        <div class="flex flex-wrap gap-3 items-end bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <div>
-            <label for="histoRecherche" class="block text-xs font-bold text-slate-600 mb-1">Recherche</label>
-            <input type="text" id="histoRecherche" oninput="pageHisto = 1; renderHistorique()"
-              placeholder="Référence, objet, directeur..."
-              class="border border-slate-300 rounded px-2.5 py-1.5 text-xs w-56 bg-white">
-          </div>
-          <div>
-            <label for="histoEtat" class="block text-xs font-bold text-slate-600 mb-1">État actuel</label>
-            <select id="histoEtat" onchange="pageHisto = 1; renderHistorique()"
-              class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
-              <option value="">Tous les états</option>
-              <option value="ACTION_REQUISE">Action requise (à envoyer, à reprendre, à diffuser)</option>
-              <option value="EN_COURS">En cours (brouillon, en validation, à reprendre, à diffuser)</option>
-              <option value="DIFFUSEE">Diffusée</option>
-              <option value="ARCHIVEE">Archivée</option>
-              <option value="REFUSEE_UNE_FOIS">Refusée au moins une fois</option>
-            </select>
-          </div>
-          <div>
-            <label for="histoDepuis" class="block text-xs font-bold text-slate-600 mb-1">Activité depuis le</label>
-            <input type="text" data-date-fr inputmode="numeric" autocomplete="off" maxlength="10" placeholder="jj/mm/aaaa" id="histoDepuis" onchange="pageHisto = 1; renderHistorique()"
-              class="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white">
-          </div>
-          <button type="button"
-            onclick="document.getElementById('histoRecherche').value='';document.getElementById('histoEtat').value='';viderDateFr('histoDepuis');pageHisto = 1;renderHistorique();"
-            class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded">
-            Réinitialiser les filtres
-          </button>
-          <button type="button" onclick="exporterHistorique()"
-            class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded">
-            Exporter (CSV)
-          </button>
-        </div>
-
-        <div id="histoListe" class="space-y-3"></div>
-        <div id="histoPagination"></div>
+      <!-- ============================================================ -->
+      <!-- TOUS : NOTES À VALIDER (DIRECTEUR) ET NOTES REÇUES             -->
+      <!-- ============================================================ -->
+      <div id="tab-notes" class="hidden">
+        <div id="zoneNotesService"></div>
       </div>
     </main>
 
     <script src="../js/api.js"></script>
     <script src="../js/shell.js"></script>
+    <script src="../js/notes.js"></script>
     <script>
       const user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-      const codes = user.roles_codes || [];
-      // La secrétaire rédige pour le circuit des directeurs ; le directeur de cabinet rédige, valide et
-      // diffuse lui-même ses notes à tout le ministère ; les autres consultent.
-      const peutRediger = codes.includes('ROLE_SECRETAIRE');
-      const peutDiffuser = codes.includes('ROLE_SECRETAIRE');
-      const estCabinet = codes.includes('ROLE_DIRECTEUR_CABINET');
+      let estSecretaire = (user.roles_codes || []).includes('ROLE_SECRETAIRE');
+      const ONGLETS = ['mes-notes', 'notes'];
 
-      // Vue propre à chaque profil : secrétaire (rédaction et diffusion),
-      // autres profils (consultation des notes de leur périmètre).
-      const VUES = {
-        SECRETAIRE: {
-          role: 'Secrétaire',
-          onglet: 'Rédiger une note',
-          titre: 'Rédiger une note de service',
-          description:
-            'Rédigez la note et enregistrez-la en brouillon. Depuis « Mes notes de service », envoyez-la aux directeurs pour validation, puis diffusez-la une fois validée : elle part par email à tous les agents du ministère.',
-        },
-
-        DIRCAB: {
-          role: 'Directeur de Cabinet',
-          onglet: 'Notes de service reçues',
-          titre: 'Notes de service reçues',
-          description:
-            'Notes diffusées par le secrétariat, la DRH ou les responsables. Vos propres notes sont dans « Notes de service envoyées ».',
-        },
-      };
-      const vue = VUES[user.role] || {
-        role: user.role || '',
-        onglet: 'Notes de service',
-        titre: 'Notes de service',
-        description: 'Notes de service de votre périmètre.',
-      };
-      document.getElementById('roleLabel').textContent = vue.role;
-      document.getElementById('onglet').textContent = vue.onglet;
-      document.getElementById('titre').textContent = vue.titre;
-      document.getElementById('description').textContent = vue.description;
-      activerOngletGfp('onglet');
-      document.getElementById('formNote').classList.toggle('hidden', !peutRediger);
-      // Secrétaire : deux onglets, « Mes notes de service » (suivi et actions) et
-      // « Rédiger une note ». Les autres profils gardent leur tableau de consultation.
-      document.getElementById('blocSuivi').classList.toggle('hidden', peutRediger);
-      document.getElementById('nav-historique').classList.toggle('hidden', !peutRediger);
-      // Directeur de cabinet : deux menus, les notes reçues (tableau) et ses notes envoyées.
-      document.getElementById('nav-envoyees').classList.toggle('hidden', !estCabinet);
-      if (estCabinet) document.getElementById('suiviTitre').textContent = 'Liste des notes reçues';
-
-      const ETATS = {
-        BROUILLON: ['Brouillon', 'text-slate-700'],
-        EN_ATTENTE_VALIDATION: ['En attente de validation des directeurs', 'text-amber-700'],
-        A_REPRENDRE: ['À reprendre (refusée)', 'text-orange-700'],
-        VALIDEE: ['Validée — à diffuser', 'text-emerald-700'],
-        DIFFUSEE: ['Diffusée', 'text-emerald-700'],
-        ARCHIVEE: ['Archivée', 'text-slate-500'],
-        REJETEE: ['Rejetée', 'text-red-700'],
-      };
-
-      let allNotes = [];
-      let PAGE_SIZE = taillePageMemorisee(3);
-      let pageNotes = 1;
-
-      function filtrerNotes() {
-        const q = (document.getElementById('noteSearch')?.value || '').toLowerCase();
-        const st = document.getElementById('noteStatutFilter')?.value || '';
-        // Le directeur de cabinet retrouve ses propres notes dans le bloc « envoyées ».
-        const base = estCabinet ? allNotes.filter((n) => !estMaNote(n)) : allNotes;
-        let filtered = base;
-        if (st) filtered = filtered.filter(n => n.statut === st);
-        if (q) filtered = filtered.filter(n =>
-          (n.numero || '').toLowerCase().includes(q) ||
-          (n.libelle || '').toLowerCase().includes(q) ||
-          (n.emetteur || '').toLowerCase().includes(q) ||
-          (n.service || '').toLowerCase().includes(q)
-        );
-
-        document.getElementById('compteur').textContent = '(' + filtered.length + ' / ' + base.length + ')';
-
-        const totalItems = filtered.length;
-        const totalPages = Math.ceil(totalItems / PAGE_SIZE_NOTES) || 1;
-        if (pageNotes > totalPages) pageNotes = totalPages;
-        if (pageNotes < 1) pageNotes = 1;
-        const startIndex = (pageNotes - 1) * PAGE_SIZE_NOTES;
-        const displayed = filtered.slice(startIndex, startIndex + PAGE_SIZE_NOTES);
-
-        document.getElementById('tableNotes').innerHTML =
-          displayed
-            .map((n) => {
-              const [libelle, couleur] = ETATS[n.statut] || [
-                n.statut || 'Diffusée',
-                'text-emerald-700',
-              ];
-              /* La secrétaire rédige, envoie aux directeurs, reprend si refus, puis diffuse une fois
-                 validée. Les notes de la DRH, des directeurs, des sous-directeurs et du directeur de
-                 cabinet sont diffusées par leur auteur : aucun geste du secrétariat. */
-              const actions = [];
-              if (peutDiffuser && !n.diffusion_directe && n.statut === 'BROUILLON') {
-                actions.push(
-                  `<button type="button" onclick="envoyer(${Number(n.id)})"
-                    class="block w-full px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold mb-1">Envoyer aux directeurs</button>`,
-                );
-              }
-              if (peutDiffuser && n.statut === 'A_REPRENDRE') {
-                actions.push(
-                  `<button type="button" onclick="reprendre(${Number(n.id)})"
-                    class="block w-full px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold mb-1">Modifier et renvoyer</button>`,
-                );
-              }
-              if (peutDiffuser && n.statut === 'VALIDEE') {
-                actions.push(
-                  `<button type="button" onclick="diffuser(${Number(n.id)})"
-                    class="block w-full px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold">Diffuser la note</button>`,
-                );
-              }
-              const action = actions.length ? actions.join('') : '—';
-              return `<tr>
-          <td class="px-4 py-3 font-mono font-bold">${escapeHtml(n.numero || n.id)}</td>
-          <td class="px-4 py-3 font-bold">${escapeHtml(n.libelle)}</td>
-          <td class="px-4 py-3">${escapeHtml(n.emetteur)}</td>
-          <td class="px-4 py-3">${escapeHtml(n.service)}</td>
-          <td class="px-4 py-3 font-bold ${couleur}">${escapeHtml(libelle)}</td>
-          <td class="px-4 py-3">${action}</td></tr>`;
-            })
-            .join('') ||
-          '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500 italic">Aucune note ne correspond aux critères.</td></tr>';
-
-        if (window.renderPagination) {
-          window.renderPagination({
-            container: 'notesPagination',
-            totalItems: totalItems,
-            currentPage: pageNotes,
-            pageSize: PAGE_SIZE_NOTES,
-            onPageChange: (p) => {
-              pageNotes = p;
-              filtrerNotes();
-            }
-          });
-        }
+      function showTab(nom) {
+        ONGLETS.forEach((t) => document.getElementById('tab-' + t).classList.toggle('hidden', t !== nom));
+        activerOngletGfp('nav-' + nom);
       }
 
-      /** Charge les notes visibles par le profil et dessine le tableau de suivi (rédiger, envoyer,
-       * reprendre et diffuser : quatre gestes réservés à la secrétaire). */
-      async function charger() {
-        const res = await API.getNotes();
-        allNotes = garderSiEchec(res, 'notes', allNotes);
-        filtrerNotes();
-        if (peutRediger) renderHistorique();
-        if (estCabinet) renderCabinet();
-      }
+      /* ---------------------------------------------------------------------------------------
+         Dépôt d'une note (secrétaire)
+         --------------------------------------------------------------------------------------- */
 
-      /* DIRECTEUR DE CABINET : ses notes, de la rédaction à la diffusion à tout le ministère. */
-      let pageCabinet = 1;
-
-      /** Note rédigée par l'utilisateur connecté. */
-      function estMaNote(n) {
-        return user.id_agent != null && Number(n.signataire_id) === Number(user.id_agent);
-      }
-
-      /** Dessine les notes du directeur de cabinet avec l'étape suivante : valider le brouillon, puis
-       * diffuser la note validée. */
-      function renderCabinet() {
-        const miennes = allNotes.filter(estMaNote);
-        document.getElementById('cabinetCompteur').textContent =
-          miennes.length + ' note' + (miennes.length > 1 ? 's' : '');
-
-        const totalPages = Math.ceil(miennes.length / PAGE_SIZE_NOTES) || 1;
-        if (pageCabinet > totalPages) pageCabinet = totalPages;
-        if (pageCabinet < 1) pageCabinet = 1;
-        const pageItems = miennes.slice((pageCabinet - 1) * PAGE_SIZE_NOTES, pageCabinet * PAGE_SIZE_NOTES);
-
-        const ETATS_CABINET = {
-          BROUILLON: ['Brouillon', 'text-slate-700'],
-          VALIDEE: ['Validée - à diffuser', 'text-emerald-700'],
-          DIFFUSEE: ['Diffusée à tous les agents', 'text-emerald-700'],
-          ARCHIVEE: ['Archivée', 'text-slate-500'],
-        };
-        document.getElementById('cabinetListe').innerHTML =
-          pageItems
-            .map((n) => {
-              const [libelle, couleur] = ETATS_CABINET[n.statut] || [n.statut, 'text-slate-700'];
-              const id = Number(n.id);
-              const action = {
-                BROUILLON: `<button type="button" onclick="validerNoteCabinet(${id})"
-                    class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Valider</button>`,
-                VALIDEE: `<button type="button" onclick="diffuserNoteCabinet(${id})"
-                    class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Diffuser à tous les agents</button>`,
-              }[n.statut];
-              return `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-1">
-                <div class="flex justify-between items-start gap-3 flex-wrap">
-                  <div class="min-w-0">
-                    <p class="font-mono font-bold text-xs text-slate-500">${escapeHtml(n.numero || '')}</p>
-                    <p class="font-bold text-sm text-slate-900">${escapeHtml(n.libelle || '')}</p>
-                    <p class="text-xs text-slate-500">Destinataires : ${escapeHtml(n.service || '—')}</p>
-                  </div>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-300 bg-slate-50 ${couleur}">${escapeHtml(libelle)}</span>
-                </div>
-                ${action ? `<div class="pt-2">${action}</div>` : ''}
-              </div>`;
-            })
-            .join('') ||
-          '<p class="text-sm text-slate-500 italic bg-white rounded-xl border border-slate-200 p-6 text-center">Vous n\'avez encore envoyé aucune note de service.</p>';
-
-        if (window.renderPagination) {
-          renderPagination({
-            container: 'cabinetPagination',
-            totalItems: miennes.length,
-            currentPage: pageCabinet,
-            pageSize: PAGE_SIZE_NOTES,
-            onPageChange: (p) => {
-              pageCabinet = p;
-              renderCabinet();
-            },
-          });
-        }
-      }
-
-      /* « Enregistrer le brouillon » soumet le formulaire ; « Valider » l'enregistre et le valide. */
-      document.getElementById('formNoteCabinet').onsubmit = (e) => {
-        e.preventDefault();
-        enregistrerNoteCabinet(false);
-      };
-
-      /** Directeur de cabinet : enregistre sa note en brouillon ou, avec « Valider », l'enregistre et la
-       * valide aussitôt. Le serveur l'adresse à toutes les structures du ministère. */
-      async function enregistrerNoteCabinet(valider) {
-        const form = document.getElementById('formNoteCabinet');
-        const objet = document.getElementById('noteCabinetObjet').value.trim();
-        const contenu = document.getElementById('noteCabinetContenu').value.trim();
-        if (!objet || !contenu) {
-          toast("Indiquez l'objet et le contenu de la note.");
-          return;
-        }
-        if (objet.length < 5) {
-          toast("L'objet de la note doit contenir au moins 5 caractères.");
-          return;
-        }
-        const res = await API.publishNote(objet, [], contenu);
-        if (res.status !== 'success') {
-          toast(res.message || "La note n'a pas pu être enregistrée.");
-          return;
-        }
-        form.reset();
-        if (valider) {
-          // Le brouillon existe déjà : un échec de validation le laisse dans la liste, à valider plus tard.
-          const val = await API.validerNoteDirecte(res.note_id);
-          toast(
-            val.status === 'success'
-              ? 'Note ' + res.ref + ' validée. Diffusez-la depuis vos notes envoyées.'
-              : 'Brouillon ' + res.ref + ' enregistré, mais non validé : ' + (val.message || 'réessayez depuis vos notes envoyées.'),
-          );
+      /** Directeur à qui les notes sont transmises (affiché sous le formulaire). */
+      function afficherDirecteur() {
+        const zone = document.getElementById('depotDirecteur');
+        const d = notesServiceDonnees.directeur;
+        const bouton = document.getElementById('btnTransmettreDepot');
+        if (d) {
+          zone.className = 'text-xs rounded-lg border px-3 py-2 bg-emerald-50 border-emerald-200 text-emerald-900';
+          zone.innerHTML = `La note sera transmise pour validation à <strong>${escapeHtml(d.nom)}</strong>${d.fonction ? ` (${escapeHtml(d.fonction)})` : ''}.`;
+          bouton.textContent = 'Transmettre au directeur';
+          bouton.disabled = false;
         } else {
-          toast('Brouillon enregistré sous la référence ' + res.ref + '. Validez-le depuis vos notes envoyées.');
+          zone.className = 'text-xs rounded-lg border px-3 py-2 bg-amber-50 border-amber-200 text-amber-900';
+          zone.textContent = 'Aucun directeur n’est rattaché à votre structure : vous pouvez enregistrer la note, mais pas la transmettre. Contactez l’administrateur.';
+          bouton.disabled = true;
         }
-        await charger();
       }
 
-      /** Directeur de cabinet : valide son brouillon ; la note n'est plus modifiable. */
-      async function validerNoteCabinet(id) {
-        if (!(await demanderConfirmation('Valider cette note ? Elle ne sera plus modifiable et pourra être diffusée à tous les agents.', 'Valider'))) return;
-        const res = await API.validerNoteDirecte(id);
+      /** Vrai si le fichier choisi est un document Word. */
+      function estDocumentWord(fichier) {
+        return !!fichier && /\.(docx?)$/i.test(fichier.name);
+      }
+
+      async function deposerNoteSecretaire(transmettre) {
+        const objet = document.getElementById('depotObjet').value.trim();
+        const date = dateIso(document.getElementById('depotDate').value);
+        const fichier = document.getElementById('depotFichier').files[0];
+        if (objet.length < 3 || !date || !fichier) {
+          toast('Veuillez renseigner l’objet, la date (jj/mm/aaaa) et joindre le document Word.');
+          return;
+        }
+        if (!estDocumentWord(fichier)) {
+          toast('Erreur : le document doit être un fichier Word (.doc ou .docx).');
+          return;
+        }
+        const donnees = new FormData();
+        donnees.append('objet', objet);
+        donnees.append('date_note', date);
+        donnees.append('fichier', fichier);
+        donnees.append('transmettre', transmettre ? '1' : '0');
+        const res = await API.deposerNote(donnees);
         if (res.status === 'success') {
-          toast('Note validée : vous pouvez maintenant la diffuser.');
-          await charger();
+          toast(transmettre
+            ? `Note ${res.data.numero} transmise à ${res.data.directeur || 'votre directeur'} pour validation.`
+            : `Note ${res.data.numero} enregistrée en brouillon.`);
+          document.getElementById('formDepot').reset();
+          document.getElementById('depotDate').value = dateFr(new Date().toISOString().slice(0, 10));
+          await rafraichirNotesService();
         } else {
-          toast(res.message || 'Validation impossible.');
+          toast('Erreur : ' + (res.message || 'Dépôt impossible.'));
         }
       }
 
-      /** Directeur de cabinet : diffuse sa note validée à tous les agents du ministère. */
-      async function diffuserNoteCabinet(id) {
-        if (!(await demanderConfirmation('Diffuser cette note ? Elle sera envoyée par notification et par email à tous les agents du ministère.', 'Diffuser'))) return;
-        const res = await API.diffuserNoteDirecte(id);
-        if (res.status === 'success') {
-          toast('Note diffusée à tous les agents du ministère.');
-          await charger();
-          if (window.rafraichirNotifications) window.rafraichirNotifications();
-        } else {
-          toast(res.message || 'La diffusion a échoué.');
+      /* ---------------------------------------------------------------------------------------
+         Mes notes (secrétaire) : état et prochaine action
+         --------------------------------------------------------------------------------------- */
+
+      /** Ligne d'information propre à l'état de la note. */
+      function infoEtatNote(n) {
+        const ligne = (cls, html) => `<p class="text-xs rounded-lg border px-3 py-2 ${cls}">${html}</p>`;
+        switch (n.statut) {
+          case 'BROUILLON':
+            return ligne('bg-amber-50 border-amber-200 text-amber-900', 'Brouillon : vérifiez le document puis transmettez-le à votre directeur.');
+          case 'EN_ATTENTE_VALIDATION':
+            return ligne('bg-sky-50 border-sky-200 text-sky-900', `Transmise à <strong>${escapeHtml(n.directeur || '')}</strong> le ${escapeHtml(formatDateSuivi(n.transmise_le))} — en attente de sa validation.`);
+          case 'A_CORRIGER':
+            return ligne('bg-orange-50 border-orange-200 text-orange-900', `Retournée par <strong>${escapeHtml(n.directeur || '')}</strong> : ${escapeHtml(n.motif_retour || '')}<br>Chargez une version corrigée puis retransmettez-la.`);
+          case 'VALIDEE':
+            return ligne('bg-emerald-50 border-emerald-200 text-emerald-900', `Validée par <strong>${escapeHtml(n.directeur || '')}</strong> le ${escapeHtml(formatDateSuivi(n.validee_le))} — choisissez les destinataires et envoyez-la.`);
+          case 'ENVOYEE':
+            return ligne('bg-violet-50 border-violet-200 text-violet-900', `Envoyée le ${escapeHtml(formatDateSuivi(n.envoyee_le))} à : <strong>${escapeHtml(n.destinataires?.resume || '')}</strong> — ${n.destinataires?.total || 0} destinataire(s), ${n.destinataires?.lus || 0} l’ont ouverte.`);
+          default:
+            return '';
         }
       }
 
-      /** Remplit la liste des structures destinataires (secrétaire uniquement), classées par ordre
-       * alphabétique. */
-      async function chargerStructures() {
-        if (!peutRediger) return;
-        const res = await API.getStructures();
-        const structures = (res.structures || [])
-          .slice()
-          .sort((a, b) => a.nom_structure.localeCompare(b.nom_structure, 'fr'));
-        document.getElementById('noteStructures').innerHTML = structures
-          .map(
-            (s) =>
-              `<option value="${Number(s.id_structure)}">${escapeHtml(s.nom_structure)}</option>`,
-          )
-          .join('');
+      /** Boutons d'action selon l'état. */
+      function actionsMaNote(n) {
+        const bouton = (onclick, texte, cls) =>
+          `<button type="button" onclick="${onclick}" class="px-3 py-1.5 rounded-lg text-xs font-bold ${cls}">${texte}</button>`;
+        const secondaire = 'border border-slate-300 bg-white hover:bg-slate-100 text-slate-700';
+        const principal = 'bg-emerald-700 hover:bg-emerald-800 text-white shadow';
+        const actions = [
+          bouton(`ouvrirNote(noteParId(${n.id}))`, 'Ouvrir', 'bg-slate-800 hover:bg-slate-900 text-white'),
+          bouton(`ouvrirSuiviNote(noteParId(${n.id}))`, 'Suivi', secondaire),
+        ];
+        if (n.statut === 'BROUILLON' || n.statut === 'A_CORRIGER') {
+          actions.push(bouton(`remplacerDocumentNote(${n.id})`, n.statut === 'A_CORRIGER' ? 'Charger la version corrigée' : 'Remplacer le document', secondaire));
+          actions.push(bouton(`transmettreNoteSecretaire(${n.id})`, n.statut === 'A_CORRIGER' ? 'Retransmettre au directeur' : 'Transmettre au directeur', principal));
+        }
+        if (n.statut === 'BROUILLON') {
+          actions.push(bouton(`supprimerNoteSecretaire(${n.id})`, 'Supprimer', 'border border-red-300 bg-red-50 hover:bg-red-100 text-red-700'));
+        }
+        if (n.statut === 'VALIDEE') {
+          actions.push(bouton(`ouvrirEnvoiNote(${n.id})`, 'Choisir les destinataires et envoyer', principal));
+        }
+        return actions.join('');
       }
 
-      /** Identifiant de la note en cours de reprise, null en création. */
-      let noteEnEdition = null;
+      function carteMaNote(n) {
+        return `
+          <div class="bg-white p-4 rounded-xl border ${n.statut === 'A_CORRIGER' ? 'border-orange-300' : n.statut === 'VALIDEE' ? 'border-emerald-300' : 'border-slate-200'} shadow-sm space-y-2">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-mono text-[11px] text-slate-500">${escapeHtml(n.numero)}</p>
+                <p class="font-bold text-sm text-slate-900">${escapeHtml(n.objet)}</p>
+                <p class="text-xs text-slate-500">Note du ${escapeHtml(dateFr(n.date_note))} — ${escapeHtml(n.fichier_nom)} (${tailleDocument(n.fichier_taille)})</p>
+              </div>
+              ${badgeNote(n.statut)}
+            </div>
+            ${infoEtatNote(n)}
+            <div class="flex flex-wrap gap-2 pt-1">${actionsMaNote(n)}</div>
+          </div>`;
+      }
 
-      document.getElementById('formNote').onsubmit = async (e) => {
-        e.preventDefault();
-        const objet = document.getElementById('noteObjet').value.trim();
-        const contenu = document.getElementById('noteContenu').value.trim();
-        const ids = Array.from(document.getElementById('noteStructures').selectedOptions).map((o) =>
-          Number(o.value),
+      function renderMesNotes() {
+        const notes = notesServiceDonnees.mes_notes || [];
+        const recherche = (document.getElementById('mesNotesRecherche').value || '').toLowerCase();
+        const etat = document.getElementById('mesNotesEtat').value;
+        const filtrees = notes.filter(
+          (n) =>
+            (!etat || n.statut === etat) &&
+            (!recherche || `${n.numero} ${n.objet}`.toLowerCase().includes(recherche)),
         );
-        if (!objet || !contenu || !ids.length) {
-          toast("Indiquez l'objet, le contenu et au moins une structure destinataire.");
-          return;
+        const compter = (s) => notes.filter((n) => n.statut === s).length;
+        const indicateur = (libelle, valeur, cls) => `
+          <div class="bg-white p-3 rounded-lg border border-slate-200">
+            <span class="block text-[10px] font-bold text-slate-400 uppercase">${libelle}</span>
+            <span class="text-2xl font-extrabold ${cls}">${valeur}</span>
+          </div>`;
+        document.getElementById('mesNotesIndicateurs').innerHTML =
+          indicateur('En attente de validation', compter('EN_ATTENTE_VALIDATION'), 'text-sky-700') +
+          indicateur('À corriger', compter('A_CORRIGER'), 'text-orange-600') +
+          indicateur('Validées à envoyer', compter('VALIDEE'), 'text-emerald-700') +
+          indicateur('Envoyées', compter('ENVOYEE'), 'text-violet-700');
+        document.getElementById('mesNotesNombre').textContent = `${notes.length} note(s)`;
+        document.getElementById('mesNotesListe').innerHTML = filtrees.length
+          ? filtrees.map(carteMaNote).join('')
+          : `<p class="text-sm text-slate-500 italic text-center py-6">${notes.length ? 'Aucune note ne correspond aux filtres.' : 'Aucune note déposée pour le moment.'}</p>`;
+      }
+
+      async function transmettreNoteSecretaire(id) {
+        const note = noteParId(id);
+        const directeur = notesServiceDonnees.directeur?.nom || 'votre directeur';
+        if (!(await demanderConfirmation(`Transmettre la note « ${note.objet} » à ${directeur} pour validation ?`, 'Transmettre'))) return;
+        const res = await API.transmettreNote(id);
+        if (res.status === 'success') {
+          toast(`Note transmise à ${res.data.directeur || directeur}.`);
+          await rafraichirNotesService();
+        } else {
+          toast('Erreur : ' + (res.message || 'Transmission impossible.'));
         }
-        if (noteEnEdition) {
-          const reprise = await API.reprendreNote(noteEnEdition, { objet, contenu, structure_ids: ids });
-          if (reprise.status !== 'success') {
-            toast(reprise.message || "La reprise n'a pas pu être enregistrée.");
+      }
+
+      async function supprimerNoteSecretaire(id) {
+        const note = noteParId(id);
+        if (!(await demanderConfirmation(`Supprimer le brouillon « ${note.objet} » ?`, 'Supprimer'))) return;
+        const res = await API.supprimerNote(id);
+        if (res.status === 'success') {
+          toast('Brouillon supprimé.');
+          await rafraichirNotesService();
+        } else {
+          toast('Erreur : ' + (res.message || 'Suppression impossible.'));
+        }
+      }
+
+      /** Nouvelle version du document (brouillon ou note retournée). */
+      function remplacerDocumentNote(id) {
+        const note = noteParId(id);
+        const voile = document.createElement('div');
+        voile.className = 'fixed inset-0 z-[70] bg-slate-900/60 flex items-center justify-center p-4';
+        voile.innerHTML = `
+          <form class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-3">
+            <h2 class="font-bold text-base text-slate-900">${note.statut === 'A_CORRIGER' ? 'Charger la version corrigée' : 'Remplacer le document'}</h2>
+            ${note.motif_retour ? `<p class="text-xs text-orange-900 bg-orange-50 border border-orange-200 rounded p-2">Motif du retour : <strong data-motif></strong></p>` : ''}
+            <label class="block text-xs font-bold text-slate-700">Objet
+              <input data-objet type="text" maxlength="255" class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal">
+            </label>
+            <label class="block text-xs font-bold text-slate-700">Date de la note
+              <input data-date ${ATTRIBUTS_DATE_FR} class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-normal">
+            </label>
+            <label class="block text-xs font-bold text-slate-700">Nouveau document Word *
+              <input data-fichier type="file" accept=".doc,.docx" class="mt-1 w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-normal">
+            </label>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" data-annuler class="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
+              <button type="submit" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg">Enregistrer la nouvelle version</button>
+            </div>
+          </form>`;
+        const $ = (sel) => voile.querySelector(sel);
+        if (note.motif_retour) $('[data-motif]').textContent = note.motif_retour;
+        $('[data-objet]').value = note.objet;
+        $('[data-date]').value = dateFr(note.date_note);
+        $('[data-annuler]').onclick = () => voile.remove();
+        $('form').onsubmit = async (e) => {
+          e.preventDefault();
+          const fichier = $('[data-fichier]').files[0];
+          if (!estDocumentWord(fichier)) {
+            toast('Erreur : choisissez le nouveau document Word (.doc ou .docx).');
             return;
           }
-          const envoi = await API.envoyerNote(noteEnEdition);
-          if (envoi.status === 'success') {
-            toast('Note modifiée et renvoyée aux directeurs.');
-            annulerReprise();
-            e.target.reset();
-            await charger();
-            showTab('historique');
+          const donnees = new FormData();
+          donnees.append('fichier', fichier);
+          if ($('[data-objet]').value.trim()) donnees.append('objet', $('[data-objet]').value.trim());
+          const date = dateIso($('[data-date]').value);
+          if (date) donnees.append('date_note', date);
+          const res = await API.remplacerDocumentNote(id, donnees);
+          if (res.status === 'success') {
+            voile.remove();
+            toast('Nouvelle version enregistrée. Pensez à la transmettre au directeur.', 'info');
+            await rafraichirNotesService();
           } else {
-            toast(envoi.message || "La note est modifiée mais l'envoi a échoué.");
+            toast('Erreur : ' + (res.message || 'Enregistrement impossible.'));
           }
-          return;
+        };
+        document.body.appendChild(voile);
+      }
+
+      /* ---------------------------------------------------------------------------------------
+         Envoi de la note validée : choix des destinataires
+         --------------------------------------------------------------------------------------- */
+
+      let choixDestinataires = null;
+
+      async function ouvrirEnvoiNote(id) {
+        const note = noteParId(id);
+        if (!choixDestinataires) {
+          const res = await API.destinatairesNotes();
+          if (res.status !== 'success') {
+            toast('Erreur : ' + (res.message || 'Liste des destinataires indisponible.'));
+            return;
+          }
+          choixDestinataires = res;
         }
-        const res = await API.publishNote(objet, ids, contenu);
-        if (res.status === 'success') {
-          toast('Brouillon enregistré sous la référence ' + res.ref + '. Envoyez-le aux directeurs depuis « Mes notes de service ».');
-          e.target.reset();
-          await charger();
-          showTab('historique');
-        } else {
-          toast(res.message || 'La note n’a pas pu être enregistrée.');
-        }
-      };
-
-      /** Secrétaire : enregistre la note rédigée puis l'envoie aussitôt à tous les directeurs pour
-       * validation (les deux étapes du circuit, en un clic). */
-      async function enregistrerEtEnvoyer() {
-        const form = document.getElementById('formNote');
-        if (!form.reportValidity()) return;
-        const objet = document.getElementById('noteObjet').value.trim();
-        const contenu = document.getElementById('noteContenu').value.trim();
-        const ids = Array.from(document.getElementById('noteStructures').selectedOptions).map((o) =>
-          Number(o.value),
-        );
-        if (!objet || !contenu || !ids.length) {
-          toast("Indiquez l'objet, le contenu et au moins une structure destinataire.");
-          return;
-        }
-        if (!(await demanderConfirmation('Enregistrer cette note et l’envoyer à tous les directeurs pour validation ?', 'Envoyer'))) return;
-        const res = await API.publishNote(objet, ids, contenu);
-        if (res.status !== 'success') {
-          toast(res.message || 'La note n’a pas pu être enregistrée.');
-          return;
-        }
-        const envoi = await API.envoyerNote(res.note_id);
-        form.reset();
-        await charger();
-        showTab('historique');
-        if (envoi.status === 'success') {
-          toast('Note ' + res.ref + ' envoyée aux directeurs pour validation.');
-          if (window.rafraichirNotifications) window.rafraichirNotifications();
-        } else {
-          toast((envoi.message || "L'envoi a échoué.") + ' La note est enregistrée en brouillon : envoyez-la depuis « Mes notes de service ».');
-        }
-      }
-
-      /** Secrétaire : charge une note refusée dans le formulaire pour la modifier avant de la renvoyer
-       * aux directeurs. */
-      function reprendre(id) {
-        const note = allNotes.find((n) => Number(n.id) === Number(id));
-        if (!note) return;
-        noteEnEdition = Number(id);
-        showTab('suivi');
-        document.getElementById('noteObjet').value = note.libelle || '';
-        document.getElementById('noteContenu').value = '';
-        document.getElementById('noteEditionId').value = String(id);
-        const info = document.getElementById('noteEditionInfo');
-        info.innerHTML =
-          'Reprise de la note <strong>' +
-          escapeHtml(note.numero || '') +
-          '</strong> : modifiez le contenu puis validez pour la renvoyer aux directeurs.';
-        info.classList.remove('hidden');
-        document.getElementById('noteSubmitBtn').textContent = 'Modifier et renvoyer aux directeurs';
-        document.getElementById('noteEnvoyerBtn').classList.add('hidden');
-        document.getElementById('noteCancelEdit').classList.remove('hidden');
-        document.getElementById('formNote').scrollIntoView({ behavior: 'smooth' });
-        document.getElementById('noteContenu').focus();
-      }
-
-      /** Secrétaire : quitte le mode reprise et revient à la création. */
-      function annulerReprise() {
-        noteEnEdition = null;
-        document.getElementById('formNote').reset();
-        document.getElementById('noteEditionId').value = '';
-        document.getElementById('noteEditionInfo').classList.add('hidden');
-        document.getElementById('noteSubmitBtn').textContent = 'Enregistrer le brouillon';
-        document.getElementById('noteEnvoyerBtn').classList.remove('hidden');
-        document.getElementById('noteCancelEdit').classList.add('hidden');
-      }
-
-      /** Secrétaire : envoie une note rédigée à tous les directeurs pour validation. */
-      async function envoyer(id) {
-        if (!(await demanderConfirmation('Envoyer cette note à tous les directeurs pour validation ?', 'Envoyer'))) return;
-        const res = await API.envoyerNote(id);
-        if (res.status === 'success') {
-          toast('Note envoyée aux directeurs : chacun peut la valider.');
-          charger();
-          if (window.rafraichirNotifications) window.rafraichirNotifications();
-        } else {
-          toast(res.message || "L'envoi a échoué.");
-        }
-      }
-
-      /** Secrétaire : diffuse la note, une fois le directeur l'a validée. */
-      async function diffuser(id) {
-        if (!(await demanderConfirmation('Diffuser cette note ? Elle sera envoyée par email à tous les agents du ministère.', 'Diffuser'))) return;
-        const res = await API.diffuseNote(id);
-        if (res.status === 'success') {
-          const e = res.emails || {};
-          toast(
-            `Note diffusée. Email envoyé à ${e.envoyes ?? 0} agent${(e.envoyes ?? 0) > 1 ? 's' : ''}` +
-              (e.echecs ? ` — ${e.echecs} envoi${e.echecs > 1 ? 's' : ''} en échec` : '') +
-              (e.ignores ? ` — ${e.ignores} compte${e.ignores > 1 ? 's' : ''} sans adresse email` : '') +
-              '.',
-            e.echecs ? 'info' : 'succes',
-          );
-          charger();
-          if (window.rafraichirNotifications) window.rafraichirNotifications();
-        } else {
-          toast(res.message || 'La diffusion a échoué.');
-        }
-      }
-
-      /* HISTORIQUE DES NOTES (secrétaire) Frise de chaque note, de la rédaction à la diffusion, lue
-         depuis note_historique (renvoyé par /api/notes). */
-      let pageHisto = 1;
-      /** Notes de l'historique après filtres : ce que l'export CSV reprend. */
-      let notesHistoFiltrees = [];
-
-      /** Libellé et couleur de pastille de chaque étape enregistrée par le serveur. */
-      const ETAPES_NOTE = {
-        REDACTION: ['Note rédigée (brouillon)', 'bg-slate-400'],
-        ENVOI_DIRECTEURS: ['Envoyée aux directeurs pour validation', 'bg-sky-500'],
-        REPRISE: ['Reprise et modifiée après refus', 'bg-amber-500'],
-        SAISIE_MISE_EN_FORME: ['Mise en forme par le secrétariat', 'bg-slate-500'],
-        VALIDATION: ['Validée par le directeur', 'bg-emerald-600'],
-        VALIDATION_AUTEUR: ['Validée par son auteur', 'bg-emerald-600'],
-        REFUS_VALIDATION: ['Refusée par le directeur', 'bg-red-600'],
-        DIFFUSION: ['Diffusée aux destinataires', 'bg-emerald-700'],
-        DIFFUSION_DIRECTE: ['Diffusée directement par son auteur', 'bg-emerald-700'],
-        ARCHIVAGE: ['Archivée', 'bg-slate-500'],
-      };
-      const ROLES_NOTE = {
-        ROLE_SECRETAIRE: 'Secrétaire',
-        ROLE_DIRECTEUR: 'Directeur',
-        ROLE_SOUS_DIRECTEUR: 'Sous-directeur',
-        ROLE_DRH: 'DRH',
-        ROLE_DIRECTEUR_CABINET: 'Directeur de cabinet',
-      };
-      const ETATS_EN_COURS = ['BROUILLON', 'EN_ATTENTE_VALIDATION', 'A_REPRENDRE', 'VALIDEE'];
-      /** États où la note attend un geste de la secrétaire. */
-      const ETATS_ACTION_REQUISE = ['BROUILLON', 'A_REPRENDRE', 'VALIDEE'];
-      /** Une note attend un geste de la secrétaire, sauf si son auteur (DRH, directeur, sous-directeur,
-       * directeur de cabinet) la valide et la diffuse lui-même. */
-      const actionRequise = (n) => !n.diffusion_directe && ETATS_ACTION_REQUISE.includes(n.statut);
-
-      /** Bascule entre les menus de la page : rédaction ou notes reçues (« suivi »), historique de la
-       * secrétaire, notes envoyées du directeur de cabinet. */
-      function showTab(nom) {
-        const menus = { suivi: 'onglet', historique: 'nav-historique', envoyees: 'nav-envoyees' };
-        Object.entries(menus).forEach(([onglet, idBouton]) => {
-          const actif = onglet === nom;
-          document.getElementById('tab-' + onglet).classList.toggle('hidden', !actif);
-        });
-        activerOngletGfp(menus[nom]);
-        ['suivi', 'historique', 'envoyees'].forEach((onglet) => {
-          const bouton = document.getElementById(menus[onglet]);
-          if (!bouton) return;
-          bouton.classList.toggle('bg-emerald-700', onglet === nom);
-          bouton.classList.toggle('text-white', onglet === nom);
-          bouton.classList.toggle('text-slate-600', onglet !== nom);
-          bouton.classList.toggle('hover:bg-slate-200', onglet !== nom);
-        });
-        if (nom === 'historique') renderHistorique();
-        if (nom === 'envoyees') renderCabinet();
-      }
-
-      /** Date de la dernière étape d'une note (pour trier du plus récent au plus ancien). */
-      function derniereActivite(n) {
-        const etapes = n.historique || [];
-        return etapes.length ? etapes[etapes.length - 1].date || '' : '';
-      }
-
-      /** Date de la dernière occurrence d'une étape, ou null. */
-      function dateEtape(n, action) {
-        const etapes = (n.historique || []).filter((h) => h.action === action);
-        return etapes.length ? etapes[etapes.length - 1].date : null;
-      }
-
-      /** Nombre de refus reçus par une note. */
-      function nombreRefus(n) {
-        return (n.historique || []).filter((h) => h.action === 'REFUS_VALIDATION').length;
-      }
-
-      /** Dessine les indicateurs, puis les notes filtrées avec leur frise dépliable. */
-      function renderHistorique() {
-        const q = (document.getElementById('histoRecherche')?.value || '').toLowerCase();
-        const etat = document.getElementById('histoEtat')?.value || '';
-        const depuis = dateIso(document.getElementById('histoDepuis')?.value);
-
-        // Indicateurs sur l'ensemble des notes, indépendamment des filtres.
-        const tuile = (libelle, valeur, couleur) =>
-          `<div class="border border-slate-200 rounded-xl p-3 bg-white">
-            <p class="text-[11px] font-bold text-slate-500 uppercase">${libelle}</p>
-            <p class="text-2xl font-extrabold ${couleur} mt-1">${valeur}</p>
+        const { structures, agents } = choixDestinataires;
+        const selection = { structures: new Set(), agents: new Set() };
+        const voile = document.createElement('div');
+        voile.className = 'fixed inset-0 z-[70] bg-slate-900/60 flex items-center justify-center p-2 sm:p-4';
+        voile.innerHTML = `
+          <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200">
+              <h2 class="font-bold text-base text-slate-900">Envoyer la note de service</h2>
+              <p class="text-xs text-slate-500"><span class="font-mono" data-numero></span> — <span data-objet></span></p>
+            </div>
+            <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              <fieldset class="space-y-2">
+                <legend class="text-xs font-bold text-slate-700 uppercase mb-1">Destinataires</legend>
+                <label class="flex items-center gap-2 text-sm"><input type="radio" name="modeEnvoi" value="tous" checked>
+                  <span><strong>Tous les agents du ministère</strong> (${agents.length} agents)</span></label>
+                <label class="flex items-center gap-2 text-sm"><input type="radio" name="modeEnvoi" value="choix">
+                  <span><strong>Choisir</strong> des structures et/ou des agents</span></label>
+              </fieldset>
+              <div data-choix class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-slate-200 rounded-lg p-3 space-y-2">
+                  <p class="text-xs font-bold text-slate-700">Structures</p>
+                  <input data-recherche-structures type="text" placeholder="Rechercher une structure..." class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs">
+                  <div data-liste-structures class="max-h-64 overflow-y-auto space-y-1"></div>
+                </div>
+                <div class="border border-slate-200 rounded-lg p-3 space-y-2">
+                  <p class="text-xs font-bold text-slate-700">Agents</p>
+                  <input data-recherche-agents type="text" placeholder="Nom, matricule, structure..." class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs">
+                  <div data-liste-agents class="max-h-64 overflow-y-auto space-y-1"></div>
+                </div>
+              </div>
+              <p data-resume class="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"></p>
+              <p class="text-[11px] text-slate-500">Chaque destinataire reçoit la note par e-mail (document Word joint) et la retrouve dans son onglet « Notes de service ».</p>
+            </div>
+            <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-200">
+              <button type="button" data-annuler class="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg">Annuler</button>
+              <button type="button" data-envoyer class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">Envoyer la note</button>
+            </div>
           </div>`;
-        document.getElementById('histoIndicateurs').innerHTML =
-          tuile('Notes au total', allNotes.length, 'text-slate-900') +
-          tuile('Action requise', allNotes.filter(actionRequise).length, 'text-amber-700') +
-          tuile('Diffusées', allNotes.filter((n) => n.statut === 'DIFFUSEE').length, 'text-emerald-700') +
-          tuile('Refusées au moins une fois', allNotes.filter((n) => nombreRefus(n) > 0).length, 'text-red-700');
+        const $ = (sel) => voile.querySelector(sel);
+        $('[data-numero]').textContent = note.numero;
+        $('[data-objet]').textContent = note.objet;
+        const modeChoix = () => voile.querySelector('input[name="modeEnvoi"]:checked').value === 'choix';
 
-        // Les notes qui attendent un geste de la secrétaire d'abord, puis la plus récemment active.
-        const aTraiter = (n) => (peutDiffuser && actionRequise(n) ? 0 : 1);
-        let liste = allNotes
-          .slice()
-          .sort((a, b) => aTraiter(a) - aTraiter(b) || derniereActivite(b).localeCompare(derniereActivite(a)));
-        if (etat === 'ACTION_REQUISE') liste = liste.filter(actionRequise);
-        else if (etat === 'EN_COURS') liste = liste.filter((n) => ETATS_EN_COURS.includes(n.statut));
-        else if (etat === 'REFUSEE_UNE_FOIS') liste = liste.filter((n) => nombreRefus(n) > 0);
-        else if (etat) liste = liste.filter((n) => n.statut === etat);
-        if (depuis) {
-          liste = liste.filter((n) => (n.historique || []).some((h) => (h.date || '').slice(0, 10) >= depuis));
-        }
-        if (q) {
-          liste = liste.filter((n) =>
-            [n.numero, n.libelle, n.service, n.emetteur]
-              .concat((n.historique || []).flatMap((h) => [h.acteur, h.commentaire]))
-              .some((v) => (v || '').toLowerCase().includes(q)),
-          );
-        }
-        notesHistoFiltrees = liste;
+        const resumer = () => {
+          if (!modeChoix()) {
+            $('[data-resume]').textContent = `${agents.length} destinataire(s) : tous les agents du ministère.`;
+            return;
+          }
+          const effectif = structures.filter((s) => selection.structures.has(s.id)).reduce((t, s) => t + s.effectif, 0);
+          $('[data-resume]').textContent =
+            `${selection.structures.size} structure(s) (${effectif} agent(s)) et ${selection.agents.size} agent(s) désigné(s)` +
+            (selection.structures.size || selection.agents.size ? '.' : ' — choisissez au moins un destinataire.');
+        };
 
-        document.getElementById('histoCompteur').textContent =
-          liste.length + ' note' + (liste.length > 1 ? 's' : '');
+        const listeStructures = () => {
+          const q = ($('[data-recherche-structures]').value || '').toLowerCase();
+          $('[data-liste-structures]').innerHTML = structures
+            .filter((s) => !q || `${s.nom} ${s.sigle}`.toLowerCase().includes(q))
+            .map((s) => `
+              <label class="flex items-start gap-2 text-xs py-1 px-1 rounded hover:bg-slate-50">
+                <input type="checkbox" data-structure="${s.id}" ${selection.structures.has(s.id) ? 'checked' : ''} class="mt-0.5">
+                <span class="min-w-0"><span class="font-semibold text-slate-800">${escapeHtml(s.nom)}</span>
+                  <span class="text-slate-500">— ${s.effectif} agent(s)</span></span>
+              </label>`)
+            .join('') || '<p class="text-xs text-slate-500 italic">Aucune structure.</p>';
+        };
+        const listeAgents = () => {
+          const q = ($('[data-recherche-agents]').value || '').toLowerCase();
+          const visibles = agents.filter((a) => !q || `${a.nom} ${a.matricule} ${a.structure || ''}`.toLowerCase().includes(q));
+          $('[data-liste-agents]').innerHTML = visibles
+            .slice(0, 200)
+            .map((a) => `
+              <label class="flex items-start gap-2 text-xs py-1 px-1 rounded hover:bg-slate-50">
+                <input type="checkbox" data-agent="${a.id}" ${selection.agents.has(a.id) ? 'checked' : ''} class="mt-0.5">
+                <span class="min-w-0"><span class="font-semibold text-slate-800">${escapeHtml(a.nom)}</span>
+                  <span class="text-slate-500">— ${escapeHtml(a.matricule)}${a.structure ? `, ${escapeHtml(a.structure)}` : ''}</span></span>
+              </label>`)
+            .join('') + (visibles.length > 200 ? `<p class="text-[11px] text-slate-500 italic">${visibles.length - 200} autre(s) : affinez la recherche.</p>` : '') || '<p class="text-xs text-slate-500 italic">Aucun agent.</p>';
+        };
 
-        const maxPage = Math.ceil(liste.length / PAGE_SIZE_NOTES) || 1;
-        if (pageHisto > maxPage) pageHisto = maxPage;
-        if (pageHisto < 1) pageHisto = 1;
-        const pageItems = liste.slice((pageHisto - 1) * PAGE_SIZE_NOTES, pageHisto * PAGE_SIZE_NOTES);
-
-        document.getElementById('histoListe').innerHTML =
-          pageItems.map(carteHistorique).join('') ||
-          '<p class="text-sm text-slate-500 italic text-center py-8">Aucune note ne correspond aux critères.</p>';
-
-        renderPagination({
-          container: 'histoPagination',
-          totalItems: liste.length,
-          currentPage: pageHisto,
-          pageSize: PAGE_SIZE_NOTES,
-          onPageChange: (p) => {
-            pageHisto = p;
-            renderHistorique();
-          },
+        voile.querySelectorAll('input[name="modeEnvoi"]').forEach((r) =>
+          r.addEventListener('change', () => {
+            $('[data-choix]').classList.toggle('hidden', !modeChoix());
+            resumer();
+          }),
+        );
+        $('[data-recherche-structures]').oninput = listeStructures;
+        $('[data-recherche-agents]').oninput = listeAgents;
+        voile.addEventListener('change', (e) => {
+          const s = e.target.dataset.structure;
+          const a = e.target.dataset.agent;
+          if (s) selection.structures[e.target.checked ? 'add' : 'delete'](Number(s));
+          if (a) selection.agents[e.target.checked ? 'add' : 'delete'](Number(a));
+          if (s || a) resumer();
         });
+        $('[data-annuler]').onclick = () => voile.remove();
+        $('[data-envoyer]').onclick = async () => {
+          const choix = modeChoix()
+            ? { tous: false, structures: [...selection.structures], agents: [...selection.agents] }
+            : { tous: true };
+          if (choix.tous === false && !choix.structures.length && !choix.agents.length) {
+            toast('Choisissez au moins une structure ou un agent.');
+            return;
+          }
+          const res = await API.envoyerNote(id, choix);
+          if (res.status === 'success') {
+            voile.remove();
+            const e = res.emails || {};
+            toast(
+              `Note envoyée à ${res.destinataires} destinataire(s) : ${e.envoyes || 0} e-mail(s) envoyé(s)` +
+                (e.ignores ? `, ${e.ignores} sans adresse e-mail` : '') +
+                (e.echecs ? `, ${e.echecs} échec(s) d’envoi` : '') + '.',
+            );
+            await rafraichirNotesService();
+          } else {
+            toast('Erreur : ' + (res.message || 'Envoi impossible.'));
+          }
+        };
+        listeStructures();
+        listeAgents();
+        resumer();
+        document.body.appendChild(voile);
       }
 
-      /** Carte d'une note : résumé des dates clés, geste attendu de la secrétaire (envoyer, reprendre,
-       * diffuser), puis frise dépliable de toutes les étapes. */
-      function carteHistorique(n) {
-        const [libelleEtat, couleurEtat] = ETATS[n.statut] || [n.statut, 'text-slate-700'];
-        const etapes = n.historique || [];
-        const refus = nombreRefus(n);
-        const jalons = [
-          ['Rédigée', dateEtape(n, 'REDACTION')],
-          ['Envoyée', dateEtape(n, 'ENVOI_DIRECTEURS')],
-          ['Validée', dateEtape(n, 'VALIDATION')],
-          ['Diffusée', dateEtape(n, 'DIFFUSION') || dateEtape(n, 'DIFFUSION_DIRECTE')],
-        ]
-          .filter(([, d]) => d)
-          .map(([libelle, d]) => `${libelle} le ${escapeHtml(formatDateSuivi(d))}`)
-          .join(' · ');
+      /* ---------------------------------------------------------------------------------------
+         Démarrage
+         --------------------------------------------------------------------------------------- */
 
-        const frise = etapes.length
-          ? etapes
-              .map((h) => {
-                const [libelle, pastille] = ETAPES_NOTE[h.action] || [h.action, 'bg-slate-400'];
-                const acteur = [h.acteur, ROLES_NOTE[h.role] || ''].filter(Boolean).join(', ');
-                const motif = h.commentaire
-                  ? `<p class="text-xs mt-0.5 ${h.action === 'REFUS_VALIDATION' ? 'text-red-700 font-semibold' : 'text-slate-600'}">${
-                      h.action === 'REFUS_VALIDATION' ? 'Motif : ' : ''
-                    }${escapeHtml(h.commentaire)}</p>`
-                  : '';
-                return `<li class="relative pl-5 pb-4 last:pb-0">
-                  <span class="absolute -left-[7px] top-1 w-3 h-3 rounded-full ${pastille} ring-4 ring-white" aria-hidden="true"></span>
-                  <p class="text-xs font-bold text-slate-900">${escapeHtml(libelle)}</p>
-                  <p class="text-[11px] text-slate-500">${escapeHtml(formatDateSuivi(h.date))}${acteur ? ' — ' + escapeHtml(acteur) : ''}</p>
-                  ${motif}
-                </li>`;
-              })
-              .join('')
-          : '<li class="text-xs text-slate-500 italic">Aucune étape enregistrée pour cette note.</li>';
-
-        // Gestes de la secrétaire selon l'état : ceux du tableau de suivi d'avant.
-        const id = Number(n.id);
-        const bouton = (action, libelle) =>
-          `<button type="button" onclick="${action}(${id})"
-            class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-xs">${libelle}</button>`;
-        const actions = peutDiffuser && !n.diffusion_directe
-          ? {
-              BROUILLON: bouton('envoyer', 'Envoyer aux directeurs'),
-              A_REPRENDRE: bouton('reprendre', 'Modifier et renvoyer'),
-              VALIDEE: bouton('diffuser', 'Diffuser la note'),
-            }[n.statut] || ''
-          : '';
-
-        return `<article class="border ${actions ? 'border-amber-300' : 'border-slate-200'} rounded-xl bg-white">
-          <div class="p-4 flex justify-between items-start gap-3 flex-wrap">
-            <div class="min-w-0">
-              <p class="font-mono text-xs font-bold text-slate-500">${escapeHtml(n.numero || '')}</p>
-              <p class="font-bold text-sm text-slate-900">${escapeHtml(n.libelle || '')}</p>
-              <p class="text-xs text-slate-500">Destinataires : ${escapeHtml(n.service || '—')}</p>
-              ${jalons ? `<p class="text-[11px] text-slate-600 mt-1">${jalons}</p>` : ''}
-            </div>
-            <div class="text-right space-y-1.5 shrink-0">
-              <p class="text-xs font-bold ${couleurEtat}">${escapeHtml(libelleEtat)}</p>
-              ${refus ? `<p><span class="px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-700 text-[10px] font-bold">Refusée ${refus} fois</span></p>` : ''}
-              ${actions ? `<div>${actions}</div>` : ''}
-            </div>
-          </div>
-          <details class="group border-t border-slate-200">
-            <summary class="cursor-pointer px-4 py-2 text-[11px] text-emerald-700 font-bold hover:bg-slate-50">
-              ${etapes.length} étape${etapes.length > 1 ? 's' : ''}
-              <span class="group-open:hidden">— voir la frise ▾</span><span class="hidden group-open:inline">— masquer la frise ▴</span>
-            </summary>
-            <div class="px-4 pt-2 pb-4">
-              <ol class="ml-2 border-l-2 border-slate-200">${frise}</ol>
-            </div>
-          </details>
-        </article>`;
-      }
-
-      /** Exporte l'historique filtré : une ligne par étape de chaque note. */
-      function exporterHistorique() {
-        if (!notesHistoFiltrees.length) {
-          toast('Aucune note à exporter avec les filtres actuels.', 'info');
-          return;
+      window.apresChargementNotes = () => {
+        if (estSecretaire) {
+          afficherDirecteur();
+          renderMesNotes();
         }
-        const lignes = notesHistoFiltrees.flatMap((n) =>
-          (n.historique || []).map((h) => [
-            n.numero,
-            n.libelle,
-            (ETATS[n.statut] || [n.statut])[0],
-            (ETAPES_NOTE[h.action] || [h.action])[0],
-            formatDateSuivi(h.date),
-            h.acteur,
-            ROLES_NOTE[h.role] || h.role,
-            h.commentaire,
-          ]),
-        );
-        telechargerCsv(
-          ['Référence', 'Objet', 'État actuel', 'Étape', 'Date', 'Acteur', 'Rôle', 'Commentaire / motif'],
-          lignes,
-          'historique-notes',
-        );
-      }
+      };
 
-      charger();
-      chargerStructures();
-      if (peutRediger) showTab('historique');
+      (async () => {
+        document.getElementById('depotDate').value = dateFr(new Date().toISOString().slice(0, 10));
+        await chargerNotesService();
+        estSecretaire = !!notesServiceDonnees.secretaire;
+        document.getElementById('nav-mes-notes').classList.toggle('hidden', !estSecretaire);
+        const role = document.getElementById('roleLabel');
+        if (role && !role.textContent.trim()) {
+          role.textContent = estSecretaire ? 'Secrétaire' : (user.roles_codes || []).includes('ROLE_DIRECTEUR_CABINET') ? 'Directeur de Cabinet' : '';
+        }
+        afficherNotesService('zoneNotesService');
+        window.apresChargementNotes();
+        majBadgesNotes();
+        showTab(estSecretaire ? 'mes-notes' : 'notes');
+        setInterval(rafraichirNotesService, 30000);
+      })();
     </script>
   </body>
 </html>

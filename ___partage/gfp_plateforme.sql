@@ -316,15 +316,30 @@ CREATE TABLE IF NOT EXISTS `migrations` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE IF NOT EXISTS `note_destinataires` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `note_id` bigint(20) unsigned NOT NULL,
+  `agent_id` bigint(20) unsigned NOT NULL,
+  `choisi` tinyint(1) NOT NULL DEFAULT 0,
+  `lu_le` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `note_destinataires_note_id_agent_id_unique` (`note_id`,`agent_id`),
+  KEY `note_destinataires_agent_id_foreign` (`agent_id`),
+  CONSTRAINT `note_destinataires_agent_id_foreign` FOREIGN KEY (`agent_id`) REFERENCES `agents` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `note_destinataires_note_id_foreign` FOREIGN KEY (`note_id`) REFERENCES `notes_service` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `note_historique` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `note_id` bigint(20) unsigned NOT NULL,
   `acteur_agent_id` bigint(20) unsigned DEFAULT NULL,
   `acteur_nom` varchar(255) DEFAULT NULL,
   `acteur_role` varchar(40) DEFAULT NULL,
-  `action` varchar(60) NOT NULL,
-  `ancien_statut` varchar(40) DEFAULT NULL,
-  `nouveau_statut` varchar(40) DEFAULT NULL,
+  `action` varchar(40) NOT NULL,
   `commentaire` text DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -333,7 +348,7 @@ CREATE TABLE IF NOT EXISTS `note_historique` (
   KEY `note_historique_note_id_index` (`note_id`),
   CONSTRAINT `note_historique_acteur_agent_id_foreign` FOREIGN KEY (`acteur_agent_id`) REFERENCES `agents` (`id`) ON DELETE SET NULL,
   CONSTRAINT `note_historique_note_id_foreign` FOREIGN KEY (`note_id`) REFERENCES `notes_service` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -350,28 +365,30 @@ CREATE TABLE IF NOT EXISTS `note_structure` (
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `notes_service` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `numero_reference` varchar(80) NOT NULL,
+  `numero` varchar(60) NOT NULL,
   `objet` varchar(255) NOT NULL,
-  `contenu` text DEFAULT NULL,
-  `fichier_path` varchar(255) DEFAULT NULL,
-  `signataire_id` bigint(20) unsigned NOT NULL,
-  `secretaire_id` bigint(20) unsigned DEFAULT NULL,
+  `date_note` date NOT NULL,
+  `fichier_path` varchar(255) NOT NULL,
+  `fichier_nom` varchar(255) NOT NULL,
+  `fichier_taille` int(10) unsigned NOT NULL DEFAULT 0,
   `statut` varchar(30) NOT NULL DEFAULT 'BROUILLON',
-  `date_emission` date NOT NULL,
-  `date_diffusion` timestamp NULL DEFAULT NULL,
-  `valide_le` timestamp NULL DEFAULT NULL,
-  `valideur_id` bigint(20) unsigned DEFAULT NULL,
+  `secretaire_id` bigint(20) unsigned NOT NULL,
+  `directeur_id` bigint(20) unsigned DEFAULT NULL,
+  `motif_retour` text DEFAULT NULL,
+  `envoi_a_tous` tinyint(1) NOT NULL DEFAULT 0,
+  `transmise_le` timestamp NULL DEFAULT NULL,
+  `validee_le` timestamp NULL DEFAULT NULL,
+  `envoyee_le` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `notes_service_numero_reference_unique` (`numero_reference`),
-  KEY `notes_service_signataire_id_foreign` (`signataire_id`),
+  UNIQUE KEY `notes_service_numero_unique` (`numero`),
   KEY `notes_service_secretaire_id_foreign` (`secretaire_id`),
-  KEY `notes_service_valideur_id_foreign` (`valideur_id`),
-  CONSTRAINT `notes_service_secretaire_id_foreign` FOREIGN KEY (`secretaire_id`) REFERENCES `agents` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `notes_service_signataire_id_foreign` FOREIGN KEY (`signataire_id`) REFERENCES `agents` (`id`),
-  CONSTRAINT `notes_service_valideur_id_foreign` FOREIGN KEY (`valideur_id`) REFERENCES `agents` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `notes_service_directeur_id_foreign` (`directeur_id`),
+  KEY `notes_service_statut_index` (`statut`),
+  CONSTRAINT `notes_service_directeur_id_foreign` FOREIGN KEY (`directeur_id`) REFERENCES `agents` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `notes_service_secretaire_id_foreign` FOREIGN KEY (`secretaire_id`) REFERENCES `agents` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -603,7 +620,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (1,'0001_01_01_0000
 (16,'2026_09_25_170000_ajouter_actif_aux_users',4),
 (17,'2026_09_25_190000_enrichir_structures',5),
 (19,'2026_09_30_000001_aligner_statuts_workflows_separes',6),
-(20,'2026_09_30_000002_rendre_justificatifs_etat_civil_nullables',7);
+(20,'2026_09_30_000002_rendre_justificatifs_etat_civil_nullables',7),
+(21,'2026_10_18_000001_refonte_notes_de_service',8);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;

@@ -146,6 +146,12 @@ header > nav button.nav-tab {
   color: #475569;
 }
 
+/* Onglet masqué selon le profil (classe « hidden ») : la règle d'affichage ci-dessus ne doit pas le
+   faire réapparaître. */
+header > nav button.nav-tab.hidden {
+  display: none !important;
+}
+
 /* Hover sur onglet inactif */
 header > nav button.nav-tab:hover:not(.nav-tab-active) {
   background-color: #e2e8f0;

@@ -80,18 +80,11 @@
             Statistiques
           </button>
           <button
-            onclick="showTab('notes-recues')"
-            id="nav-notes-recues"
-            class="nav-tab"
-          >
-            Notes de service reçues
-          </button>
-          <button
             onclick="showTab('notes')"
             id="nav-notes"
             class="nav-tab"
           >
-            Notes de service envoyées
+            Notes de service <span class="tab-badge" data-notes-non-lues data-count="0"></span>
           </button>
         </div>
       </nav>
@@ -299,76 +292,9 @@
         </div>
       </div>
 
-      <!-- TAB : NOTES DE SERVICE (DRH : rédige vers sa direction, diffuse directement) -->
-      <div id="tab-notes" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-          <div class="border-b border-slate-200 pb-4">
-            <h2 class="text-base font-bold text-slate-900">Note de service vers ma direction</h2>
-            <p class="text-xs text-slate-500">
-              Rédigez la note à l'attention des agents de votre direction, validez-la, puis
-              diffusez-la directement, sans passer par le secrétariat.
-            </p>
-          </div>
-          <form id="formNoteDrh" class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Objet de la note *</label>
-              <input type="text" id="noteDrhObjet" required maxlength="200"
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contenu de la note *</label>
-              <textarea id="noteDrhContenu" required rows="3" placeholder="Rédigez le contenu de la note..."
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"></textarea>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Structures destinataires *
-                <span class="normal-case font-normal text-slate-500">(votre direction est présélectionnée)</span>
-              </label>
-              <select id="noteDrhStructures" multiple required
-                class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm h-24"></select>
-            </div>
-            <div class="flex flex-wrap gap-3">
-              <button type="submit"
-                class="px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs rounded-lg shadow">
-                Enregistrer le brouillon
-              </button>
-              <button type="button" onclick="enregistrerNoteDrh(true)"
-                class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow">
-                Valider
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div class="border-b border-slate-200 pb-4 flex justify-between items-center">
-            <div>
-              <h2 class="text-base font-bold text-slate-900">Notes de service envoyées</h2>
-              <p class="text-xs text-slate-500">Validez vos brouillons, puis diffusez-les directement aux agents.</p>
-            </div>
-            <span id="notesDrhCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">0 note</span>
-          </div>
-          <div id="notesDrhContainer" class="space-y-3"></div>
-          <div id="notesDrhPagination"></div>
-        </div>
-      </div>
-
-      <!-- TAB : NOTES DE SERVICE REÇUES (émises par le secrétariat ou les autres responsables) -->
-      <div id="tab-notes-recues" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <div class="border-b border-slate-200 pb-4 flex justify-between items-center flex-wrap gap-2">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Notes de service reçues</h2>
-            <p class="text-xs text-slate-500">Notes émises par le secrétariat, le Cabinet ou les autres responsables.</p>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <input type="text" id="notesRecuesDrhSearch" oninput="pageNotesRecuesDrh = 1; renderNotesRecuesDrh()"
-              placeholder="Référence, objet, émetteur..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-52">
-            <span id="notesRecuesDrhCount" class="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full text-xs font-bold">0 note</span>
-          </div>
-        </div>
-        <div id="notesRecuesDrhContainer" class="space-y-3"></div>
-        <div id="notesRecuesDrhPagination"></div>
+      <!-- TAB : NOTES DE SERVICE (reçues du secrétariat ; à valider si une secrétaire lui est rattachée) -->
+      <div id="tab-notes" class="hidden">
+        <div id="zoneNotesService"></div>
       </div>
 
       <!-- TAB : HISTORIQUE -->
@@ -378,6 +304,7 @@
 
     <script src="../js/api.js"></script>
     <script src="../js/shell.js"></script>
+    <script src="../js/notes.js"></script>
     <script>
       let user = null;
       let requests = [];
@@ -386,9 +313,6 @@
       let pageDrhPermHisto = 1;
       let pageDrhEc = 1;
       let pageDashDrh = 1;
-      let pageNotesDrh = 1;
-      let pageNotesRecuesDrh = 1;
-      let notesDrh = [];
       /** Dossiers du tableau de bord après filtres : ce que l'export CSV reprend. */
       let dossiersDashDrh = [];
       let PAGE_SIZE = taillePageMemorisee(3);
@@ -412,7 +336,6 @@
           user.structure || 'Structure non assignée';
         loadAvatar();
         await loadData();
-        await chargerStructuresDrh();
         showTab('dashboard');
         renderAll();
       }
@@ -421,8 +344,7 @@
       async function loadData() {
         const r = await API.getRequests();
         requests = garderSiEchec(r, 'requests', requests);
-        const n = await API.getNotes();
-        notesDrh = garderSiEchec(n, 'notes', notesDrh);
+        await chargerNotesService();
       }
 
       /* Pause quand l'onglet est caché, mise à jour dès le retour, et on ne redessine que si les données
@@ -431,9 +353,9 @@
       document.addEventListener('visibilitychange', rafraichirAuto);
       async function rafraichirAuto() {
         if (document.hidden || typeof loadData !== 'function') return;
-        const avant = JSON.stringify([requests, notesDrh]);
+        const avant = JSON.stringify([requests, notesServiceDonnees]);
         await loadData();
-        if (JSON.stringify([requests, notesDrh]) === avant) return;
+        if (JSON.stringify([requests, notesServiceDonnees]) === avant) return;
         if (typeof renderAll === 'function') renderAll();
       }
 
@@ -441,8 +363,8 @@
        * dossiers (permissions, état civil). */
       function renderAll() {
         renderDashboard();
-        renderNotesDrh();
-        renderNotesRecuesDrh();
+        afficherNotesService('zoneNotesService');
+        majBadgesNotes();
         renderPermHistorique();
         renderPermissions();
         renderEtatCivil();
@@ -877,221 +799,9 @@
       }
 
 
-      /** Notes du DRH : ses brouillons (à valider), ses notes validées (à diffuser directement vers sa
-       * direction) puis ses notes diffusées. Il valide lui-même : aucun circuit de validation. */
-      function renderNotesDrh() {
-        const miennes = notesDrh.filter((n) => Number(n.signataire_id) === user.id_agent);
-
-        document.getElementById('notesDrhCount').textContent =
-          miennes.length + ' note' + (miennes.length > 1 ? 's' : '');
-
-        const maxPage = Math.ceil(miennes.length / PAGE_SIZE_NOTES) || 1;
-        if (pageNotesDrh > maxPage) pageNotesDrh = maxPage;
-        if (pageNotesDrh < 1) pageNotesDrh = 1;
-        const pageItems = miennes.slice((pageNotesDrh - 1) * PAGE_SIZE_NOTES, pageNotesDrh * PAGE_SIZE_NOTES);
-
-        const ETATS_DRH = {
-          BROUILLON: ['Brouillon', 'text-slate-700'],
-          VALIDEE: ['Validée - à diffuser', 'text-emerald-700'],
-          DIFFUSEE: ['Diffusée', 'text-emerald-700'],
-          ARCHIVEE: ['Archivée', 'text-slate-500'],
-        };
-        const container = document.getElementById('notesDrhContainer');
-        container.innerHTML =
-          pageItems
-            .map((n) => {
-              const [libelle, couleur] = ETATS_DRH[n.statut] || [n.statut, 'text-slate-700'];
-              const id = Number(n.id);
-              const action = {
-                BROUILLON: `<button type="button" onclick="validerNoteDrh(${id})"
-                    class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Valider</button>`,
-                VALIDEE: `<button type="button" onclick="diffuserNoteDrh(${id})"
-                    class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-xs">Diffuser aux agents</button>`,
-              }[n.statut];
-              return `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-1">
-                <div class="flex justify-between items-start gap-3 flex-wrap">
-                  <div class="min-w-0">
-                    <p class="font-mono font-bold text-xs text-slate-500">${escapeHtml(n.numero || '')}</p>
-                    <p class="font-bold text-sm text-slate-900">${escapeHtml(n.libelle || '')}</p>
-                    <p class="text-xs text-slate-500">Destinataires : ${escapeHtml(n.service || '—')}</p>
-                  </div>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-300 bg-slate-50 ${couleur}">${escapeHtml(libelle)}</span>
-                </div>
-                ${action ? `<div class="pt-2">${action}</div>` : ''}
-              </div>`;
-            })
-            .join('') ||
-          '<p class="text-sm text-slate-500 italic bg-white rounded-xl border border-slate-200 p-6 text-center">Aucune note de service.</p>';
-
-        renderPagination({
-          container: 'notesDrhPagination',
-          totalItems: miennes.length,
-          currentPage: pageNotesDrh,
-          pageSize: PAGE_SIZE_NOTES,
-          onPageChange: (p) => {
-            pageNotesDrh = p;
-            renderNotesDrh();
-          },
-        });
-      }
-
-      /** Note reçue : émise par un autre. Une note du circuit de la secrétaire compte dès son envoi aux
-       * directeurs ; une note diffusée par son auteur (directeur, sous-directeur, Cabinet) une fois
-       * diffusée. */
-      function estRecueDrh(n) {
-        if (Number(n.signataire_id) === user.id_agent) return false;
-        if (n.diffusion_directe) return n.statut === 'DIFFUSEE' || n.statut === 'ARCHIVEE';
-        return n.statut !== 'BROUILLON';
-      }
-
-      /** Notes reçues par le DRH, avec recherche et pagination. */
-      function renderNotesRecuesDrh() {
-        const search = (document.getElementById('notesRecuesDrhSearch')?.value || '').toLowerCase();
-        const recues = notesDrh
-          .filter(estRecueDrh)
-          .filter(
-            (n) =>
-              !search ||
-              [n.numero, n.libelle, n.emetteur, n.service].some((v) => (v || '').toLowerCase().includes(search)),
-          );
-        document.getElementById('notesRecuesDrhCount').textContent =
-          recues.length + ' note' + (recues.length > 1 ? 's' : '');
-
-        const maxPage = Math.ceil(recues.length / PAGE_SIZE_NOTES) || 1;
-        if (pageNotesRecuesDrh > maxPage) pageNotesRecuesDrh = maxPage;
-        if (pageNotesRecuesDrh < 1) pageNotesRecuesDrh = 1;
-        const pageItems = recues.slice(
-          (pageNotesRecuesDrh - 1) * PAGE_SIZE_NOTES,
-          pageNotesRecuesDrh * PAGE_SIZE_NOTES,
-        );
-
-        const ETATS_RECUES = {
-          EN_ATTENTE_VALIDATION: ['En attente de validation', 'text-amber-700'],
-          A_REPRENDRE: ['À reprendre par la secrétaire', 'text-orange-700'],
-          VALIDEE: ['Validée - à diffuser', 'text-emerald-700'],
-          DIFFUSEE: ['Diffusée', 'text-emerald-700'],
-          ARCHIVEE: ['Archivée', 'text-slate-500'],
-        };
-        document.getElementById('notesRecuesDrhContainer').innerHTML =
-          pageItems
-            .map((n) => {
-              const [libelle, couleur] = ETATS_RECUES[n.statut] || [n.statut, 'text-slate-700'];
-              return `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-1">
-                <div class="flex justify-between items-start gap-3 flex-wrap">
-                  <div class="min-w-0">
-                    <p class="font-mono font-bold text-xs text-slate-500">${escapeHtml(n.numero || '')}</p>
-                    <p class="font-bold text-sm text-slate-900">${escapeHtml(n.libelle || '')}</p>
-                    <p class="text-xs text-slate-500">Émetteur : ${escapeHtml(n.emetteur || '—')}</p>
-                    <p class="text-xs text-slate-500">Destinataires : ${escapeHtml(n.service || '—')}</p>
-                  </div>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-300 bg-slate-50 ${couleur}">${escapeHtml(libelle)}</span>
-                </div>
-              </div>`;
-            })
-            .join('') ||
-          '<p class="text-sm text-slate-500 italic bg-white rounded-xl border border-slate-200 p-6 text-center">Aucune note de service reçue.</p>';
-
-        renderPagination({
-          container: 'notesRecuesDrhPagination',
-          totalItems: recues.length,
-          currentPage: pageNotesRecuesDrh,
-          pageSize: PAGE_SIZE_NOTES,
-          onPageChange: (p) => {
-            pageNotesRecuesDrh = p;
-            renderNotesRecuesDrh();
-          },
-        });
-      }
-
-      /** Remplit les destinataires, avec la direction du DRH présélectionnée. */
-      async function chargerStructuresDrh() {
-        const res = await API.getStructures();
-        const structures = (res.structures || [])
-          .slice()
-          .sort((a, b) => a.nom_structure.localeCompare(b.nom_structure, 'fr'));
-        const mienne = user?.structure_id;
-        document.getElementById('noteDrhStructures').innerHTML = structures
-          .map(
-            (s) =>
-              `<option value="${Number(s.id_structure)}"${Number(s.id_structure) === Number(mienne) ? ' selected' : ''}>${escapeHtml(s.nom_structure)}</option>`,
-          )
-          .join('');
-      }
-
-      /** DRH : valide son brouillon ; la note n'est plus modifiable et peut être diffusée. */
-      async function validerNoteDrh(id) {
-        if (!(await demanderConfirmation('Valider cette note ? Elle ne sera plus modifiable et pourra être diffusée aux agents.', 'Valider'))) return;
-        const res = await API.validerNoteDirecte(id);
-        if (res.status === 'success') {
-          toast('Note validée : vous pouvez maintenant la diffuser.');
-          await loadData();
-          renderAll();
-        } else {
-          toast('Erreur : ' + (res.message || 'Validation impossible.'));
-        }
-      }
-
-      /** DRH : diffuse directement sa note validée vers les agents destinataires. */
-      async function diffuserNoteDrh(id) {
-        if (!(await demanderConfirmation('Diffuser cette note validée aux agents destinataires ?', 'Diffuser'))) return;
-        const res = await API.diffuserNoteDirecte(id);
-        if (res.status === 'success') {
-          toast('Note diffusée aux agents.');
-          await loadData();
-          renderAll();
-        } else {
-          toast('Erreur : ' + (res.message || 'Diffusion impossible.'));
-        }
-      }
-
-      /* « Enregistrer le brouillon » soumet le formulaire ; « Valider » l'enregistre et le valide. */
-      document.getElementById('formNoteDrh').addEventListener('submit', (e) => {
-        e.preventDefault();
-        enregistrerNoteDrh(false);
-      });
-
-      /** DRH : enregistre sa note en brouillon ou, avec « Valider », l'enregistre et la valide aussitôt ;
-       * il la diffuse ensuite depuis la liste de ses notes. */
-      async function enregistrerNoteDrh(valider) {
-        const formulaire = document.getElementById('formNoteDrh');
-        const objet = document.getElementById('noteDrhObjet').value.trim();
-        const contenu = document.getElementById('noteDrhContenu').value.trim();
-        const ids = Array.from(document.getElementById('noteDrhStructures').selectedOptions).map((o) =>
-          Number(o.value),
-        );
-        if (!objet || !contenu || !ids.length) {
-          toast("Indiquez l'objet, le contenu et au moins une structure destinataire.");
-          return;
-        }
-        if (objet.length < 5) {
-          toast("L'objet de la note doit contenir au moins 5 caractères.");
-          return;
-        }
-        const res = await API.publishNote(objet, ids, contenu);
-        if (res.status !== 'success') {
-          toast(res.message || "La note n'a pas pu être enregistrée.");
-          return;
-        }
-        formulaire.reset();
-        await chargerStructuresDrh();
-        if (valider) {
-          // Le brouillon existe déjà : un échec de validation le laisse dans la liste, à valider plus tard.
-          const val = await API.validerNoteDirecte(res.note_id);
-          toast(
-            val.status === 'success'
-              ? 'Note ' + res.ref + ' validée. Diffusez-la depuis la liste ci-dessous.'
-              : 'Brouillon ' + res.ref + ' enregistré, mais non validé : ' + (val.message || 'réessayez depuis la liste.'),
-          );
-        } else {
-          toast('Brouillon enregistré sous la référence ' + res.ref + '. Validez-le depuis la liste ci-dessous.');
-        }
-        await loadData();
-        renderAll();
-      }
-
       /** Affiche l'onglet demandé et masque les autres ; les statistiques se chargent à l'ouverture. */
       function showTab(name) {
-        ['dashboard', 'permissions', 'etatcivil', 'statistiques', 'notes-recues', 'notes'].forEach((t) => {
+        ['dashboard', 'permissions', 'etatcivil', 'statistiques', 'notes'].forEach((t) => {
           document.getElementById('tab-' + t).classList.add('hidden');
         });
         document.getElementById('tab-' + name).classList.remove('hidden');

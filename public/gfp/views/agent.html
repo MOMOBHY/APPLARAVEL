@@ -56,7 +56,7 @@
           </button>
           <button onclick="showTab('notes')" id="nav-notes"
             class="nav-tab">
-            Notes de Service
+            Notes de service <span class="tab-badge" data-notes-non-lues data-count="0"></span>
           </button>
         </div>
       </nav>
@@ -522,29 +522,24 @@
       <!-- ============================================================ -->
       <!-- TAB : NOTES DE SERVICE                                       -->
       <!-- ============================================================ -->
-      <div id="tab-notes" class="hidden space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="text-base font-bold text-slate-900">Notes de Service Diffusées</h2>
-          <input type="text" id="notesSearch" oninput="pageNotes=1;renderNotes()" placeholder="Rechercher..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs w-48">
-        </div>
-        <div id="notesContainer" class="space-y-3"></div>
-        <div id="notesPagination"></div>
+      <!-- Notes reçues du secrétariat (module commun js/notes.js). -->
+      <div id="tab-notes" class="hidden">
+        <div id="zoneNotesService"></div>
       </div>
 
     </main>
 
     <script src="../js/api.js"></script>
     <script src="../js/shell.js"></script>
+    <script src="../js/notes.js"></script>
     <script>
       let user = null;
       let requests = [];
-      let notes = [];
 
       let pageDash = 1;
       let pagePerm = 1;
       let pageNaiss = 1;
       let pageDeces = 1;
-      let pageNotes = 1;
       let PAGE_SIZE = taillePageMemorisee(3);
 
       /* INITIALISATION */
@@ -599,8 +594,7 @@
 
         const r = await API.getRequests();
         requests = garderSiEchec(r, 'requests', requests);
-        const n = await API.getNotes();
-        notes = garderSiEchec(n, 'notes', notes);
+        await chargerNotesService();
       }
 
       function renderAll() {
@@ -617,7 +611,8 @@
         renderPermissions();
         renderNaissances();
         renderDeces();
-        renderNotes();
+        afficherNotesService('zoneNotesService');
+        majBadgesNotes();
       }
 
       async function rafraichirVue() {
@@ -633,9 +628,9 @@
       document.addEventListener('visibilitychange', rafraichirAuto);
       async function rafraichirAuto() {
         if (document.hidden || typeof loadData !== 'function') return;
-        const avant = JSON.stringify([user, requests, notes]);
+        const avant = JSON.stringify([user, requests, notesServiceDonnees]);
         await loadData();
-        if (JSON.stringify([user, requests, notes]) === avant) return;
+        if (JSON.stringify([user, requests, notesServiceDonnees]) === avant) return;
         if (typeof renderAll === 'function') renderAll();
       }
 
@@ -1412,48 +1407,6 @@
             toast('Erreur : ' + (res.message || 'Vérifiez les champs.'));
           }
         }
-      }
-
-      /* NOTES DE SERVICE */
-      function renderNotes() {
-        const search = (document.getElementById('notesSearch')?.value || '').toLowerCase();
-        const container = document.getElementById('notesContainer');
-        container.innerHTML = '';
-        const visibles = notes
-          .filter(n => n.statut === 'DIFFUSEE' || n.statut === 'ARCHIVEE')
-          .filter(n => !search || (n.libelle||'').toLowerCase().includes(search) || (n.service||'').toLowerCase().includes(search));
-        if (!visibles.length) {
-          container.innerHTML = '<p class="text-slate-500 italic text-sm">Aucune note de service disponible.</p>';
-          renderPagination({ container: 'notesPagination', totalItems: 0, currentPage: 1, pageSize: PAGE_SIZE_NOTES, onPageChange: () => {} });
-          return;
-        }
-
-        const maxPage = Math.ceil(visibles.length / PAGE_SIZE_NOTES) || 1;
-        if (pageNotes > maxPage) pageNotes = maxPage;
-        if (pageNotes < 1) pageNotes = 1;
-
-        const pageItems = visibles.slice((pageNotes - 1) * PAGE_SIZE_NOTES, pageNotes * PAGE_SIZE_NOTES);
-
-        pageItems.forEach(n => {
-          const d = document.createElement('div');
-          d.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm';
-          d.innerHTML = `
-            <span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${escapeHtml(n.service)}</span>
-            <h3 class="font-bold text-sm text-slate-900 mt-1">${escapeHtml(n.libelle)}</h3>
-            <p class="text-xs text-slate-500 mt-1">Publié le ${escapeHtml(dateFr(n.date))} par ${escapeHtml(n.emetteur)}</p>`;
-          container.appendChild(d);
-        });
-
-        renderPagination({
-          container: 'notesPagination',
-          totalItems: visibles.length,
-          currentPage: pageNotes,
-          pageSize: PAGE_SIZE_NOTES,
-          onPageChange: (newPage) => {
-            pageNotes = newPage;
-            renderNotes();
-          }
-        });
       }
 
       window.onload = init;

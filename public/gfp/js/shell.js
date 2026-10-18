@@ -293,35 +293,35 @@
    * → pastille neutre avec le code brut. */
   const styleType = {
     VALIDATION: 'bg-emerald-100 text-emerald-800 border border-emerald-300',
-    VALIDEE: 'bg-emerald-100 text-emerald-800 border border-emerald-300',
     REJET: 'bg-red-100 text-red-800 border border-red-300',
-    REFUS_VALIDATION: 'bg-red-100 text-red-800 border border-red-300',
     RETOUR: 'bg-orange-100 text-orange-800 border border-orange-300',
     RETOUR_CORRECTION: 'bg-orange-100 text-orange-800 border border-orange-300',
     ATTENTE_DRH: 'bg-amber-100 text-amber-800 border border-amber-300',
     ATTENTE_VALIDATION: 'bg-amber-100 text-amber-800 border border-amber-300',
     ATTENTE_VERIF: 'bg-amber-100 text-amber-800 border border-amber-300',
     ATTENTE_CONTROLE: 'bg-amber-100 text-amber-800 border border-amber-300',
-    ATTENTE_SAISIE: 'bg-amber-100 text-amber-800 border border-amber-300',
     INFO: 'bg-sky-100 text-sky-800 border border-sky-300',
     STRUCTURE: 'bg-blue-100 text-blue-800 border border-blue-300',
     NOTE_SERVICE: 'bg-violet-100 text-violet-800 border border-violet-300',
+    NOTE_A_VALIDER: 'bg-amber-100 text-amber-800 border border-amber-300',
+    NOTE_VALIDEE: 'bg-emerald-100 text-emerald-800 border border-emerald-300',
+    NOTE_RETOURNEE: 'bg-orange-100 text-orange-800 border border-orange-300',
   };
   const libelleType = {
     VALIDATION: 'Validé',
-    VALIDEE: 'Validée',
     REJET: 'Rejeté',
-    REFUS_VALIDATION: 'Refusé',
     RETOUR: 'À corriger',
     RETOUR_CORRECTION: 'À corriger',
     ATTENTE_DRH: 'À trancher',
     ATTENTE_VALIDATION: 'À valider',
     ATTENTE_VERIF: 'À vérifier',
     ATTENTE_CONTROLE: 'À contrôler',
-    ATTENTE_SAISIE: 'À saisir',
     INFO: 'Info',
     STRUCTURE: 'Structure',
-    NOTE_SERVICE: 'Note',
+    NOTE_SERVICE: 'Note de service',
+    NOTE_A_VALIDER: 'Note à valider',
+    NOTE_VALIDEE: 'Note validée',
+    NOTE_RETOURNEE: 'Note à corriger',
   };
 
   /** Joue un court signal sonore (deux notes) quand une nouvelle notification arrive. Silencieux si

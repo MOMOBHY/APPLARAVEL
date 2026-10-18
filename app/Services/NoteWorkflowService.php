@@ -2,638 +2,407 @@
 
 namespace App\Services;
 
+use App\Mail\NoteServiceEnvoyee;
 use App\Models\Agent;
 use App\Models\JournalAudit;
+use App\Models\NoteDestinataire;
 use App\Models\NoteHistorique;
 use App\Models\NoteService;
 use App\Models\Notification;
-use App\Models\Structure;
 use App\Models\User;
-use App\Notifications\NoteServiceTransmise;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-/** Notes de service : la secrétaire rédige et envoie aux directeurs ; un directeur valide (la secrétaire
- * diffuse) ou refuse avec motif (elle reprend et renvoie). Le DRH, les directeurs, les sous-directeurs et
- * le directeur de cabinet valident et diffusent eux-mêmes leurs notes. */
+/** Circuit des notes de service : la secrétaire dépose le document Word et le transmet à son directeur ;
+ * le directeur le valide ou le retourne avec un motif ; une fois validée, la secrétaire choisit les
+ * destinataires et envoie la note, par e-mail (document joint) et dans l'application. */
 class NoteWorkflowService
 {
-    /** Rôles qui rédigent une note de service : la secrétaire (vers les directeurs) ; le DRH, le directeur
-     * et le sous-directeur (vers les agents des structures choisies) ; le directeur de cabinet (vers tous
-     * les agents du ministère). Tous sauf la secrétaire diffusent directement. */
-    public const ROLES_EMETTEURS = [
-        'ROLE_SECRETAIRE',
-        'ROLE_DRH',
-        'ROLE_DIRECTEUR',
-        'ROLE_SOUS_DIRECTEUR',
+    /** Taille maximale du document, en Ko. */
+    public const MAX_KO = 5120;
+
+    /** Formats acceptés : documents Word. */
+    public const EXTENSIONS = ['doc', 'docx'];
+
+    /** Types MIME admis pour un document Word (selon le poste, un .docx est parfois vu comme une archive). */
+    public const MIMES = [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword',
+        'application/zip',
+        'application/x-zip-compressed',
+        'application/octet-stream',
+        'application/vnd.ms-office',
+        'application/CDFV2',
+    ];
+
+    /** Comptes de direction : en l'absence de responsable désigné, le directeur de la secrétaire est le
+     * compte de direction de sa structure (le Directeur de Cabinet pour le Cabinet). */
+    public const ROLES_DIRECTION = [
         'ROLE_DIRECTEUR_CABINET',
-    ];
-
-    /** Rôles qui diffusent eux-mêmes leurs notes, sans circuit de validation : leur autorité vaut feu
-     * vert. Leurs notes ne passent jamais par le secrétariat. */
-    public const ROLES_DIFFUSION_DIRECTE = [
-        'ROLE_DRH',
         'ROLE_DIRECTEUR',
-        'ROLE_SOUS_DIRECTEUR',
-        'ROLE_DIRECTEUR_CABINET',
-    ];
-
-    /** Le directeur de cabinet s'adresse à tout le ministère : toutes les structures sont destinataires
-     * et l'email part à tous les agents actifs, comme pour une note diffusée par la secrétaire. */
-    public const ROLE_CABINET = 'ROLE_DIRECTEUR_CABINET';
-
-    /** Bilan du dernier envoi d'emails de diffusion (envoyés, échecs, comptes sans adresse), repris dans
-     * la réponse de l'API pour informer la secrétaire. */
-    public static ?array $dernierBilanEmails = null;
-
-    /** Rôles du circuit interne, qui consultent toutes les notes quel que soit leur état. */
-    public const ROLES_INTERNES = [
-        'ROLE_ADMIN_DSI',
         'ROLE_DRH',
-        'ROLE_DIRECTEUR',
         'ROLE_SOUS_DIRECTEUR',
-        'ROLE_SECRETAIRE',
-        // Consultation seule : le gestionnaire RH voit les notes de service
-        // sans pouvoir les émettre, les saisir, les valider ni les diffuser.
-        'ROLE_GESTIONNAIRE_RH',
     ];
 
-    /** Notes consultables par l'utilisateur : tout pour le circuit interne ; sinon les notes
-     * diffusées/archivées de sa structure et celles qu'il a émises. */
-    public static function visiblesPour(User $user): Builder
+    /** Bilan des e-mails du dernier envoi (consulté par le contrôleur et les tests). */
+    public static array $dernierBilanEmails = ['envoyes' => 0, 'ignores' => 0, 'echecs' => 0];
+
+    // ---------------------------------------------------------------------------------------------
+    // Directeur de la secrétaire
+    // ---------------------------------------------------------------------------------------------
+
+    /** Directeur de la secrétaire : le responsable de sa structure, sinon le compte de direction actif
+     * rattaché à la même structure. */
+    public static function directeurDe(Agent $secretaire): ?Agent
     {
-        $query = NoteService::query();
-        if ($user->hasRole(...self::ROLES_INTERNES)) {
-            return $query;
+        $structure = $secretaire->structure;
+        if ($structure?->responsable_agent_id && $structure->responsable_agent_id !== $secretaire->id) {
+            return $structure->responsable;
+        }
+        if (! $secretaire->structure_id) {
+            return null;
         }
 
-        return $query->where(function (Builder $visibles) use ($user) {
-            $visibles->where(function (Builder $diffusees) use ($user) {
-                $diffusees
-                    ->whereIn('statut', [NoteService::DIFFUSEE, NoteService::ARCHIVEE])
-                    ->whereHas(
-                        'structures',
-                        fn (Builder $s) => $s->where('structures.id', $user->agent?->structure_id),
-                    );
-            });
-            if ($user->agent_id) {
-                $visibles->orWhere('signataire_id', $user->agent_id);
-            }
-        });
+        return Agent::where('structure_id', $secretaire->structure_id)
+            ->whereKeyNot($secretaire->id)
+            ->whereHas(
+                'user',
+                fn ($u) => $u->where('actif', true)->whereHas(
+                    'roles',
+                    fn ($r) => $r->whereIn('code', self::ROLES_DIRECTION),
+                ),
+            )
+            ->orderBy('id')
+            ->first();
     }
 
-    /** Étape 1 — rédaction (brouillon) par la secrétaire, le DRH, un directeur ou un sous-directeur. */
-    public static function rediger(Agent $auteur, array $data, ?string $fichierPath): NoteService
+    // ---------------------------------------------------------------------------------------------
+    // Secrétaire : dépôt, nouvelle version, transmission, envoi
+    // ---------------------------------------------------------------------------------------------
+
+    /** Dépôt du document Word (note en brouillon). */
+    public static function deposer(Agent $secretaire, string $objet, string $dateNote, UploadedFile $fichier): NoteService
     {
-        self::exigerRedacteur($auteur);
         $note = NoteService::create([
-            'numero_reference' => self::prochainNumero(),
-            'objet' => $data['objet'],
-            'contenu' => $data['contenu'] ?? null,
-            'fichier_path' => $fichierPath,
-            'signataire_id' => $auteur->id,
-            'secretaire_id' => $auteur->user?->hasRole('ROLE_SECRETAIRE') ? $auteur->id : null,
+            'numero' => self::prochainNumero($secretaire),
+            'objet' => $objet,
+            'date_note' => $dateNote,
             'statut' => NoteService::BROUILLON,
-            'date_emission' => $data['date_emission'] ?? now()->toDateString(),
-        ]);
-        $note->structures()->sync(
-            $auteur->user?->hasRole(self::ROLE_CABINET)
-                ? Structure::pluck('id')->all()
-                : self::structuresCibles($data['structure_ids'] ?? null),
-        );
-
-        self::tracer(
-            $note,
-            $auteur,
-            self::roleEmetteur($auteur),
-            'REDACTION',
-            null,
-            $note->statut,
-            "Note rédigée par {$auteur->fullName()}.",
-        );
-
-        return $note->refresh();
-    }
-
-    /** Étape 2 — la secrétaire envoie sa note à tous les directeurs : chacun la reçoit dans son coin « À
-     * valider ». Vaut aussi reprise après un refus. */
-    public static function envoyerAuxDirecteurs(NoteService $note, Agent $secretaire): NoteService
-    {
-        if (! in_array($note->statut, [NoteService::BROUILLON, NoteService::A_REPRENDRE], true)) {
-            abort(422, 'Seule une note rédigée ou reprise peut être envoyée aux directeurs.');
-        }
-        self::exigerSecretaire($secretaire);
-        if (self::estDiffusionDirecte($note)) {
-            abort(403, 'Cette note est diffusée directement par son auteur : elle ne passe pas par le secrétariat.');
-        }
-
-        $ancien = $note->statut;
-        $note->update(['statut' => NoteService::EN_ATTENTE_VALIDATION, 'secretaire_id' => $secretaire->id]);
-        self::tracer(
-            $note,
-            $secretaire,
-            'ROLE_SECRETAIRE',
-            'ENVOI_DIRECTEURS',
-            $ancien,
-            $note->statut,
-            'Note envoyée aux directeurs pour validation.',
-        );
-
-        foreach (self::directeurs() as $directeur) {
-            self::notifier(
-                $directeur->id,
-                'Note à valider',
-                "La note {$note->numero_reference} attend votre validation.",
-                'ATTENTE_VALIDATION',
-                $note->numero_reference,
-            );
-        }
-
-        return $note->refresh();
-    }
-
-    /** La secrétaire reprend une note refusée : elle la corrige avant de la renvoyer. */
-    public static function reprendre(NoteService $note, Agent $secretaire, array $data): NoteService
-    {
-        if (! in_array($note->statut, [NoteService::BROUILLON, NoteService::A_REPRENDRE], true)) {
-            abort(422, 'Reprise impossible à ce stade.');
-        }
-        self::exigerSecretaire($secretaire);
-
-        $ancien = $note->statut;
-        $note->update([
-            'objet' => $data['objet'] ?? $note->objet,
-            'contenu' => $data['contenu'] ?? $note->contenu,
             'secretaire_id' => $secretaire->id,
-        ]);
-        if (! empty($data['structure_ids'])) {
-            $note->structures()->sync(self::structuresCibles($data['structure_ids']));
-        }
-        self::tracer(
-            $note,
-            $secretaire,
-            'ROLE_SECRETAIRE',
-            'REPRISE',
-            $ancien,
-            $note->statut,
-            'Note reprise par le secrétariat.',
-        );
+        ] + self::enregistrerFichier($fichier));
+        self::tracer($note, $secretaire, 'DEPOT', 'Document déposé : '.$note->fichier_nom);
+
+        return $note;
+    }
+
+    /** Nouvelle version du document (brouillon ou note retournée par le directeur). */
+    public static function remplacerDocument(
+        Agent $secretaire,
+        NoteService $note,
+        UploadedFile $fichier,
+        ?string $objet = null,
+        ?string $dateNote = null,
+    ): NoteService {
+        self::exigerAutrice($note, $secretaire);
+        self::exigerStatut($note, [NoteService::BROUILLON, NoteService::A_CORRIGER], 'remplacer le document');
+        $ancien = $note->fichier_path;
+        $note->update(array_filter(['objet' => $objet, 'date_note' => $dateNote]) + self::enregistrerFichier($fichier));
+        Storage::disk('local')->delete($ancien);
+        self::tracer($note, $secretaire, 'NOUVELLE_VERSION', 'Nouveau document : '.$note->fichier_nom);
 
         return $note->refresh();
     }
 
-    /** Contrôle à faire avant toute saisie : la note attend le secrétariat — reprise d'une note refusée
-     * par un directeur. */
-    public static function exigerSaisissable(NoteService $note): void
+    /** Transmission au directeur de la secrétaire, qui est prévenu. */
+    public static function transmettre(Agent $secretaire, NoteService $note): NoteService
     {
-        if (! in_array($note->statut, [NoteService::EN_ATTENTE_SAISIE, NoteService::A_REPRENDRE], true)) {
-            abort(422, 'Saisie impossible à ce stade.');
+        self::exigerAutrice($note, $secretaire);
+        self::exigerStatut($note, [NoteService::BROUILLON, NoteService::A_CORRIGER], 'transmettre');
+        $directeur = self::directeurDe($secretaire);
+        if (! $directeur) {
+            abort(422, 'Aucun directeur n’est rattaché à votre structure : la note ne peut pas être transmise.');
         }
-    }
-
-    /** Étape 2 (reprise) — la secrétaire modifie une note refusée et la renvoie aux directeurs. */
-    public static function saisir(NoteService $note, Agent $secretaire, array $data): NoteService
-    {
-        self::exigerSaisissable($note);
-        self::exigerSecretaire($secretaire);
-
-        $ancien = $note->statut;
         $note->update([
-            'contenu' => $data['contenu'] ?? $note->contenu,
-            'numero_reference' => $data['numero_reference'] ?? $note->numero_reference,
-            'fichier_path' => $data['fichier_path'] ?? $note->fichier_path,
-            'secretaire_id' => $secretaire->id,
             'statut' => NoteService::EN_ATTENTE_VALIDATION,
+            'directeur_id' => $directeur->id,
+            'transmise_le' => now(),
+            'motif_retour' => null,
         ]);
-        if (! empty($data['structure_ids'])) {
-            $note->structures()->sync(self::structuresCibles($data['structure_ids']));
-        }
-        self::tracer(
-            $note,
-            $secretaire,
-            'ROLE_SECRETAIRE',
-            'SAISIE_MISE_EN_FORME',
-            $ancien,
-            $note->statut,
-            'Note reprise et renvoyée aux directeurs.',
+        self::notifier(
+            $directeur->id,
+            'Note de service à valider',
+            "{$secretaire->fullName()} vous transmet la note « {$note->objet} » pour validation.",
+            'NOTE_A_VALIDER',
+            $note->numero,
         );
+        self::tracer($note, $secretaire, 'TRANSMISSION', 'Transmise à '.$directeur->fullName());
 
-        foreach (self::directeurs() as $directeur) {
-            self::notifier(
-                $directeur->id,
-                'Note à valider',
-                "La note {$note->numero_reference} attend votre validation.",
-                'ATTENTE_VALIDATION',
-                $note->numero_reference,
+        return $note->refresh();
+    }
+
+    /** Suppression d'un brouillon (jamais transmis). */
+    public static function supprimer(Agent $secretaire, NoteService $note): void
+    {
+        self::exigerAutrice($note, $secretaire);
+        self::exigerStatut($note, [NoteService::BROUILLON], 'supprimer');
+        Storage::disk('local')->delete($note->fichier_path);
+        JournalAudit::noter(JournalAudit::DOSSIER, 'SUPPRESSION_NOTE', $secretaire->user, $note->objet, $note->numero);
+        $note->delete();
+    }
+
+    /** Envoi de la note validée aux destinataires choisis : tous les agents, des structures et/ou des
+     * agents désignés. Chaque destinataire la reçoit dans l'application et par e-mail (document joint). */
+    public static function envoyer(
+        Agent $secretaire,
+        NoteService $note,
+        bool $tous,
+        array $structureIds = [],
+        array $agentIds = [],
+    ): array {
+        self::exigerAutrice($note, $secretaire);
+        self::exigerStatut($note, [NoteService::VALIDEE], 'envoyer');
+
+        $choisis = collect($agentIds)->map(fn ($id) => (int) $id)->unique();
+        $parStructure = $tous
+            ? Agent::pluck('id')
+            : Agent::whereIn('structure_id', $structureIds)->pluck('id');
+        $destinataires = $parStructure->merge($choisis)->unique()->values();
+        if ($destinataires->isEmpty()) {
+            abort(422, 'Choisissez au moins un destinataire.');
+        }
+
+        DB::transaction(function () use ($note, $tous, $structureIds, $choisis, $destinataires, $secretaire) {
+            $note->structures()->sync($tous ? [] : $structureIds);
+            $maintenant = now();
+            NoteDestinataire::insert(
+                $destinataires
+                    ->map(fn ($id) => [
+                        'note_id' => $note->id,
+                        'agent_id' => $id,
+                        'choisi' => $choisis->contains($id),
+                        'created_at' => $maintenant,
+                        'updated_at' => $maintenant,
+                    ])
+                    ->all(),
             );
-        }
-
-        return $note->refresh();
-    }
-
-    /** Étape 3 — un directeur valide la note : c'est le feu vert qui autorise la secrétaire à la
-     * diffuser. La note étant envoyée à tous les directeurs, la première validation l'emporte. */
-    public static function valider(NoteService $note, Agent $directeur): NoteService
-    {
-        if ($note->statut !== NoteService::EN_ATTENTE_VALIDATION) {
-            abort(422, 'Validation impossible à ce stade.');
-        }
-        self::exigerDirecteur($directeur, 'valide la note');
-
-        $ancien = $note->statut;
-        $note->update([
-            'statut' => NoteService::VALIDEE,
-            'valide_le' => now(),
-            'valideur_id' => $directeur->id,
-        ]);
-        self::tracer(
-            $note,
-            $directeur,
-            'ROLE_DIRECTEUR',
-            'VALIDATION',
-            $ancien,
-            $note->statut,
-            "Note validée par {$directeur->fullName()}, diffusable.",
-        );
-
-        foreach (self::secretaires() as $secretaire) {
-            self::notifier(
-                $secretaire->id,
-                'Note validée à diffuser',
-                "La note {$note->numero_reference} est validée : diffusez-la aux services.",
-                'VALIDEE',
-                $note->numero_reference,
+            $note->update([
+                'statut' => NoteService::ENVOYEE,
+                'envoi_a_tous' => $tous,
+                'envoyee_le' => $maintenant,
+            ]);
+            foreach ($destinataires as $agentId) {
+                self::notifier(
+                    $agentId,
+                    'Nouvelle note de service',
+                    $note->objet,
+                    'NOTE_SERVICE',
+                    $note->numero,
+                );
+            }
+            self::tracer(
+                $note,
+                $secretaire,
+                'ENVOI',
+                self::resumeDestinataires($note->refresh()).' — '.$destinataires->count().' destinataire(s)',
             );
-        }
+        });
 
-        return $note->refresh();
+        $bilan = self::envoyerEmails($note, $destinataires);
+
+        return ['note' => $note->refresh(), 'destinataires' => $destinataires->count(), 'emails' => $bilan];
     }
 
-    /** Un directeur refuse la note : elle revient à la secrétaire, qui la reprend avant de la renvoyer
-     * aux directeurs. Le refus n'est donc pas un arrêt du circuit, c'est un retour pour correction. */
-    public static function refuser(NoteService $note, Agent $directeur, string $motif): NoteService
-    {
-        if ($note->statut !== NoteService::EN_ATTENTE_VALIDATION) {
-            abort(422, 'Refus impossible à ce stade.');
-        }
-        self::exigerDirecteur($directeur, 'refuse la note');
-        if (blank($motif)) {
-            abort(422, 'Motif de refus obligatoire.');
-        }
+    // ---------------------------------------------------------------------------------------------
+    // Directeur : validation ou retour
+    // ---------------------------------------------------------------------------------------------
 
-        $ancien = $note->statut;
-        $note->update(['statut' => NoteService::A_REPRENDRE]);
-        self::tracer(
-            $note,
-            $directeur,
-            'ROLE_DIRECTEUR',
-            'REFUS_VALIDATION',
-            $ancien,
-            $note->statut,
-            $motif,
+    /** Validation par le directeur à qui la note a été transmise ; la secrétaire est prévenue. */
+    public static function valider(Agent $directeur, NoteService $note): NoteService
+    {
+        self::exigerDirecteurDeLaNote($note, $directeur);
+        self::exigerStatut($note, [NoteService::EN_ATTENTE_VALIDATION], 'valider');
+        $note->update(['statut' => NoteService::VALIDEE, 'validee_le' => now()]);
+        self::notifier(
+            $note->secretaire_id,
+            'Note de service validée',
+            "{$directeur->fullName()} a validé la note « {$note->objet} ». Vous pouvez l’envoyer.",
+            'NOTE_VALIDEE',
+            $note->numero,
         );
-
-        foreach (self::secretaires() as $secretaire) {
-            self::notifier(
-                $secretaire->id,
-                'Note à reprendre',
-                "La note {$note->numero_reference} a été refusée et vous revient pour correction : {$motif}",
-                'REFUS_VALIDATION',
-                $note->numero_reference,
-            );
-        }
+        self::tracer($note, $directeur, 'VALIDATION');
 
         return $note->refresh();
     }
 
-    /** Étape 4 — la secrétaire diffuse. Un directeur a dû valider au préalable : sans son feu vert, la
-     * note reste au secretariat. */
-    public static function diffuser(NoteService $note, Agent $secretaire): NoteService
+    /** Retour à la secrétaire avec un motif : elle charge une version corrigée puis retransmet. */
+    public static function retourner(Agent $directeur, NoteService $note, string $motif): NoteService
     {
-        if ($note->statut !== NoteService::VALIDEE) {
-            abort(422, "La note doit être validée par le directeur avant d'être diffusée.");
-        }
-        if (self::estDiffusionDirecte($note)) {
-            abort(403, 'Cette note est diffusée directement par son auteur : elle ne passe pas par le secrétariat.');
-        }
-
-        $ancien = $note->statut;
-        $note->update([
-            'statut' => NoteService::DIFFUSEE,
-            'secretaire_id' => $note->secretaire_id ?? $secretaire->id,
-            'date_diffusion' => now(),
-        ]);
-        self::tracer(
-            $note,
-            $secretaire,
-            'ROLE_SECRETAIRE',
-            'DIFFUSION',
-            $ancien,
-            $note->statut,
-            'Note diffusée aux structures destinataires et envoyée par email à tous les agents du ministère.',
+        self::exigerDirecteurDeLaNote($note, $directeur);
+        self::exigerStatut($note, [NoteService::EN_ATTENTE_VALIDATION], 'retourner');
+        $note->update(['statut' => NoteService::A_CORRIGER, 'motif_retour' => $motif]);
+        self::notifier(
+            $note->secretaire_id,
+            'Note de service à corriger',
+            "{$directeur->fullName()} vous retourne la note « {$note->objet} » : {$motif}",
+            'NOTE_RETOURNEE',
+            $note->numero,
         );
-        self::avertirDestinataires($note, emailATousLesAgents: true);
+        self::tracer($note, $directeur, 'RETOUR', $motif);
 
         return $note->refresh();
     }
 
-    /** Le DRH, un directeur ou un sous-directeur valide lui-même son brouillon, sans circuit de
-     * validation : son autorité vaut feu vert. La note validée n'est plus modifiable ; il la diffuse
-     * ensuite. */
-    public static function validerDirectement(NoteService $note, Agent $auteur): NoteService
+    // ---------------------------------------------------------------------------------------------
+    // Consultation
+    // ---------------------------------------------------------------------------------------------
+
+    /** Ouvrir ou télécharger le document : la secrétaire autrice, le directeur à qui la note a été
+     * transmise, un destinataire (note envoyée) ou l'administrateur. */
+    public static function peutConsulter(User $user, NoteService $note): bool
     {
-        self::exigerAuteurDirect($note, $auteur);
-        if ($note->statut !== NoteService::BROUILLON) {
-            abort(422, 'Seul un brouillon peut être validé.');
+        $agentId = $user->agent_id;
+        if ($user->hasRole('ROLE_ADMIN_DSI')) {
+            return true;
+        }
+        if ($agentId && ($note->secretaire_id === $agentId || $note->directeur_id === $agentId)) {
+            return true;
         }
 
-        $ancien = $note->statut;
-        $note->update([
-            'statut' => NoteService::VALIDEE,
-            'valide_le' => now(),
-            'valideur_id' => $auteur->id,
-        ]);
-        self::tracer(
-            $note,
-            $auteur,
-            self::roleEmetteur($auteur),
-            'VALIDATION_AUTEUR',
-            $ancien,
-            $note->statut,
-            'Note validée par son auteur, prête à être diffusée.',
-        );
-
-        return $note->refresh();
+        return $note->statut === NoteService::ENVOYEE
+            && $agentId
+            && $note->destinataires()->where('agent_id', $agentId)->exists();
     }
 
-    /** Le DRH, un directeur ou un sous-directeur diffuse directement sa note validée aux agents des
-     * structures choisies, sans passer par le secrétariat. */
-    public static function diffuserDirectement(NoteService $note, Agent $auteur): NoteService
+    /** Marque la note comme lue par ce destinataire (première ouverture). */
+    public static function marquerLue(Agent $agent, NoteService $note): void
     {
-        self::exigerAuteurDirect($note, $auteur);
-        if ($note->statut !== NoteService::VALIDEE) {
-            abort(422, 'Validez la note avant de la diffuser.');
+        NoteDestinataire::where('note_id', $note->id)
+            ->where('agent_id', $agent->id)
+            ->whereNull('lu_le')
+            ->update(['lu_le' => now()]);
+    }
+
+    /** Destinataires en clair : « Tous les agents du ministère », sinon structures et agents désignés. */
+    public static function resumeDestinataires(NoteService $note): string
+    {
+        if ($note->envoi_a_tous) {
+            return 'Tous les agents du ministère';
+        }
+        $parties = $note->structures()->orderBy('nom')->pluck('nom');
+        $choisis = $note->destinataires()->where('choisi', true)->count();
+        if ($choisis) {
+            $parties->push($choisis.' agent(s) désigné(s)');
         }
 
-        $ancien = $note->statut;
-        $note->update([
-            'statut' => NoteService::DIFFUSEE,
-            'date_diffusion' => now(),
-        ]);
-        self::tracer(
-            $note,
-            $auteur,
-            self::roleEmetteur($auteur),
-            'DIFFUSION_DIRECTE',
-            $ancien,
-            $note->statut,
-            'Note validée diffusée directement par son auteur.',
-        );
-        self::avertirDestinataires($note, emailATousLesAgents: (bool) $auteur->user?->hasRole(self::ROLE_CABINET));
-
-        return $note->refresh();
+        return $parties->implode(', ');
     }
 
-    /** Notifie les agents des structures destinataires et leur transmet la note par email ; une panne de
-     * messagerie ne bloque pas la diffusion. */
-    protected static function avertirDestinataires(NoteService $note, bool $emailATousLesAgents = false): void
+    // ---------------------------------------------------------------------------------------------
+    // Outils
+    // ---------------------------------------------------------------------------------------------
+
+    /** Enregistre le document sur le disque privé et renvoie ses colonnes. */
+    protected static function enregistrerFichier(UploadedFile $fichier): array
     {
-        $agents = Agent::with('user')
-            ->whereIn('structure_id', $note->structures()->pluck('structures.id'))
-            ->get();
+        return [
+            'fichier_path' => $fichier->store('notes', 'local'),
+            'fichier_nom' => $fichier->getClientOriginalName(),
+            'fichier_taille' => (int) $fichier->getSize(),
+        ];
+    }
+
+    /** Numéro de la note : N° 0001/MFP/<structure de la secrétaire>/<année>. */
+    protected static function prochainNumero(Agent $secretaire): string
+    {
+        $code = $secretaire->structure?->code ?: 'MFP';
+        $annee = now()->year;
+        $rang = NoteService::whereYear('created_at', $annee)->count() + 1;
+        do {
+            $numero = 'N° '.str_pad((string) $rang++, 4, '0', STR_PAD_LEFT)."/MFP/{$code}/{$annee}";
+        } while (NoteService::where('numero', $numero)->exists());
+
+        return $numero;
+    }
+
+    /** E-mails aux destinataires (adresse du compte, sinon celle de l'agent), document en pièce jointe. */
+    protected static function envoyerEmails(NoteService $note, Collection $agentIds): array
+    {
+        $bilan = ['envoyes' => 0, 'ignores' => 0, 'echecs' => 0];
+        $dejaFaits = [];
+        $agents = Agent::with('user')->whereIn('id', $agentIds)->get();
         foreach ($agents as $agent) {
-            self::notifier(
-                $agent->id,
-                'Nouvelle note de service',
-                "{$note->numero_reference} : {$note->objet}",
-                'NOTE_SERVICE',
-                $note->numero_reference,
-            );
-        }
-
-        // Diffusion par la secrétaire : l'email part à tous les agents du ministère
-        // (comptes actifs). Diffusion directe du DRH : aux seules structures choisies.
-        $destinataires = $emailATousLesAgents
-            ? User::where('actif', true)->get()
-            : $agents->pluck('user')->filter();
-
-        self::$dernierBilanEmails = self::envoyerEmails($note->loadMissing('signataire'), $destinataires);
-    }
-
-    /** Envoie l'email de la note à chaque destinataire, un par un : une adresse en échec n'empêche pas
-     * les suivantes et le bilan compte les échecs. Un compte sans adresse est compté comme ignoré. */
-    protected static function envoyerEmails(NoteService $note, Collection $destinataires): array
-    {
-        $bilan = ['envoyes' => 0, 'echecs' => 0, 'ignores' => 0];
-        foreach ($destinataires->unique('id') as $user) {
-            $email = strtolower(trim((string) $user->email));
-            if ($email === '') {
+            $adresse = strtolower(trim((string) ($agent->user?->email ?: $agent->email)));
+            if ($adresse === '' || ! filter_var($adresse, FILTER_VALIDATE_EMAIL)) {
                 $bilan['ignores']++;
 
                 continue;
             }
+            if (isset($dejaFaits[$adresse])) {
+                continue;
+            }
+            $dejaFaits[$adresse] = true;
             try {
-                NotificationFacade::send($user, new NoteServiceTransmise($note));
+                Mail::to($adresse)->send(new NoteServiceEnvoyee($note, $agent->fullName()));
                 $bilan['envoyes']++;
             } catch (Throwable $e) {
                 report($e);
                 $bilan['echecs']++;
             }
         }
+        self::$dernierBilanEmails = $bilan;
 
         return $bilan;
     }
 
-    /** Archive une note validée ou diffusée. La note reste consultable. */
-    public static function archiver(NoteService $note, Agent $acteur): NoteService
+    protected static function exigerAutrice(NoteService $note, Agent $secretaire): void
     {
-        if (! in_array($note->statut, [NoteService::DIFFUSEE, NoteService::VALIDEE], true)) {
-            abort(422, 'Seule une note validée ou diffusée peut être archivée.');
-        }
-        $ancien = $note->statut;
-        $note->update(['statut' => NoteService::ARCHIVEE]);
-        self::tracer(
-            $note,
-            $acteur,
-            null,
-            'ARCHIVAGE',
-            $ancien,
-            $note->statut,
-            'Note archivée, toujours consultable.',
-        );
-
-        return $note->refresh();
-    }
-
-    /** Garde-fous du circuit : la rédaction appartient à la secrétaire, au DRH, aux directeurs et aux
-     * sous-directeurs ; l'envoi aux directeurs et la reprise à la secrétaire seule ; la validation et le
-     * refus à un directeur. */
-    protected static function exigerRedacteur(Agent $acteur): void
-    {
-        if (! $acteur->user?->hasRole(...self::ROLES_EMETTEURS)) {
-            abort(403, 'Rédaction réservée au secrétariat, à la DRH, aux directeurs, aux sous-directeurs et au directeur de cabinet.');
+        if ($note->secretaire_id !== $secretaire->id) {
+            abort(403, 'Cette note a été déposée par une autre secrétaire.');
         }
     }
 
-    /** Validation et diffusion directes : réservées au DRH, aux directeurs, aux sous-directeurs et au
-     * directeur de cabinet, et à l'auteur de la note seulement. */
-    protected static function exigerAuteurDirect(NoteService $note, Agent $auteur): void
+    protected static function exigerDirecteurDeLaNote(NoteService $note, Agent $directeur): void
     {
-        if (! $auteur->user?->hasRole(...self::ROLES_DIFFUSION_DIRECTE)) {
-            abort(403, 'Validation et diffusion directes réservées à la DRH, aux directeurs, aux sous-directeurs et au directeur de cabinet.');
-        }
-        if ($note->signataire_id !== $auteur->id) {
-            abort(403, "Seul l'auteur de la note la valide et la diffuse directement.");
+        if (! $note->directeur_id || $note->directeur_id !== $directeur->id) {
+            abort(403, 'Seul le directeur à qui la note a été transmise peut la valider ou la retourner.');
         }
     }
 
-    /** Rôle sous lequel l'auteur émet sa note, repris dans l'historique et le journal d'audit. */
-    protected static function roleEmetteur(Agent $auteur): string
+    protected static function exigerStatut(NoteService $note, array $statuts, string $action): void
     {
-        foreach (self::ROLES_DIFFUSION_DIRECTE as $role) {
-            if ($auteur->user?->hasRole($role)) {
-                return $role;
-            }
+        if (! in_array($note->statut, $statuts, true)) {
+            abort(422, "Impossible de {$action} cette note dans son état actuel.");
         }
-
-        return 'ROLE_SECRETAIRE';
-    }
-
-    /** Vrai si l'auteur de la note la diffuse lui-même (DRH, directeur, sous-directeur) : elle ne passe
-     * pas par le circuit du secrétariat. */
-    public static function estDiffusionDirecte(NoteService $note): bool
-    {
-        return (bool) $note->signataire?->user?->hasRole(...self::ROLES_DIFFUSION_DIRECTE);
-    }
-
-    protected static function exigerSecretaire(Agent $acteur): void
-    {
-        if (! $acteur->user?->hasRole('ROLE_SECRETAIRE')) {
-            abort(403, 'Action réservée au secrétariat.');
-        }
-    }
-
-    protected static function exigerDirecteur(Agent $acteur, string $action): void
-    {
-        if (! $acteur->user?->hasRole('ROLE_DIRECTEUR')) {
-            abort(403, "Seul un directeur {$action} une note de service.");
-        }
-    }
-
-    /** Étape 5 — destinataires exacts (émetteur + admin DSI). */
-    public static function destinataires(NoteService $note): array
-    {
-        $structures = $note->structures()->get();
-        $agents = Agent::with('structure')
-            ->whereIn('structure_id', $structures->pluck('id'))
-            ->get(['id', 'matricule', 'nom', 'prenom', 'structure_id']);
-
-        return ['structures' => $structures, 'agents' => $agents];
-    }
-
-    /** Numéro suivant libre : le secrétariat peut avoir attribué manuellement un numéro qui entrerait
-     * sinon en collision avec le compteur. */
-    protected static function prochainNumero(): string
-    {
-        $rang = NoteService::count() + 1;
-        do {
-            $numero =
-                'NOTE N° '.
-                str_pad((string) $rang++, 4, '0', STR_PAD_LEFT).
-                '/MFP/CAB/'.
-                now()->year;
-        } while (NoteService::where('numero_reference', $numero)->exists());
-
-        return $numero;
-    }
-
-    /** « Sa secrétaire » : secrétaires de la structure de l'autorité, sinon tout le secrétariat. */
-    protected static function secretairesDe(Agent $autorite): Collection
-    {
-        $siennes = self::secretaires()->where('structure_id', $autorite->structure_id);
-
-        return $siennes->isNotEmpty() ? $siennes : self::secretaires();
-    }
-
-    /** Retrouve tous les directeurs (agents portant le rôle ROLE_DIRECTEUR). */
-    protected static function directeurs(): Collection
-    {
-        return Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_DIRECTEUR'))->get();
-    }
-
-    /** Retrouve toutes les secrétaires (agents portant le rôle ROLE_SECRETAIRE). */
-    protected static function secretaires(): Collection
-    {
-        return Agent::whereHas('user.roles', fn ($q) => $q->where('code', 'ROLE_SECRETAIRE'))->get();
-    }
-
-    /** Structures destinataires d'une note : liste d'identifiants ou nom (recherche partielle) ; sans
-     * indication ou nom introuvable, toutes les structures. */
-    protected static function structuresCibles(mixed $structures): array
-    {
-        if (is_array($structures) && $structures !== []) {
-            return Structure::whereIn('id', $structures)->pluck('id')->all();
-        }
-        if (is_string($structures) && trim($structures) !== '') {
-            $trouvees = Structure::where('nom', 'like', '%'.trim($structures).'%')
-                ->pluck('id')
-                ->all();
-
-            return $trouvees === [] ? Structure::pluck('id')->all() : $trouvees;
-        }
-
-        return Structure::pluck('id')->all();
     }
 
     /** Inscrit une étape dans l'historique de la note et dans le journal d'audit. */
-    public static function tracer(
-        NoteService $note,
-        ?Agent $acteur,
-        ?string $role,
-        string $action,
-        ?string $ancien,
-        ?string $nouveau,
-        ?string $commentaire = null,
-    ): void {
+    protected static function tracer(NoteService $note, ?Agent $acteur, string $action, ?string $commentaire = null): void
+    {
+        $role = $acteur?->user?->roles()->value('libelle');
         NoteHistorique::create([
             'note_id' => $note->id,
             'acteur_agent_id' => $acteur?->id,
             'acteur_nom' => $acteur?->fullName(),
-            'acteur_role' => $role,
+            'acteur_role' => $role ? mb_substr($role, 0, 40) : null,
             'action' => $action,
-            'ancien_statut' => $ancien,
-            'nouveau_statut' => $nouveau,
             'commentaire' => $commentaire,
         ]);
-        JournalAudit::noter(
-            JournalAudit::DOSSIER,
-            $action,
-            $acteur?->user,
-            trim(
-                ($role ? "[{$role}] " : '').
-                    ($ancien || $nouveau ? "{$ancien} → {$nouveau}" : '').
-                    ($commentaire ? " — {$commentaire}" : ''),
-            ),
-            $note->numero_reference,
-        );
+        JournalAudit::noter(JournalAudit::DOSSIER, 'NOTE_'.$action, $acteur?->user, $commentaire ?: $note->objet, $note->numero);
     }
 
     /** Crée une notification pour un agent. */
-    protected static function notifier(
-        int $agentId,
-        string $titre,
-        string $message,
-        string $type,
-        ?string $ref,
-    ): void {
+    protected static function notifier(int $agentId, string $titre, string $message, string $type, string $reference): void
+    {
         Notification::create([
             'agent_id' => $agentId,
             'titre' => $titre,
             'message' => $message,
             'type' => $type,
-            'reference_dossier' => $ref,
+            'reference_dossier' => $reference,
         ]);
     }
 }

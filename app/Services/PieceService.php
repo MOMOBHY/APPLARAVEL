@@ -64,12 +64,6 @@ class PieceService
                 'ROLE_DRH',
             ),
             'deces' => $user->hasRole('ROLE_GESTIONNAIRE_RH', 'ROLE_DRH'),
-            'note' => $user->hasRole(
-                'ROLE_SECRETAIRE',
-                'ROLE_DRH',
-                'ROLE_DIRECTEUR',
-                'ROLE_SOUS_DIRECTEUR',
-            ),
             default => false,
         };
     }

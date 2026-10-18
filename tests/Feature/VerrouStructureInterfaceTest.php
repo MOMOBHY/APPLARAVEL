@@ -98,6 +98,7 @@ class VerrouStructureInterfaceTest extends TestCase
             'views/notes.html',
             'js/api.js',
             'js/shell.js',
+            'js/notes.js',
         ];
 
         foreach ($fichiers as $fichier) {

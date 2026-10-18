@@ -71,7 +71,7 @@
             id="nav-notes"
             class="nav-tab"
           >
-            Notes de Service
+            Notes de service <span class="tab-badge" data-notes-non-lues data-count="0"></span>
           </button>
           <button
             onclick="showTab('statistiques')"
@@ -380,7 +380,6 @@
         </div>
       </div>
 
-      <!-- TAB : NOTES DE SERVICE -->
       <div id="tab-statistiques" class="hidden space-y-6"></div>
       <div id="tab-structures" class="hidden space-y-6"></div>
       <div id="tab-responsables" class="hidden space-y-6"></div>
@@ -481,99 +480,22 @@
         </div>
       </div>
 
-      <div id="tab-notes" class="hidden space-y-6">
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-          <div class="border-b border-slate-200 pb-3">
-            <h2 class="text-base font-bold text-slate-900">
-              Publication & Suivi des Destinataires des Notes de Service
-            </h2>
-            <p class="text-xs text-slate-500">
-              Choisissez le service destinataire avant publication.
-            </p>
-          </div>
-
-          <!-- FORMULAIRE DE PUBLICATION -->
-          <form
-            onsubmit="publishNote(event)"
-            class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4"
-          >
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Titre / Objet de la Note *</label
-              >
-              <input
-                type="text"
-                id="noteTitle"
-                required
-                placeholder="ex: NOTE N° 0026/MFP"
-                class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-semibold"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1"
-                >Structure / Service Destinataire *</label
-              >
-              <select
-                id="noteService"
-                class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-800"
-              >
-                <option value="Tous les Services du Ministère">
-                  Tous les Services du Ministère
-                </option>
-                <option value="Secrétariat général">Secrétariat général</option>
-                <option value="Direction des Ressources Humaines">
-                  Direction des Ressources Humaines (DRH)
-                </option>
-                <option value="Direction des Affaires Générales">
-                  Direction des Affaires Générales (DAG)
-                </option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow"
-            >
-              Publier et Transmettre aux Destinataires
-            </button>
-          </form>
-
-          <!-- TABLEAU HISTORIQUE NOTES + DESTINATAIRES -->
-          <div class="space-y-3 pt-2">
-            <h3 class="text-sm font-bold text-slate-900">
-              Historique des Notes et Destinataires Cibles
-            </h3>
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs text-left">
-                <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
-                  <tr>
-                    <th class="px-4 py-2.5">ID Note</th>
-                    <th class="px-4 py-2.5">Intitulé / Objet</th>
-                    <th class="px-4 py-2.5">Émetteur</th>
-                    <th class="px-4 py-2.5">Service Destinataire</th>
-                    <th class="px-4 py-2.5">Liste des Agents Concernés</th>
-                    <th class="px-4 py-2.5">Date</th>
-                  </tr>
-                </thead>
-                <tbody id="notesTable" class="divide-y divide-slate-200"></tbody>
-              </table>
-            </div>
-            <div id="adminNotesPagination"></div>
-          </div>
-        </div>
+      <!-- TAB : NOTES DE SERVICE (reçues, module commun js/notes.js) -->
+      <div id="tab-notes" class="hidden">
+        <div id="zoneNotesService"></div>
       </div>
     </main>
 
     <script src="../js/api.js"></script>
     <script src="../js/shell.js"></script>
+    <script src="../js/notes.js"></script>
     <script>
       let user = null;
       let requests = [];
-      let notes = [];
       let users = [];
       let PAGE_SIZE = taillePageMemorisee(3);
       let pageUsers = 1;
       let pageSearch = 1;
-      let pageAdminNotes = 1;
 
       /** Démarre la page : vérifie la session et le profil administrateur, charge les référentiels
        * (rôles, structures) puis les données. */
@@ -596,16 +518,16 @@
         await loadData();
         renderUsers();
         filterSearch();
-        renderNotes();
+        afficherNotesService('zoneNotesService');
+        majBadgesNotes();
         activerOngletGfp('nav-users');
       }
 
-      /** Recharge les dossiers, les notes et la liste des comptes. */
+      /** Recharge les dossiers, les notes de service et la liste des comptes. */
       async function loadData() {
         const r = await API.getRequests();
         requests = garderSiEchec(r, 'requests', requests);
-        const n = await API.getNotes();
-        notes = garderSiEchec(n, 'notes', notes);
+        await chargerNotesService();
         const u = await API.getUsers();
         users = garderSiEchec(u, 'users', users);
       }
@@ -962,77 +884,6 @@
               filterSearch();
             }
           });
-        }
-      }
-
-      /** Dessine le tableau des notes de service avec, pour chacune, les agents des structures
-       * destinataires. */
-      function renderNotes() {
-        const tbody = document.getElementById('notesTable');
-        tbody.innerHTML = '';
-
-        const totalItems = notes.length;
-        const totalPages = Math.ceil(totalItems / PAGE_SIZE_NOTES) || 1;
-        if (pageAdminNotes > totalPages) pageAdminNotes = totalPages;
-        if (pageAdminNotes < 1) pageAdminNotes = 1;
-        const startIndex = (pageAdminNotes - 1) * PAGE_SIZE_NOTES;
-        const displayed = notes.slice(startIndex, startIndex + PAGE_SIZE_NOTES);
-
-        displayed.forEach((n) => {
-          let targetAgents = users;
-          if (n.service && !n.service.includes('Tous')) {
-            targetAgents = users.filter(
-              (u) =>
-                u.structure.toLowerCase().includes(n.service.toLowerCase()) ||
-                n.service.toLowerCase().includes(u.structure.toLowerCase()),
-            );
-          }
-          const agentList =
-            targetAgents.map((u) => u.nom + ' ' + u.prenom + ' (' + u.matricule + ')').join(', ') ||
-            'Tous les agents';
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-          <td class="px-4 py-3 font-mono font-bold">NOTE-#${escapeHtml(n.id)}</td>
-          <td class="px-4 py-3 font-bold text-slate-900">${escapeHtml(n.libelle)}</td>
-          <td class="px-4 py-3 text-slate-600">${escapeHtml(n.emetteur)}</td>
-          <td class="px-4 py-3"><span
-            class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">${escapeHtml(n.service)}</span>
-          </td>
-          <td class="px-4 py-3 text-xs text-slate-700 max-w-xs truncate"
-            title="${escapeHtml(agentList)}">${escapeHtml(agentList)}</td>
-          <td class="px-4 py-3 text-slate-500 font-mono text-xs">${escapeHtml(dateFr(n.date) || '—')}</td>
-        `;
-          tbody.appendChild(tr);
-        });
-
-        if (window.renderPagination) {
-          window.renderPagination({
-            container: 'adminNotesPagination',
-            totalItems: totalItems,
-            currentPage: pageAdminNotes,
-            pageSize: PAGE_SIZE_NOTES,
-            onPageChange: (p) => {
-              pageAdminNotes = p;
-              renderNotes();
-            }
-          });
-        }
-      }
-
-      /** Publie une note de service pour le service choisi, puis recharge la liste. */
-      async function publishNote(e) {
-        e.preventDefault();
-        const title = document.getElementById('noteTitle').value;
-        const service = document.getElementById('noteService').value;
-        const res = await API.publishNote(title, service);
-        if (res.status === 'success') {
-          toast('Note publiée pour : ' + service);
-          document.getElementById('noteTitle').value = '';
-          await loadData();
-          renderNotes();
-        } else {
-          toast('Publication impossible : ' + (res.message || 'action non autorisée.'));
         }
       }
 

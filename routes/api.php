@@ -42,8 +42,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/declarations/soumettre-brouillon', [LegacyApiController::class, 'soumettrebrouillonDeclaration']);
     Route::post('/brouillons/supprimer', [LegacyApiController::class, 'supprimerBrouillon']);
     Route::post('/status', [LegacyApiController::class, 'updateStatus']);
-    Route::get('/notes', [LegacyApiController::class, 'notes']);
-    Route::post('/notes', [LegacyApiController::class, 'storeNote']);
     Route::get('/roles', [LegacyApiController::class, 'roles']);
     Route::get('/users', [LegacyApiController::class, 'users'])->middleware('role:ROLE_ADMIN_DSI');
     Route::post('/users', [LegacyApiController::class, 'storeUser'])->middleware(
@@ -105,45 +103,31 @@ Route::middleware('auth:sanctum')->group(function () {
         'role:ROLE_DRH',
     );
 
-    Route::get('/notes/{note}', [NoteServiceController::class, 'show']);
-    Route::post('/notes/{note}/envoyer', [
-        NoteServiceController::class,
-        'envoyer',
-    ])->middleware('role:ROLE_SECRETAIRE');
-    Route::post('/notes/{note}/reprendre', [
-        NoteServiceController::class,
-        'reprendre',
-    ])->middleware('role:ROLE_SECRETAIRE');
-    Route::post('/notes/{note}/valider', [NoteServiceController::class, 'valider'])->middleware(
-        'role:ROLE_DIRECTEUR',
-    );
-    Route::post('/notes/{note}/refuser', [NoteServiceController::class, 'refuser'])->middleware(
-        'role:ROLE_DIRECTEUR',
-    );
-    Route::post('/notes/{note}/archiver', [NoteServiceController::class, 'archiver'])->middleware(
-        'role:ROLE_SECRETAIRE,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR',
-    );
-
     Route::get('/pieces/{piece}', [PieceController::class, 'telecharger']);
 
-    Route::post('/notes/{note}/saisir', [NoteServiceController::class, 'saisir'])->middleware(
+    // Notes de service : la secrétaire dépose un document Word, son directeur le valide (ou le retourne
+    // avec un motif), puis elle l'envoie aux destinataires qu'elle choisit (e-mail et application).
+    Route::get('/notes', [NoteServiceController::class, 'index']);
+    Route::get('/notes/destinataires', [NoteServiceController::class, 'destinatairesPossibles'])->middleware(
         'role:ROLE_SECRETAIRE',
     );
-    Route::post('/notes/{note}/diffuser', [NoteServiceController::class, 'diffuser'])->middleware(
+    Route::post('/notes', [NoteServiceController::class, 'store'])->middleware('role:ROLE_SECRETAIRE');
+    Route::post('/notes/{note}/document', [NoteServiceController::class, 'remplacer'])->middleware(
         'role:ROLE_SECRETAIRE',
     );
-    Route::post('/notes/{note}/valider-directement', [
-        NoteServiceController::class,
-        'validerDirectement',
-    ])->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_DIRECTEUR_CABINET');
-    Route::post('/notes/{note}/diffuser-directement', [
-        NoteServiceController::class,
-        'diffuserDirectement',
-    ])->middleware('role:ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR,ROLE_DIRECTEUR_CABINET');
-    Route::get('/notes/{note}/destinataires', [
-        NoteServiceController::class,
-        'destinataires',
-    ])->middleware('role:ROLE_ADMIN_DSI,ROLE_DRH,ROLE_DIRECTEUR,ROLE_SOUS_DIRECTEUR');
+    Route::post('/notes/{note}/transmettre', [NoteServiceController::class, 'transmettre'])->middleware(
+        'role:ROLE_SECRETAIRE',
+    );
+    Route::post('/notes/{note}/envoyer', [NoteServiceController::class, 'envoyer'])->middleware(
+        'role:ROLE_SECRETAIRE',
+    );
+    Route::delete('/notes/{note}', [NoteServiceController::class, 'supprimer'])->middleware(
+        'role:ROLE_SECRETAIRE',
+    );
+    // Validation et retour : réservés au directeur à qui la note a été transmise (contrôlé par le service).
+    Route::post('/notes/{note}/valider', [NoteServiceController::class, 'valider']);
+    Route::post('/notes/{note}/retourner', [NoteServiceController::class, 'retourner']);
+    Route::get('/notes/{note}/fichier', [NoteServiceController::class, 'fichier']);
 
     Route::get('/admin/users', [AdminController::class, 'users'])->middleware(
         'role:ROLE_ADMIN_DSI',

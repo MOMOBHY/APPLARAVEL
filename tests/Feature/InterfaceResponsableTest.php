@@ -18,11 +18,11 @@ class InterfaceResponsableTest extends TestCase
 
     /* LES ONGLETS PRÉSENTS */
 
-    public function test_le_responsable_a_cinq_onglets_en_plus_du_visa(): void
+    public function test_le_responsable_a_quatre_onglets_en_plus_du_visa(): void
     {
         $html = $this->html();
 
-        foreach (['permissions', 'naissances', 'deces', 'notes', 'notes-envoyees'] as $onglet) {
+        foreach (['permissions', 'naissances', 'deces', 'notes'] as $onglet) {
             $this->assertStringContainsString(
                 "id=\"nav-{$onglet}\"",
                 $html,
@@ -173,8 +173,8 @@ class InterfaceResponsableTest extends TestCase
         );
     }
 
-    /** Le gestionnaire RH consulte les notes de service comme les deux autres profils, sans les émettre
-     * (rédaction réservée au directeur). */
+    /** Les trois profils consultent les notes de service (module commun) ; aucun n'en rédige : seule la
+     * secrétaire dépose les notes. */
     public function test_le_gestionnaire_consulte_les_notes_de_service(): void
     {
         $html = $this->html();
@@ -185,7 +185,10 @@ class InterfaceResponsableTest extends TestCase
             $html,
         );
         $this->assertStringContainsString('id="tab-notes"', $html);
-        $this->assertStringContainsString('function renderNotesDepot()', $html);
+        $this->assertStringContainsString('id="zoneNotesService"', $html);
+        $this->assertStringContainsString("afficherNotesService('zoneNotesService')", $html);
+        $this->assertStringNotContainsString('nav-notes-envoyees', $html);
+        $this->assertStringNotContainsString('API.publishNote(', $html);
     }
 
     /* LA DÉCLARATION DE DÉCÈS */
@@ -219,27 +222,6 @@ class InterfaceResponsableTest extends TestCase
         $this->assertStringContainsString('function peutDeposer()', $html);
         // L'ouverture se fait en Masquant les onglets, pas en changeant de vue.
         $this->assertStringContainsString("btn.classList.toggle('hidden', !peutDeposer())", $html);
-    }
-
-    /** Le directeur et le sous-directeur rédigent leurs notes ; le bloc des notes envoyées est masqué
-     * pour le gestionnaire RH, qui ne fait que consulter. */
-    public function test_seuls_le_directeur_et_le_sous_directeur_redigent_dans_la_vue(): void
-    {
-        $html = $this->html();
-
-        $this->assertStringContainsString('id="formNoteDepot"', $html);
-        $this->assertStringContainsString(
-            "document.getElementById('nav-notes-envoyees')?.remove()",
-            $html,
-        );
-        $this->assertStringContainsString(
-            "document.getElementById('tab-notes-envoyees')?.remove()",
-            $html,
-        );
-        $this->assertStringContainsString("if (name === 'notes-envoyees' && !peutDeposer()) return;", $html);
-        $this->assertStringContainsString("if (!peutDeposer()) {", $html);
-        $this->assertStringContainsString('API.publishNote(', $html);
-        $this->assertStringContainsString('API.diffuserNoteDirecte(', $html);
     }
 
     /* LES CIRCUITS AFFICHÉS */
@@ -293,80 +275,10 @@ class InterfaceResponsableTest extends TestCase
     {
         $html = $this->html();
 
-        foreach (['perm', 'naiss', 'deces', 'note'] as $prefixe) {
+        foreach (['perm', 'naiss', 'deces'] as $prefixe) {
             $this->assertStringContainsString("onclick=\"showFormDepot('{$prefixe}-form')\"", $html);
             $this->assertStringContainsString("onclick=\"hideFormDepot('{$prefixe}-form')\"", $html);
             $this->assertStringContainsString("id=\"{$prefixe}-form\"", $html);
         }
-    }
-
-    /* LE CYCLE DE LA NOTE DE SERVICE, VU PAR LE DIRECTEUR */
-
-    /** La secrétaire envoie ses notes : chaque directeur les reçoit dans son coin « À valider » et les
-     * valide ou refuse. */
-    public function test_le_directeur_recoit_et_valide_les_notes_de_la_secretaire(): void
-    {
-        $html = $this->html();
-
-        $this->assertStringContainsString('id="notes-a-valider-bloc"', $html);
-        $this->assertStringContainsString('id="notesAValiderContainer"', $html);
-        $this->assertStringContainsString('async function validerNoteDepot(', $html);
-        $this->assertStringContainsString('async function refuserNoteDepot(', $html);
-        $this->assertStringContainsString('API.validerNote(', $html);
-        $this->assertStringContainsString('API.refuserNote(', $html);
-    }
-
-    /** Deux menus : les notes reçues (émises par d'autres) et les notes envoyées (les siennes), chacun
-     * avec sa recherche et son filtre. */
-    public function test_les_notes_sont_separees_en_recues_et_envoyees(): void
-    {
-        $html = $this->html();
-
-        $this->assertStringContainsString("onclick=\"showTab('notes')\" id=\"nav-notes\"", $html);
-        $this->assertStringContainsString("onclick=\"showTab('notes-envoyees')\" id=\"nav-notes-envoyees\"", $html);
-        $this->assertStringContainsString('id="tab-notes-envoyees"', $html);
-        $this->assertStringContainsString("'notesEnvoyeesSearch'", $html);
-        $this->assertStringContainsString("'notesEnvoyeesFiltreStatut'", $html);
-
-        $this->assertStringContainsString('Notes de service reçues', $html);
-        $this->assertStringContainsString('Notes de service envoyées', $html);
-        $this->assertStringContainsString('id="notesContainer"', $html);
-        $this->assertStringContainsString('id="notesEnvoyeesContainer"', $html);
-        $this->assertStringContainsString('function estMaNote(n)', $html);
-        $this->assertStringContainsString('function estRecue(n)', $html);
-        $this->assertStringContainsString('notesDepot.filter(estRecue)', $html);
-        $this->assertStringContainsString('notesDepot.filter(estMaNote)', $html);
-    }
-
-    /** Brouillon, validation, puis diffusion : le formulaire propose « Enregistrer le brouillon » et «
-     * Valider », la liste des notes envoyées donne l'étape suivante. */
-    public function test_la_note_envoyee_se_valide_avant_diffusion(): void
-    {
-        $html = $this->html();
-
-        $this->assertStringContainsString('onclick="enregistrerNoteDepot(false)"', $html);
-        $this->assertStringContainsString('onclick="enregistrerNoteDepot(true)"', $html);
-        $this->assertStringContainsString('async function validerNoteEnvoyee(id)', $html);
-        $this->assertStringContainsString('API.validerNoteDirecte(', $html);
-        $this->assertStringContainsString("VALIDEE: ['Validée - à diffuser'", $html);
-    }
-
-    /** La secrétaire rédige, envoie aux directeurs, reprend si refus, puis diffuse une fois validée :
-     * quatre gestes distincts dans son interface. */
-    public function test_la_secretaire_redige_envoie_reprend_puis_diffuse(): void
-    {
-        $html = file_get_contents(base_path('public/gfp/views/notes.html'));
-        $this->assertIsString($html);
-
-        $this->assertStringContainsString('async function envoyer(id)', $html);
-        $this->assertStringContainsString('function reprendre(id)', $html);
-        $this->assertStringContainsString('function annulerReprise()', $html);
-        $this->assertStringContainsString('async function diffuser(id)', $html);
-        $this->assertStringContainsString('API.envoyerNote(', $html);
-        $this->assertStringContainsString('API.reprendreNote(', $html);
-        $this->assertStringNotContainsString('Saisir et transmettre', $html);
-        // L'état de refus est affiché, pas seulement traité côté serveur.
-        $this->assertStringContainsString("A_REPRENDRE: ['À reprendre (refusée)'", $html);
-        $this->assertStringContainsString('<option value="A_REPRENDRE">', $html);
     }
 }

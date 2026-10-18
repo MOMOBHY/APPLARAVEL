@@ -149,27 +149,19 @@ class TableauBordDrhTest extends TestCase
         $this->assertStringContainsString('triPlusRecent(permsATrancher.concat(', $html);
     }
 
-    public function test_le_drh_a_un_onglet_notes_avec_diffusion_directe(): void
+    /** Le DRH reçoit les notes du secrétariat (et valide celles d'une secrétaire qui lui serait
+     * rattachée) dans l'onglet commun ; il ne rédige plus de notes lui-même. */
+    public function test_le_drh_a_l_onglet_commun_des_notes_de_service(): void
     {
         $html = $this->html();
 
         $this->assertStringContainsString('id="nav-notes"', $html);
         $this->assertStringContainsString('id="tab-notes"', $html);
-        $this->assertStringContainsString('id="formNoteDrh"', $html);
-        $this->assertStringContainsString('id="notesDrhContainer"', $html);
-        $this->assertStringContainsString('function renderNotesDrh()', $html);
-        $this->assertStringContainsString('API.diffuserNoteDirecte(', $html);
-        // Deux menus : notes reçues et notes envoyées.
-        $this->assertStringContainsString('id="nav-notes-recues"', $html);
-        $this->assertStringContainsString('id="tab-notes-recues"', $html);
-        $this->assertStringContainsString('function renderNotesRecuesDrh()', $html);
-        $this->assertStringContainsString('Notes de service envoyées', $html);
-        // Il valide lui-même son brouillon avant de le diffuser.
-        $this->assertStringContainsString('onclick="enregistrerNoteDrh(true)"', $html);
-        $this->assertStringContainsString('async function validerNoteDrh(id)', $html);
-        $this->assertStringContainsString('API.validerNoteDirecte(', $html);
-        // Aucun circuit de validation pour ses notes.
-        $this->assertStringNotContainsString('Circuit de Validation', $html);
+        $this->assertStringContainsString('<script src="../js/notes.js"></script>', $html);
+        $this->assertStringContainsString("afficherNotesService('zoneNotesService')", $html);
+        $this->assertStringNotContainsString('formNoteDrh', $html);
+        $this->assertStringNotContainsString('nav-notes-recues', $html);
+        $this->assertStringNotContainsString('API.diffuserNoteDirecte(', $html);
     }
 
     public function test_le_miroir_drh_est_identique_aux_sources(): void
