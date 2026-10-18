@@ -887,12 +887,24 @@
         return '';
       }
 
-      /** Statut affiché : pour le directeur et le sous-directeur, un dossier déclaré conforme apparaît «
-       * Validé » tant que le DRH ne l'a pas tranché. */
+      /** Étapes qui suivent la vérification du gestionnaire RH, jusqu'à la décision du DRH. */
+      const ETAPES_APRES_VERIFICATION_RH = [
+        'EN_ATTENTE_VALIDATION_SOUS_DIRECTEUR',
+        'EN_ATTENTE_VALIDATION_DIRECTEUR',
+        'EN_ATTENTE_VALIDATION_RESPONSABLE',
+        'EN_ATTENTE_DRH',
+      ];
+
+      /** Statut affiché : un dossier que l'utilisateur a validé apparaît « Validé » tant que le DRH ne l'a
+       * pas tranché. Gestionnaire RH : vérifié puis transmis (au visa ou au DRH) ; directeur et
+       * sous-directeur : déclaré conforme et transmis au DRH. */
       function statutDashboard(r) {
         const statut = statutReel(r);
+        if (!r.traite_par_moi) return statut;
         const direction = user.role === 'DIRECTEUR' || user.role === 'SOUS_DIRECTEUR';
-        return direction && r.traite_par_moi && statut === 'EN_ATTENTE_DRH' ? 'VALIDEE' : statut;
+        if (direction && statut === 'EN_ATTENTE_DRH') return 'VALIDEE';
+        if (user.role === 'RESPONSABLE' && ETAPES_APRES_VERIFICATION_RH.includes(statut)) return 'VALIDEE';
+        return statut;
       }
 
       function renderDashboard() {
