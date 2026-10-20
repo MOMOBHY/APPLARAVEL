@@ -64,40 +64,59 @@
             class="max-h-80 overflow-y-auto divide-y divide-slate-100 p-1"></div>
         </div>
       </div>
-      <div
-        class="flex items-center space-x-2 bg-slate-100 p-0.5 sm:p-1.5 rounded-full border border-slate-200">
-        <div class="relative group cursor-pointer" id="avatarZone" title="Changer la photo">
+      <div class="relative">
+        <button type="button" id="userMenuButton"
+          class="flex items-center space-x-1.5 sm:space-x-2 bg-slate-100 hover:bg-slate-200/80 p-0.5 sm:py-1 sm:pl-1 sm:pr-2.5 rounded-full border border-slate-200 transition focus:outline-none"
+          title="Menu utilisateur" aria-expanded="false" aria-haspopup="true">
           <img id="avatarImg" src="${AVATAR_PAR_DEFAUT}" alt="Photo de profil"
-            class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover border-2 border-emerald-600 shadow-sm">
-          <div
-            class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">Changer</div>
-        </div>
-        <input type="file" id="avatarInput" accept="image/*" class="hidden">
-        <div class="text-left pr-2 hidden sm:block">
-          <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
-          <p id="roleLabel"
-            class="text-[11px] font-bold ${couleurRole}">${escapeHtml(conteneur.dataset.role || '')}</p>
-          <p id="navStructure" class="text-[11px] text-slate-500 max-w-[14rem] truncate"></p>
+            class="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover border-2 border-emerald-600 shadow-sm shrink-0">
+          <div class="text-left hidden sm:block">
+            <p id="navName" class="text-xs font-extrabold text-slate-900 leading-tight"></p>
+            <p id="roleLabel" class="text-[10px] font-bold ${couleurRole} leading-tight">${escapeHtml(conteneur.dataset.role || '')}</p>
+          </div>
+          <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        <div id="userMenuDropdown"
+          class="hidden absolute right-0 mt-2 w-60 sm:w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden divide-y divide-slate-100">
+          <!-- Profil & structure -->
+          <div class="p-3 bg-slate-50">
+            <div class="flex items-center space-x-2.5">
+              <div class="relative group cursor-pointer shrink-0" id="avatarZone" title="Changer la photo">
+                <img id="avatarMenuImg" src="${AVATAR_PAR_DEFAUT}" alt="Photo de profil"
+                  class="h-10 w-10 rounded-full object-cover border-2 border-emerald-600 shadow-sm">
+                <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold">Changer</div>
+              </div>
+              <input type="file" id="avatarInput" accept="image/*" class="hidden">
+              <div class="min-w-0 flex-1">
+                <p id="menuNavName" class="text-xs font-extrabold text-slate-900 truncate"></p>
+                <p id="navStructure" class="text-[11px] text-slate-500 truncate"></p>
+                <button type="button" id="btnChangerAvatar" class="text-[10px] text-emerald-700 hover:underline font-semibold">Changer la photo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="p-1">
+            <button type="button" id="btnMonCompte"
+              class="w-full flex items-center space-x-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition text-left">
+              <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.1a7.5 7.5 0 0115 0"/>
+              </svg>
+              <span>Mon compte</span>
+            </button>
+            <button type="button" id="btnDeconnexion"
+              class="w-full flex items-center space-x-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition text-left">
+              <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+              </svg>
+              <span>Déconnexion</span>
+            </button>
+          </div>
         </div>
       </div>
-      <!-- Sur mobile, « Mon compte » et « Déconnexion » deviennent des icônes (libellé gardé pour les
-           lecteurs d'écran) : le nom de l'espace garde ainsi sa place. -->
-      <button type="button" id="btnMonCompte" title="Mon compte"
-        class="p-1.5 sm:px-3 sm:py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
-        <span class="hidden sm:inline">Mon compte</span>
-        <span class="sr-only sm:hidden">Mon compte</span>
-        <svg class="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.1a7.5 7.5 0 0115 0"/>
-        </svg>
-      </button>
-      <button type="button" id="btnDeconnexion" title="Déconnexion"
-        class="p-1.5 sm:px-3 sm:py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-700">
-        <span class="hidden sm:inline">Déconnexion</span>
-        <span class="sr-only sm:hidden">Déconnexion</span>
-        <svg class="sm:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
-        </svg>
-      </button>
     </div>`;
 
   // ---- Fenêtre « Mon compte » : adresse email du ministère ----
@@ -175,12 +194,39 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  $('navName').textContent = utilisateur.name || '';
-  $('navStructure').textContent = utilisateur.structure || 'Structure non assignée';
+  if ($('navName')) $('navName').textContent = utilisateur.name || '';
+  if ($('menuNavName')) $('menuNavName').textContent = utilisateur.name || '';
+  if ($('navStructure')) $('navStructure').textContent = utilisateur.structure || 'Structure non assignée';
 
   window.definirSousTitre = (texte) => {
     $('gfpSousTitre').textContent = texte;
   };
+
+  // ---- Menu utilisateur déroulant (Mon compte, Déconnexion, Avatar) ----
+  const btnUserMenu = $('userMenuButton');
+  const dropdownUserMenu = $('userMenuDropdown');
+  if (btnUserMenu && dropdownUserMenu) {
+    btnUserMenu.onclick = (e) => {
+      e.stopPropagation();
+      const ouvert = dropdownUserMenu.classList.toggle('hidden');
+      btnUserMenu.setAttribute('aria-expanded', !ouvert);
+      if (!ouvert && $('notificationsDropdown')) {
+        $('notificationsDropdown').classList.add('hidden');
+      }
+    };
+    document.addEventListener('click', (e) => {
+      if (!dropdownUserMenu.contains(e.target) && !btnUserMenu.contains(e.target)) {
+        dropdownUserMenu.classList.add('hidden');
+        btnUserMenu.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        dropdownUserMenu.classList.add('hidden');
+        btnUserMenu.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 
   // ---- Photo de profil (conservée dans le navigateur, par matricule) ----
   const cleAvatar = 'user_avatar_' + utilisateur.matricule;
@@ -193,7 +239,9 @@
     } catch (e) {
       /* stockage indisponible */
     }
-    $('avatarImg').src = enregistre || AVATAR_PAR_DEFAUT;
+    const src = enregistre || AVATAR_PAR_DEFAUT;
+    if ($('avatarImg')) $('avatarImg').src = src;
+    if ($('avatarMenuImg')) $('avatarMenuImg').src = src;
   };
   /** Enregistre une nouvelle photo de profil choisie par l'utilisateur et l'affiche aussitôt. La photo
    * reste dans ce navigateur (localStorage) : elle n'est pas envoyée au serveur. */
@@ -207,12 +255,14 @@
       } catch (err) {
         /* trop volumineux */
       }
-      $('avatarImg').src = evt.target.result;
+      if ($('avatarImg')) $('avatarImg').src = evt.target.result;
+      if ($('avatarMenuImg')) $('avatarMenuImg').src = evt.target.result;
     };
     lecteur.readAsDataURL(fichier);
   };
-  $('avatarZone').onclick = () => $('avatarInput').click();
-  $('avatarInput').onchange = window.uploadAvatar;
+  if ($('avatarZone')) $('avatarZone').onclick = () => $('avatarInput').click();
+  if ($('btnChangerAvatar')) $('btnChangerAvatar').onclick = () => $('avatarInput').click();
+  if ($('avatarInput')) $('avatarInput').onchange = window.uploadAvatar;
   window.loadAvatar();
 
   // ---- Déconnexion ----
@@ -222,9 +272,19 @@
     sessionStorage.clear();
     window.location.href = base + 'login.html';
   };
-  $('btnDeconnexion').onclick = window.logout;
+  if ($('btnDeconnexion')) {
+    $('btnDeconnexion').onclick = () => {
+      if (dropdownUserMenu) dropdownUserMenu.classList.add('hidden');
+      window.logout();
+    };
+  }
 
-  $('btnMonCompte').onclick = () => window.ouvrirMonCompte();
+  if ($('btnMonCompte')) {
+    $('btnMonCompte').onclick = () => {
+      if (dropdownUserMenu) dropdownUserMenu.classList.add('hidden');
+      window.ouvrirMonCompte();
+    };
+  }
   $('fermerMonCompte').onclick = () => voile.classList.add('hidden');
   voile.addEventListener('click', (e) => {
     if (e.target === voile) voile.classList.add('hidden');
@@ -383,6 +443,7 @@
 
   $('notifBellButton').onclick = (e) => {
     e.stopPropagation();
+    if (dropdownUserMenu) dropdownUserMenu.classList.add('hidden');
     $('notificationsDropdown').classList.toggle('hidden');
   };
   document.addEventListener('click', (e) => {
